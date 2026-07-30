@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "291933237090",
+    "project_id": "steward-20d80",
+    "storage_bucket": "steward-20d80.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:291933237090:android:91dace3e68f8a12957c63b",
+        "android_client_info": {
+          "package_name": "com.den.steward"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "291933237090-3plhi75sc40ks6aqt4lcdf9c06hu24hq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.den.steward",
+            "certificate_hash": "e1fc737d70a169a66f8b9b50b266ae168e501368"
+          }
+        },
+        {
+          "client_id": "291933237090-32pijcdtec8n6bkm933d4g0o3cd22n0b.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDzPOdW7EtdzERAGRezLESggQypEQ43E78"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "291933237090-32pijcdtec8n6bkm933d4g0o3cd22n0b.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

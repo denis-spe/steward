@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="steward_icon">#37474F</color>
+    <color name="steward_primary">#2E7D32</color>
+    <color name="steward_primary_dark">#1B5E20</color>
+    <color name="steward_accent">#FFC107</color>
+    <color name="steward_navy">#1A237E</color>
+    <color name="steward_gold">#FBC02D</color>
+</resources>

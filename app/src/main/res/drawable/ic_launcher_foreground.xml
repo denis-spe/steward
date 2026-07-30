@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Shield, centered within the 66dp adaptive-icon safe zone -->
+    <path
+        android:pathData="M34,30 L74,30 L74,56 C74,70 64,78 54,82 C44,78 34,70 34,56 Z"
+        android:fillColor="#FFFFFF" />
+
+    <!-- Upward trend line, echoes the earnings icon used in the nav menu -->
+    <path
+        android:pathData="M40,66 L50,54 L58,60 L68,42"
+        android:strokeColor="@color/steward_primary"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000" />
+
+</vector>

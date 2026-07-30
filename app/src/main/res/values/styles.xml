@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <!-- Background color of the splash screen -->
+        <item name="windowSplashScreenBackground">@color/steward_gold</item>
+
+        <!-- App logo (Static or Animated Vector Drawable) -->
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_sprout</item>
+
+        <!-- Theme to transition to after the splash screen finishes -->
+        <item name="postSplashScreenTheme">@style/Theme.Steward</item>
+    </style>
+</resources>

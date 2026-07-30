@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_earnings">Earnings</string>
+    <string name="menu_expense">Expense</string>
+    <string name="menu_savings">Savings</string>
+    <string name="menu_loan">Loan</string>
+    <string name="menu_debt">Debt</string>
+    <string name="menu_finance_target">Finance Target</string>
+    <string name="menu_settings">Settings</string>
+</resources>
