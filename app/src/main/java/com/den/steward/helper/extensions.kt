@@ -22,9 +22,9 @@ val String.isEmailValid: String?
 val String.isPasswordValid: String?
     get() {
         // Example password validation (at least 6 characters)
-        return if (this.isNotBlank() && this.isNotEmpty()) {
-            "Password cannot be blank"
-        } else if (this.length >= 8) {
+        return if (this.isBlank() && this.isEmpty()) {
+            "Password cannot be empty"
+        } else if (this.length < 8) {
             "Password must be at least 8 characters long"
         } else {
             null

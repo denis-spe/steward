@@ -13,7 +13,7 @@ android {
 
     defaultConfig {
         applicationId = "com.den.steward"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
