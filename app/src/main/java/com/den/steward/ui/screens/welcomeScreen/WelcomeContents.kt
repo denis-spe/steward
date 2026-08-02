@@ -5,8 +5,10 @@ import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -68,6 +70,9 @@ fun WelcomeContent(
                     welcomeViewModel.onAnonymousLogin()
                 }
             )
+
+            // Welcome footer
+            WelcomeFooter()
 
         }
     }
@@ -136,6 +141,10 @@ fun WelcomeFooter() {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Spacer(
+            modifier = Modifier.height(40.dp)
+        )
+
         Text(
             text = "Copy right©$currentYear, All rights reserved",
             style = MaterialTheme.typography.bodySmall,
@@ -143,7 +152,7 @@ fun WelcomeFooter() {
             color = Color.Gray
         )
         Text(
-            "Glory be to the name of LORD of host",
+            "Glory be to LORD GOD of host",
             style = MaterialTheme.typography.bodySmall,
             textAlign = TextAlign.Center,
             color = Color.Gray

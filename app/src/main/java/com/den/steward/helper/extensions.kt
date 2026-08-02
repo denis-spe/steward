@@ -30,3 +30,12 @@ val String.isPasswordValid: String?
             null
         }
     }
+
+val String.isNameValid: String?
+    get() {
+        return if (this.isBlank() || this.isEmpty()) {
+            "Name cannot be blank"
+        } else {
+            null
+        }
+    }

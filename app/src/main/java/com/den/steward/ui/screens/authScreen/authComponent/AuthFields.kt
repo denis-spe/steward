@@ -64,6 +64,43 @@ fun EmailAuthField(
 }
 
 @Composable
+fun NameAuthField(
+    textState: TextFieldState,
+    supportingText: String?,
+    label: String,
+    imeAction: ImeAction? = null,
+    onNextClick: () -> Unit,
+) {
+    TextField(
+        state = textState,
+        label = {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        },
+        supportingText = {
+            if (!supportingText.isNullOrEmpty()) {
+                Text(
+                    text = supportingText,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        },
+        isError = !supportingText.isNullOrEmpty(),
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Email,
+            showKeyboardOnFocus = true,
+            imeAction = imeAction ?: ImeAction.Next
+        ),
+        onKeyboardAction = KeyboardActionHandler {
+            onNextClick()
+        }
+    )
+}
+
+@Composable
 fun PasswordAuthField(
     textState: TextFieldState,
     supportingText: String?,

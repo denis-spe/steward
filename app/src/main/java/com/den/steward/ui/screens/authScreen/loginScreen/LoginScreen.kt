@@ -44,6 +44,7 @@ import com.den.steward.helper.isPasswordValid
 import com.den.steward.ui.screens.authScreen.authComponent.AuthButton
 import com.den.steward.ui.screens.authScreen.authComponent.EmailAuthField
 import com.den.steward.ui.screens.authScreen.authComponent.PasswordAuthField
+import com.den.steward.ui.screens.componentExtenison.BoxNotification
 import com.den.steward.ui.screens.screenManager.HomeRouter
 import com.den.steward.ui.screens.welcomeScreen.ShowServerMessage
 import kotlinx.coroutines.delay
@@ -102,25 +103,10 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth()
                 .padding(padding),
         ) {
-            AnimatedVisibility(
-                visible = userState is AuthState.Error,
-                modifier = Modifier.fillMaxWidth()
-                    .align(Alignment.TopCenter),
-                exit = slideOutVertically(),
-                enter = slideInVertically() + fadeIn(),
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxWidth()
-                        .padding(top = 10.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    serverErrorMessage?.let {
-                        ShowServerMessage(
-                            serverMessage = it
-                        )
-                    }
-                }
-            }
+            BoxNotification(
+                visible = serverErrorMessage != null,
+                serverErrorMessage = serverErrorMessage
+            )
 
             // Login contents
             LoginContent(
@@ -129,7 +115,6 @@ fun LoginScreen(
                 isEmailValid = emailMessage,
                 isPasswordValid = passwordMessage
             ) {
-                Log.d("LoginScreen", passwordState.text.toString())
                 if (isEmailValid == null && isPasswordValid == null) {
                     loginViewModel.login(
                         email = emailState.text.toString(),

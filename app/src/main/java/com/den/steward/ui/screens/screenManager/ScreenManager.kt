@@ -2,8 +2,10 @@
 package com.den.steward.ui.screens.screenManager
 
 import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
@@ -17,7 +19,6 @@ import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
-import androidx.navigation3.runtime.metadata
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
@@ -42,33 +43,7 @@ fun EntryProviderScope<NavKey>.featureAEntryBuilder(
     welcomeViewModel: WelcomeViewModel,
 ) {
     // ===== Welcome Screen =====
-    entry<WelcomeRouter>(
-        metadata = metadata {
-//            put(NavDisplay.TransitionKey) {
-//                // Slide new content up, keeping the old content in place underneath
-//                slideInVertically(
-//                    initialOffsetY = { it },
-//                    animationSpec = tween(1000)
-//                ) togetherWith ExitTransition.KeepUntilTransitionsFinished
-//            }
-            put(NavDisplay.PopTransitionKey) {
-                // Slide old content down, revealing the new content in place underneath
-                EnterTransition.None togetherWith
-                        slideOutVertically(
-                            targetOffsetY = { it },
-                            animationSpec = tween(1000)
-                        )
-            }
-            put(NavDisplay.PredictivePopTransitionKey) {
-                // Slide old content down, revealing the new content in place underneath
-                EnterTransition.None togetherWith
-                        slideOutVertically(
-                            targetOffsetY = { it },
-                            animationSpec = tween(1000)
-                        )
-            }
-        }
-    ) {
+    entry<WelcomeRouter> {
         WelcomeScreen(
             backStack = backStack,
             welcomeViewModel = welcomeViewModel
@@ -170,34 +145,27 @@ fun ScreenManager() {
             )
         },
         transitionSpec = {
-            // Slide in from right when navigating forward
-            slideInHorizontally(
+            // Slide new content up, keeping the old content in place underneath
+            slideInHorizontally (
                 initialOffsetX = { it },
-                animationSpec = tween(500)
-            ) togetherWith slideOutHorizontally(
-                targetOffsetX = { -it },
-                animationSpec = tween(500)
-            )
+                animationSpec = tween(1000)
+            ) togetherWith ExitTransition.None
         },
         popTransitionSpec = {
-            // Slide in from left when navigating back
-            slideInHorizontally(
-                initialOffsetX = { -it },
-                animationSpec = tween(500)
-            ) togetherWith slideOutHorizontally(
-                targetOffsetX = { it },
-                animationSpec = tween(500)
-            )
+            // Slide old content down, revealing the new content in place underneath
+            EnterTransition.None togetherWith
+                    slideOutHorizontally (
+                        targetOffsetX = { it },
+                        animationSpec = tween(1000)
+                    )
         },
         predictivePopTransitionSpec = {
-            // Slide in from left when navigating back
-            slideInHorizontally(
-                initialOffsetX = { -it },
-                animationSpec = tween(500)
-            ) togetherWith slideOutHorizontally(
-                targetOffsetX = { it },
-                animationSpec = tween(500)
-            )
+            // Slide old content down, revealing the new content in place underneath
+            EnterTransition.None togetherWith
+                    slideOutHorizontally (
+                        targetOffsetX = { it },
+                        animationSpec = tween(1000)
+                    )
         },
     )
 }

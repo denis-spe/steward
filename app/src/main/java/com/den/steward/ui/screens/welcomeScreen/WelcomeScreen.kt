@@ -22,6 +22,7 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import com.den.steward.backend.states.AuthState
 import com.den.steward.backend.viewModels.WelcomeViewModel
+import com.den.steward.ui.screens.componentExtenison.BoxNotification
 import com.den.steward.ui.screens.screenManager.HomeRouter
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
@@ -60,23 +61,10 @@ fun WelcomeScreen(
             modifier = Modifier.fillMaxWidth()
                 .padding(padding),
         ) {
-            AnimatedVisibility(
-                visible = userState is AuthState.Error,
-                modifier = Modifier.fillMaxWidth()
-                    .align(Alignment.TopCenter),
-                exit = slideOutVertically(),
-                enter = slideInVertically() + fadeIn(),
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxWidth()
-                        .padding(top = 10.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    ShowServerMessage(
-                        serverMessage = serverMessage ?: ""
-                    )
-                }
-            }
+            BoxNotification(
+                visible = serverMessage != null,
+                serverErrorMessage = serverMessage
+            )
 
             WelcomeContent(
                 welcomeViewModel = welcomeViewModel,
