@@ -5,17 +5,14 @@ import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.buildAnnotatedString
@@ -25,9 +22,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import com.den.steward.R
+import com.den.steward.backend.states.AuthState
 import com.den.steward.backend.viewModels.WelcomeViewModel
 import com.den.steward.helper.title
-import java.time.LocalDate
+import com.den.steward.ui.screens.components.Footer
 
 @Composable
 fun WelcomeContent(
@@ -53,12 +51,16 @@ fun WelcomeContent(
             WelcomeDescription()
 
             // Login and Register Buttons
-            LoginAndRegisterButtons(backStack = backStack)
+            LoginAndRegisterButtons(
+                backStack = backStack,
+                welcomeViewModel = welcomeViewModel
+            )
 
             // Google Buttons
             GoogleButton(
                 onClick = {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                        welcomeViewModel.updateAuthState(AuthState.NotAuthenticated)
                         welcomeViewModel.onGoogleSignIn(context)
                     }
                 }
@@ -67,12 +69,13 @@ fun WelcomeContent(
             // Anonymous Button
             AnonymousButton(
                 onClick = {
+                    welcomeViewModel.updateAuthState(AuthState.NotAuthenticated)
                     welcomeViewModel.onAnonymousLogin()
                 }
             )
 
             // Welcome footer
-            WelcomeFooter()
+            Footer()
 
         }
     }
@@ -131,34 +134,5 @@ fun WelcomeDescription() {
         )
     }
 }
-
-@Composable
-fun WelcomeFooter() {
-    val currentYear = LocalDate.now().year
-
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Spacer(
-            modifier = Modifier.height(40.dp)
-        )
-
-        Text(
-            text = "Copy right©$currentYear, All rights reserved",
-            style = MaterialTheme.typography.bodySmall,
-            textAlign = TextAlign.Center,
-            color = Color.Gray
-        )
-        Text(
-            "Glory be to LORD GOD of host",
-            style = MaterialTheme.typography.bodySmall,
-            textAlign = TextAlign.Center,
-            color = Color.Gray
-        )
-    }
-}
-
 
 

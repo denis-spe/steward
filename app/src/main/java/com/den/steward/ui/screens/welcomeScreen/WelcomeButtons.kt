@@ -20,19 +20,19 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import com.den.steward.backend.states.AuthState
+import com.den.steward.backend.viewModels.WelcomeViewModel
 import com.den.steward.ui.screens.screenManager.LoginRouter
 import com.den.steward.ui.screens.screenManager.NameRouter
 import com.den.steward.ui.theme.ExtendedTheme
-import com.den.steward.ui.theme.StewardTheme
 
 const val CORNER_RATE = 30f
 
 @Composable
-fun LoginAndRegisterButtons(backStack: NavBackStack<NavKey>) {
+fun LoginAndRegisterButtons(backStack: NavBackStack<NavKey>, welcomeViewModel: WelcomeViewModel) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
@@ -40,11 +40,13 @@ fun LoginAndRegisterButtons(backStack: NavBackStack<NavKey>) {
     ) {
         LoginButton(
             onClick = {
+                welcomeViewModel.updateAuthState(AuthState.NotAuthenticated)
                 backStack.add(LoginRouter)
             }
         )
         RegisterButton(
             onClick = {
+                welcomeViewModel.updateAuthState(AuthState.NotAuthenticated)
                 backStack.add(NameRouter)
             }
         )

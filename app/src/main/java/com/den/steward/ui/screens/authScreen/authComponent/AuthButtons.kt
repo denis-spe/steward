@@ -2,21 +2,25 @@
 package com.den.steward.ui.screens.authScreen.authComponent
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
 fun AuthButton(
-    onClick: () -> Unit,
     text: String,
-    isError: Boolean
+    isError: Boolean,
+    onClick: () -> Unit,
 ) {
     OutlinedButton(
         onClick = onClick,
@@ -31,6 +35,25 @@ fun AuthButton(
             style = MaterialTheme.typography.bodyMedium,
             color = if (isError) MaterialTheme.colorScheme.error
             else MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+
+@Composable
+fun AuthForgotPassword(
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    TextButton(
+        modifier = modifier,
+        onClick = onClick,
+    ) {
+        Text(
+            text = "Forgot Password?",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.Bold
         )
     }

@@ -12,4 +12,5 @@ sealed class AuthState {
     ) : AuthState()
 
     data class Error(val message: String) : AuthState()
+    data class Success(val message: String) : AuthState()
 }

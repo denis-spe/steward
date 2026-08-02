@@ -1,6 +1,9 @@
 // Bless be to the LORD GOD of hosts
 package com.den.steward.helper
 
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
+
 val String.title: String
     get() {
         return this.replaceFirstChar { it.uppercase() }
@@ -39,3 +42,9 @@ val String.isNameValid: String?
             null
         }
     }
+
+fun NavBackStack<NavKey>.pop() {
+    if (this.size > 1) {
+        this.removeLastOrNull()
+    }
+}

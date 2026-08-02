@@ -56,4 +56,8 @@ class AuthorizationUseCase @Inject constructor(
             password = password
         )
     }
+
+    suspend fun sendPasswordResetEmail(email: String) {
+        accountService.sendRecoveryEmail(email)
+    }
 }

@@ -1,4 +1,5 @@
-package com.den.steward.ui.screens.authScreen.loginScreen
+// Grace and truth came through JESUS CHRIST
+package com.den.steward.ui.screens.authScreen.forgotPasswordScreen
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,79 +28,66 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import com.den.steward.backend.states.AuthState
-import com.den.steward.backend.viewModels.LoginViewModel
+import com.den.steward.backend.viewModels.ForgotPasswordViewModel
 import com.den.steward.helper.isEmailValid
-import com.den.steward.helper.isPasswordValid
 import com.den.steward.helper.pop
 import com.den.steward.ui.screens.authScreen.authComponent.AuthButton
-import com.den.steward.ui.screens.authScreen.authComponent.AuthForgotPassword
 import com.den.steward.ui.screens.authScreen.authComponent.EmailAuthField
-import com.den.steward.ui.screens.components.Footer
-import com.den.steward.ui.screens.authScreen.authComponent.PasswordAuthField
 import com.den.steward.ui.screens.componentExtenison.BoxNotification
 import com.den.steward.ui.screens.components.BackButton
-import com.den.steward.ui.screens.screenManager.ForgotPasswordRouter
+import com.den.steward.ui.screens.components.Footer
 import com.den.steward.ui.screens.screenManager.HomeRouter
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(
+fun ForgotPasswordScreen(
     backStack: NavBackStack<NavKey>,
-    loginViewModel: LoginViewModel,
+    forgotPasswordViewModel: ForgotPasswordViewModel
 ) {
     // Text fields states
     val emailState = rememberTextFieldState()
     val emailMessage = remember { mutableStateOf("") }
-    val passwordState = rememberTextFieldState()
-    val passwordMessage = remember { mutableStateOf("") }
 
     val isEmailValid by remember {
         derivedStateOf { emailState.text.toString().isEmailValid }
     }
-    val isPasswordValid by remember {
-        derivedStateOf { passwordState.text.toString().isPasswordValid }
-    }
 
-
-    LaunchedEffect(emailState.text, passwordState.text) {
+    LaunchedEffect(emailState.text) {
         emailMessage.value = ""
-        passwordMessage.value = ""
     }
 
 
     // User state management
-    val userState by loginViewModel.userState.collectAsStateWithLifecycle()
+    val userState by forgotPasswordViewModel.userState.collectAsStateWithLifecycle()
 
     // Loading state
-    val isLoading by loginViewModel.isLoading.collectAsStateWithLifecycle()
+    val isLoading by forgotPasswordViewModel.isLoading.collectAsStateWithLifecycle()
 
     // Navigation logic handled in LaunchedEffect to avoid side effects during composition
     LaunchedEffect(userState) {
         if (userState is AuthState.Authenticated) {
             backStack.clear()
             backStack.add(HomeRouter)
-        } else if (userState is AuthState.Error) {
+        } else if (userState is AuthState.Error || userState is AuthState.Success) {
             delay(3000.milliseconds) // Delay for 3 seconds
-            loginViewModel.updateAuthState(AuthState.NotAuthenticated)
+            forgotPasswordViewModel.updateAuthState(AuthState.NotAuthenticated)
         }
     }
 
-    // Server error message
-    val serverErrorMessage = if (userState is AuthState.Error) {
-        (userState as AuthState.Error).message
-    } else {
-        null
+    // Server message
+    val serverMessage = when (userState) {
+        is AuthState.Error -> (userState as AuthState.Error).message
+        is AuthState.Success -> (userState as AuthState.Success).message
+        else -> null
     }
 
     Scaffold(
@@ -119,30 +108,21 @@ fun LoginScreen(
                 .padding(padding),
         ) {
             BoxNotification(
-                visible = serverErrorMessage != null,
-                serverErrorMessage = serverErrorMessage
+                visible = serverMessage != null,
+                serverErrorMessage = serverMessage
             )
 
-            // Login contents
-            LoginContent(
+            ForgotPasswordContent(
                 emailState = emailState,
-                passwordState = passwordState,
                 emailError = emailMessage.value,
-                passwordError = passwordMessage.value,
-                onPasswordForgotClick = {
-                    backStack.add(ForgotPasswordRouter)
-                },
-            ) {
-                if ((isEmailValid == null) && (isPasswordValid == null)) {
-                    loginViewModel.login(
-                        email = emailState.text.toString(),
-                        password = passwordState.text.toString()
-                    )
-                } else {
-                    emailMessage.value = isEmailValid ?: ""
-                    passwordMessage.value = isPasswordValid ?: ""
+                onResetClick = {
+                    if (isEmailValid == null) {
+                        forgotPasswordViewModel.forgotPassword(emailState.text.toString())
+                    } else {
+                        emailMessage.value = isEmailValid ?: ""
+                    }
                 }
-            }
+            )
 
             if (isLoading) {
                 LinearProgressIndicator(
@@ -157,21 +137,16 @@ fun LoginScreen(
 }
 
 @Composable
-private fun LoginContent(
+private fun ForgotPasswordContent(
     emailState: TextFieldState,
-    passwordState: TextFieldState,
     emailError: String,
-    passwordError: String,
-    onPasswordForgotClick: () -> Unit = {},
-    onLoginClick: () -> Unit = {},
+    onResetClick: () -> Unit
 ) {
-
-    val emailFocusRequester = remember { FocusRequester() }
-    val passwordFocusRequester = remember { FocusRequester() }
+    val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
 
     LaunchedEffect(Unit) {
-        emailFocusRequester.requestFocus()
+        focusRequester.requestFocus()
         keyboardController?.show()
     }
 
@@ -183,61 +158,38 @@ private fun LoginContent(
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Login title
-            LoginTitle()
+            ForgotPasswordTitle()
+            ForgotPasswordDescription()
 
-            // Login description
-            LoginDescription()
-
-            // Email and password fields
             EmailAuthField(
-                modifier = Modifier
-                    .focusRequester(emailFocusRequester),
+                modifier = Modifier.focusRequester(focusRequester),
                 textState = emailState,
-                supportingText = emailError
-            ) {
-                passwordFocusRequester.requestFocus()
-                keyboardController?.show()
-            }
-
-
-            Column {
-                PasswordAuthField(
-                    modifier = Modifier.focusRequester(passwordFocusRequester),
-                    textState = passwordState,
-                    supportingText = passwordError,
-                    onNextClick = onLoginClick
-                )
-
-                AuthForgotPassword(
-                    onClick = onPasswordForgotClick
-                )
-            }
-
-            // Login button
-            AuthButton(
-                onClick = onLoginClick,
-                text = "Login",
-                isError = emailError.isNotEmpty() || passwordError.isNotEmpty()
+                supportingText = emailError,
+                onNextClick = onResetClick
             )
 
-            // Login footer
+            AuthButton(
+                onClick = onResetClick,
+                text = "Send Recovery Email",
+                isError = emailError.isNotEmpty()
+            )
+
             Footer()
         }
     }
 }
 
 @Composable
-private fun LoginTitle() {
+private fun ForgotPasswordTitle() {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Login",
+            text = "Forgot Password",
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold
         )
@@ -245,18 +197,14 @@ private fun LoginTitle() {
 }
 
 @Composable
-private fun LoginDescription() {
+private fun ForgotPasswordDescription() {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = buildAnnotatedString {
-                append("Welcome back\n")
-                append("Please login your steward account\n")
-                append("Enter your email and password\n")
-            },
+            text = "Enter your email to receive a password reset link",
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center
         )

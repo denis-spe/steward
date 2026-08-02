@@ -5,12 +5,12 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -23,11 +23,15 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.den.steward.backend.states.AuthState
+import com.den.steward.backend.viewModels.ForgotPasswordViewModel
 import com.den.steward.backend.viewModels.HomeViewModel
+import com.den.steward.backend.viewModels.LoginViewModel
 import com.den.steward.backend.viewModels.RegisterViewModel
 import com.den.steward.backend.viewModels.ScreenManagerViewModel
 import com.den.steward.backend.viewModels.SettingsViewModel
 import com.den.steward.backend.viewModels.WelcomeViewModel
+import com.den.steward.helper.pop
+import com.den.steward.ui.screens.authScreen.forgotPasswordScreen.ForgotPasswordScreen
 import com.den.steward.ui.screens.authScreen.loginScreen.LoginScreen
 import com.den.steward.ui.screens.authScreen.registerScreen.EmailScreen
 import com.den.steward.ui.screens.authScreen.registerScreen.NameScreen
@@ -46,7 +50,7 @@ fun EntryProviderScope<NavKey>.featureAEntryBuilder(
     entry<WelcomeRouter> {
         WelcomeScreen(
             backStack = backStack,
-            welcomeViewModel = welcomeViewModel
+            welcomeViewModel = welcomeViewModel,
         )
     }
 
@@ -76,7 +80,11 @@ fun EntryProviderScope<NavKey>.featureAEntryBuilder(
 
     // ===== Login Screen =====
     entry<LoginRouter> {
-        LoginScreen(backStack = backStack)
+        val loginViewModel: LoginViewModel = hiltViewModel()
+        LoginScreen(
+            backStack = backStack,
+            loginViewModel = loginViewModel
+        )
     }
 
     // ===== Home Screen =====
@@ -94,6 +102,15 @@ fun EntryProviderScope<NavKey>.featureAEntryBuilder(
         SettingsScreen(
             backStack = backStack,
             settingsViewModel = settingsViewModel
+        )
+    }
+
+    // ===== Forgot Password Screen =====
+    entry<ForgotPasswordRouter> {
+        val forgotPasswordViewModel: ForgotPasswordViewModel = hiltViewModel()
+        ForgotPasswordScreen(
+            backStack = backStack,
+            forgotPasswordViewModel = forgotPasswordViewModel
         )
     }
 }
@@ -124,7 +141,9 @@ fun ScreenManager() {
     }
 
     // 4. Create the NavBackStack with the initial screen
-    val backStack = rememberNavBackStack(isLogIn)
+    val backStack = key(isLogIn) {
+        rememberNavBackStack(isLogIn)
+    }
 
 
     // 5. Create the NavDisplay
@@ -136,7 +155,7 @@ fun ScreenManager() {
             rememberViewModelStoreNavEntryDecorator()
         ),
         backStack = backStack,
-        onBack = { backStack.removeLastOrNull() },
+        onBack = { backStack.pop() },
         entryProvider = entryProvider {
             featureAEntryBuilder(
                 backStack = backStack,
@@ -145,26 +164,26 @@ fun ScreenManager() {
             )
         },
         transitionSpec = {
-            // Slide new content up, keeping the old content in place underneath
+            // Slide new content horizontal, keeping the old content in place underneath
             slideInHorizontally (
                 initialOffsetX = { it },
-                animationSpec = tween(1000)
+                animationSpec = tween(500)
             ) togetherWith ExitTransition.None
         },
         popTransitionSpec = {
-            // Slide old content down, revealing the new content in place underneath
+            // Slide old content horizontal, revealing the new content in place underneath
             EnterTransition.None togetherWith
                     slideOutHorizontally (
                         targetOffsetX = { it },
-                        animationSpec = tween(1000)
+                        animationSpec = tween(500)
                     )
         },
         predictivePopTransitionSpec = {
-            // Slide old content down, revealing the new content in place underneath
+            // Slide old content horizontal, revealing the new content in place underneath
             EnterTransition.None togetherWith
                     slideOutHorizontally (
                         targetOffsetX = { it },
-                        animationSpec = tween(1000)
+                        animationSpec = tween(500)
                     )
         },
     )

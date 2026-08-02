@@ -2,9 +2,12 @@
 // and with all your might and love your neighbor as yourself
 package com.den.steward.ui.screens.authScreen.authComponent
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.KeyboardActionHandler
@@ -26,6 +29,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -34,8 +38,10 @@ import com.den.steward.ui.theme.StewardTheme
 
 @Composable
 fun EmailAuthField(
+    modifier: Modifier = Modifier,
     textState: TextFieldState,
     supportingText: String?,
+    onNextClick: () -> Unit
 ) {
     TextField(
         state = textState,
@@ -45,6 +51,7 @@ fun EmailAuthField(
                 style = MaterialTheme.typography.bodyMedium
             )
         },
+        modifier = modifier,
         supportingText = {
             if (!supportingText.isNullOrEmpty()) {
                 Text(
@@ -59,12 +66,16 @@ fun EmailAuthField(
             keyboardType = KeyboardType.Email,
             showKeyboardOnFocus = true,
             imeAction = ImeAction.Next
-        )
+        ),
+        onKeyboardAction = KeyboardActionHandler {
+            onNextClick()
+        }
     )
 }
 
 @Composable
 fun NameAuthField(
+    modifier: Modifier = Modifier,
     textState: TextFieldState,
     supportingText: String?,
     label: String,
@@ -88,9 +99,10 @@ fun NameAuthField(
                 )
             }
         },
+        modifier = modifier,
         isError = !supportingText.isNullOrEmpty(),
         keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Email,
+            keyboardType = KeyboardType.Text,
             showKeyboardOnFocus = true,
             imeAction = imeAction ?: ImeAction.Next
         ),
@@ -102,6 +114,8 @@ fun NameAuthField(
 
 @Composable
 fun PasswordAuthField(
+    modifier: Modifier = Modifier,
+    label: String = "Password",
     textState: TextFieldState,
     supportingText: String?,
     imeAction: ImeAction? = null,
@@ -110,14 +124,16 @@ fun PasswordAuthField(
     val showPassword = remember { mutableStateOf(false) }
 
     SecureTextField(
+        modifier = modifier,
         state = textState,
         label = {
             Text(
-                text = "Password",
+                text = label,
                 style = MaterialTheme.typography.bodyMedium
             )
         },
         supportingText = {
+
             if (!supportingText.isNullOrEmpty()) {
                 Text(
                     text = supportingText,
@@ -177,7 +193,7 @@ fun AuthFieldPreview() {
             EmailAuthField(
                 textState = textState,
                 supportingText = null
-            )
+            ) {}
 
             PasswordAuthField(
                 textState = textState,

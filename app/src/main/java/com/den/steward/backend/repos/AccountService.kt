@@ -232,7 +232,12 @@ class AccountService @Inject constructor(
     }
 
     override suspend fun sendRecoveryEmail(email: String) {
-        auth.sendPasswordResetEmail(email).await()
+        try {
+            auth.sendPasswordResetEmail(email).await()
+            _userState.value = AuthState.Success("Recovery email sent successfully")
+        } catch (e: Exception) {
+            _userState.value = AuthState.Error(e.message ?: "Unknown error")
+        }
     }
 
     override suspend fun createAnonymousAccount() {

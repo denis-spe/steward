@@ -4,33 +4,40 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import com.den.steward.backend.viewModels.RegisterViewModel
 import com.den.steward.helper.isNameValid
+import com.den.steward.helper.pop
 import com.den.steward.ui.screens.authScreen.authComponent.AuthButton
+import com.den.steward.ui.screens.components.Footer
 import com.den.steward.ui.screens.authScreen.authComponent.NameAuthField
+import com.den.steward.ui.screens.components.BackButton
 import com.den.steward.ui.screens.screenManager.EmailRouter
-import com.den.steward.ui.screens.screenManager.NameRouter
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NameScreen(
     backStack: NavBackStack<NavKey>,
@@ -38,6 +45,16 @@ fun NameScreen(
 ) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        topBar = {
+            TopAppBar(
+                title = {},
+                navigationIcon = {
+                    BackButton {
+                        backStack.pop()
+                    }
+                }
+            )
+        }
     ) { padding ->
         NameContent(
             padding = padding,
@@ -56,12 +73,26 @@ fun NameContent(
 
     val firstNameState = rememberTextFieldState()
     val lastNameState = rememberTextFieldState()
-    val errorMessage = remember { mutableStateOf("") }
-    val isNameValid = firstNameState.text.toString().isNameValid
+    val firstNameError = remember { mutableStateOf("") }
+    val lastNameError = remember { mutableStateOf("") }
+
+    val isFirstNameValid by remember {
+        derivedStateOf { firstNameState.text.toString().isNameValid }
+    }
+
+    val firstNameFocusRequester = remember { FocusRequester() }
+    val lastNameFocusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     LaunchedEffect(firstNameState.text, lastNameState.text) {
-        errorMessage.value = ""
+        firstNameError.value = ""
     }
+
+    LaunchedEffect(Unit) {
+        firstNameFocusRequester.requestFocus()
+        keyboardController?.show()
+    }
+
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -82,58 +113,52 @@ fun NameContent(
 
             // First name field
             NameAuthField(
+                modifier = Modifier.focusRequester(firstNameFocusRequester),
                 textState = firstNameState,
-                supportingText = errorMessage.value,
+                supportingText = firstNameError.value,
                 label = "First Name",
                 onNextClick = {
-                    errorMessage.value = isNameValid ?: ""
-
-                    if (isNameValid == null) {
-                        registerViewModel.updateUserName(
-                            firstName = firstNameState.text.toString(),
-                            lastName = lastNameState.text.toString()
-                        )
-                        backStack.add(NameRouter)
-                    }
+                    lastNameFocusRequester.requestFocus()
                 }
             )
 
             // Last name field
             NameAuthField(
+                modifier = Modifier.focusRequester(lastNameFocusRequester),
                 textState = lastNameState,
-                supportingText = null,
-                label = "Last Name",
+                supportingText = lastNameError.value,
+                label = "Last Name (Optional)",
                 onNextClick = {
-                    errorMessage.value = isNameValid ?: ""
-
-                    if (isNameValid == null) {
+                    if (isFirstNameValid == null) {
                         registerViewModel.updateUserName(
                             firstName = firstNameState.text.toString(),
                             lastName = lastNameState.text.toString()
                         )
                         backStack.add(EmailRouter)
+                    } else {
+                        firstNameError.value = isFirstNameValid ?: ""
                     }
                 }
             )
 
             AuthButton(
                 onClick = {
-                    errorMessage.value = isNameValid ?: ""
-
-                    if (isNameValid == null) {
+                    if (isFirstNameValid == null) {
                         registerViewModel.updateUserName(
                             firstName = firstNameState.text.toString(),
                             lastName = lastNameState.text.toString()
                         )
                         backStack.add(EmailRouter)
+                    } else {
+                        firstNameError.value = isFirstNameValid ?: ""
                     }
                 },
                 text = "Next",
-                isError = false
+                isError = firstNameError.value.isNotEmpty() || lastNameError.value.isNotEmpty()
             )
 
             // Name footer
-            NameFooter()
+            Footer()
         }
     }
 }
@@ -163,24 +188,6 @@ fun NameDescription() {
         Text(
             text = "Enter your names",
             style = MaterialTheme.typography.bodyMedium,
-        )
-    }
-}
-
-@Composable
-fun NameFooter() {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Spacer(
-            modifier = Modifier.height(40.dp)
-        )
-        Text(
-            text = "Copy right©2023, All rights reserved",
-            style = MaterialTheme.typography.bodySmall,
-            color = Color.Gray
         )
     }
 }
