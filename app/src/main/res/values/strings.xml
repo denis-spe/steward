@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">steward</string>
+
+    <string name="gloryBeTOGOD">Glory be to the name of LORD GOD</string>
+
+    <!-- component text -->
+    <string name="footer">By continuing, you agree to our\nTerms of Service and Privacy Policy\nCopy right©2023, All rights reserved\n
+    </string>
+
+    <!-- Common -->
+    <string name="loading_indicator">loading indicator</string>
 </resources>

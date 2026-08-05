@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="login_title">Login</string>
+    <string name="login_screen_title">login screen</string>
+    <string name="login_description">Welcome back\nPlease login your steward account\nEnter your email and password\n</string>
+    <string name="login_email_field">Email</string>
+    <string name="login_password_field">Password</string>
+    <string name="login_forgot_password">Forgot Password?</string>
+    <string name="login_button">Login button</string>
+</resources>

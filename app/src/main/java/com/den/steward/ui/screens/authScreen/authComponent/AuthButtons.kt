@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 fun AuthButton(
     text: String,
     isError: Boolean,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
     OutlinedButton(
@@ -28,7 +29,7 @@ fun AuthButton(
             if (isError) MaterialTheme.colorScheme.error
                 else MaterialTheme.colorScheme.primary
         ),
-        modifier = Modifier.fillMaxWidth(0.5f)
+        modifier = modifier
     ) {
         Text(
             text = text,

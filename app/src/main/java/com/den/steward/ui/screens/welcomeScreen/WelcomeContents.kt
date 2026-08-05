@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,9 +35,11 @@ fun WelcomeContent(
     backStack: NavBackStack<NavKey>
 ) {
     val context = LocalContext.current
+    val onScroll = rememberScrollState()
 
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize()
+            .verticalScroll(onScroll),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -76,27 +80,7 @@ fun WelcomeContent(
 
             // Welcome footer
             Footer()
-
         }
-    }
-}
-
-@Composable
-fun ShowServerMessage(
-    serverMessage: String
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(0.7f)
-            .padding(top = 10.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = serverMessage,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.error,
-            textAlign = TextAlign.Center
-        )
     }
 }
 
@@ -123,12 +107,7 @@ fun WelcomeDescription() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = buildAnnotatedString {
-                append("Welcome to ${stringResource(R.string.app_name)}\n")
-                append("Steward will be a your faith servant\n")
-                append("A servant which will keep on track your\n")
-                append("finance activities\n")
-            },
+            text = stringResource(R.string.welcome_description),
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center
         )

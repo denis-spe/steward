@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -26,6 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -34,6 +38,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import com.den.steward.R
 import com.den.steward.backend.states.AuthState
 import com.den.steward.backend.viewModels.LoginViewModel
 import com.den.steward.helper.isEmailValid
@@ -120,7 +125,7 @@ fun LoginScreen(
         ) {
             BoxNotification(
                 visible = serverErrorMessage != null,
-                serverErrorMessage = serverErrorMessage
+                notificationText = serverErrorMessage
             )
 
             // Login contents
@@ -175,8 +180,11 @@ private fun LoginContent(
         keyboardController?.show()
     }
 
+    val onScrollState = rememberScrollState()
+
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize()
+            .verticalScroll(onScrollState),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -194,7 +202,8 @@ private fun LoginContent(
             // Email and password fields
             EmailAuthField(
                 modifier = Modifier
-                    .focusRequester(emailFocusRequester),
+                    .focusRequester(emailFocusRequester)
+                    .testTag(stringResource(R.string.login_email_field)),
                 textState = emailState,
                 supportingText = emailError
             ) {
@@ -205,19 +214,23 @@ private fun LoginContent(
 
             Column {
                 PasswordAuthField(
-                    modifier = Modifier.focusRequester(passwordFocusRequester),
+                    modifier = Modifier
+                        .focusRequester(passwordFocusRequester)
+                        .testTag(stringResource(R.string.login_password_field)),
                     textState = passwordState,
                     supportingText = passwordError,
                     onNextClick = onLoginClick
                 )
 
                 AuthForgotPassword(
+                    modifier = Modifier.testTag(stringResource(R.string.login_forgot_password)),
                     onClick = onPasswordForgotClick
                 )
             }
 
             // Login button
             AuthButton(
+                modifier = Modifier.testTag(stringResource(R.string.login_button)),
                 onClick = onLoginClick,
                 text = "Login",
                 isError = emailError.isNotEmpty() || passwordError.isNotEmpty()
@@ -232,12 +245,13 @@ private fun LoginContent(
 @Composable
 private fun LoginTitle() {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth()
+            .testTag(stringResource(R.string.login_screen_title)),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Login",
+            text = stringResource(R.string.login_title),
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold
         )
@@ -252,11 +266,7 @@ private fun LoginDescription() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = buildAnnotatedString {
-                append("Welcome back\n")
-                append("Please login your steward account\n")
-                append("Enter your email and password\n")
-            },
+            text = stringResource(R.string.login_description),
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center
         )

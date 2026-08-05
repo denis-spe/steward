@@ -13,12 +13,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import com.den.steward.R
 
 @Composable
 internal fun Footer() {
     Column (
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth()
+            .testTag(stringResource(R.string.footer)),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -26,24 +38,17 @@ internal fun Footer() {
             modifier = Modifier.height(40.dp)
         )
         Text(
-            "Glory be the name of LORD GOD",
+            text = buildAnnotatedString {
+                withStyle( style = SpanStyle(
+                    fontFamily = FontFamily(Font(R.font.special_font, weight = FontWeight.Bold))
+                ) ) {
+                    append(stringResource(R.string.gloryBeTOGOD) + "\n")
+                }
+                append(stringResource(R.string.footer))
+                                        },
             style = MaterialTheme.typography.bodySmall,
-            color = Color.Gray
-        )
-        Text(
-            "By continuing, you agree to our",
-            style = MaterialTheme.typography.bodySmall,
-            color = Color.Gray
-        )
-        Text(
-            "Terms of Service and Privacy Policy",
-            style = MaterialTheme.typography.bodySmall,
-            color = Color.Gray
-        )
-        Text(
-            "Copy right©2023, All rights reserved",
-            style = MaterialTheme.typography.bodySmall,
-            color = Color.Gray
+            color = Color.Gray,
+            textAlign = TextAlign.Center
         )
     }
 }

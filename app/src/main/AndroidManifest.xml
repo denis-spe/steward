@@ -16,6 +16,11 @@
         android:usesCleartextTraffic="true"
         android:name=".StewardApplication"
         android:theme="@style/Theme.App.Starting">
+
+        <profileable
+            android:shell="true"
+            tools:targetApi="q" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

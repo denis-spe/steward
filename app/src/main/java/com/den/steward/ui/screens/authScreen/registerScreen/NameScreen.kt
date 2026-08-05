@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -24,10 +26,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import com.den.steward.R
 import com.den.steward.backend.viewModels.RegisterViewModel
 import com.den.steward.helper.isNameValid
 import com.den.steward.helper.pop
@@ -94,8 +99,11 @@ fun NameContent(
     }
 
 
+    val onScrollState = rememberScrollState()
+
     Column(
         modifier = Modifier.fillMaxSize()
+            .verticalScroll(onScrollState)
             .padding(padding),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -113,7 +121,8 @@ fun NameContent(
 
             // First name field
             NameAuthField(
-                modifier = Modifier.focusRequester(firstNameFocusRequester),
+                modifier = Modifier.focusRequester(firstNameFocusRequester)
+                    .testTag(stringResource(R.string.name_screen_first_name_field)),
                 textState = firstNameState,
                 supportingText = firstNameError.value,
                 label = "First Name",
@@ -124,7 +133,8 @@ fun NameContent(
 
             // Last name field
             NameAuthField(
-                modifier = Modifier.focusRequester(lastNameFocusRequester),
+                modifier = Modifier.focusRequester(lastNameFocusRequester)
+                    .testTag(stringResource(R.string.name_screen_last_name_field)),
                 textState = lastNameState,
                 supportingText = lastNameError.value,
                 label = "Last Name (Optional)",
@@ -142,6 +152,7 @@ fun NameContent(
             )
 
             AuthButton(
+                modifier = Modifier.testTag(stringResource(R.string.name_screen_next_button)),
                 onClick = {
                     if (isFirstNameValid == null) {
                         registerViewModel.updateUserName(
@@ -171,7 +182,7 @@ fun NameTitle() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "User Names",
+            text = stringResource(R.string.name_screen_title),
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold
         )
@@ -186,7 +197,7 @@ fun NameDescription() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Enter your names",
+            text = stringResource(R.string.name_screen_description),
             style = MaterialTheme.typography.bodyMedium,
         )
     }

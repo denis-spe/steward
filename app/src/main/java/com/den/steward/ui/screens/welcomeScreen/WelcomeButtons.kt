@@ -1,6 +1,7 @@
 // Glory be to the LORD GOD of hosts
 package com.den.steward.ui.screens.welcomeScreen
 
+import com.den.steward.R
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -16,6 +17,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -63,7 +66,8 @@ fun LoginButton(
         shape = RoundedCornerShape(
             topStart = CORNER_RATE,
             bottomStart = CORNER_RATE,
-        )
+        ),
+        modifier = Modifier.testTag(stringResource(R.string.login_button)),
     ) {
         Text(
             text = "Login",
@@ -86,7 +90,8 @@ fun RegisterButton(
         border = BorderStroke(2.dp, ExtendedTheme.colors.primary),
         colors = ButtonDefaults.outlinedButtonColors(
             contentColor = ExtendedTheme.colors.primary
-        )
+        ),
+        modifier = Modifier.testTag(stringResource(R.string.register_button)),
     ) {
         Text(
             text = "Register",
@@ -102,6 +107,7 @@ fun AnonymousButton(
 ) {
     TextButton(
         onClick = onClick,
+        modifier = Modifier.testTag(stringResource(R.string.anonymous_button)),
     ) {
         Text(
             text = "Anonymous",
@@ -118,6 +124,7 @@ fun GoogleButton(
 ) {
     TextButton(
         onClick = onClick,
+        modifier = Modifier.testTag(stringResource(R.string.google_button)),
     ) {
         Text(
             text = buildAnnotatedString {

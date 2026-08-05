@@ -63,7 +63,7 @@ fun WelcomeScreen(
         ) {
             BoxNotification(
                 visible = serverMessage != null,
-                serverErrorMessage = serverMessage
+                notificationText = serverMessage
             )
 
             WelcomeContent(

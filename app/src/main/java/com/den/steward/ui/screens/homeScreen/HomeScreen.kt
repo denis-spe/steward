@@ -10,8 +10,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import com.den.steward.R
 import com.den.steward.backend.viewModels.HomeViewModel
 import com.den.steward.ui.screens.screenManager.SettingsRouter
 
@@ -27,11 +30,12 @@ fun HomeScreen(backStack: NavBackStack<NavKey>, homeViewModel: HomeViewModel) {
             verticalArrangement = Arrangement.Center
         ) {
             Button(
+                modifier = Modifier.testTag(stringResource(R.string.home_screen_settings_button)),
                 onClick = {
                     backStack.add(SettingsRouter)
                 }
             ) {
-                Text("Settings")
+                Text(stringResource(R.string.home_screen_settings_button))
             }
         }
     }

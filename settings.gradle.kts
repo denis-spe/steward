@@ -24,4 +24,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "steward"
 include(":app")
+include(":benchmark")
  

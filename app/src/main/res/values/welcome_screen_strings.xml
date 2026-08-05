@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="welcome_description">Welcome to Steward\nSteward will be a faith servant\nA servant which will keep on track your\nfinance activities\n</string>
+    <string name="google_button">google button</string>
+    <string name="anonymous_button">anonymous button</string>
+    <string name="register_button">register button</string>
+</resources>

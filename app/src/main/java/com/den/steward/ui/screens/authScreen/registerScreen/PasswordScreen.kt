@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -26,12 +28,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import com.den.steward.R
 import com.den.steward.backend.states.AuthState
 import com.den.steward.backend.viewModels.RegisterViewModel
 import com.den.steward.helper.isPasswordValid
@@ -118,7 +123,7 @@ fun PasswordScreen(
 
             BoxNotification(
                 visible = serverError != null,
-                serverErrorMessage = serverError
+                notificationText = serverError
             )
 
             PasswordContent(
@@ -139,7 +144,8 @@ fun PasswordScreen(
             if (isLoading) {
                 LinearProgressIndicator(
                     modifier = Modifier.fillMaxWidth()
-                        .align(Alignment.BottomCenter),
+                        .align(Alignment.BottomCenter)
+                        .testTag(stringResource(R.string.loading_indicator)),
                     trackColor = MaterialTheme.colorScheme.background,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -165,8 +171,11 @@ private fun PasswordContent(
         keyboardController?.show()
     }
 
+    val onScrollState = rememberScrollState()
+
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize()
+            .verticalScroll(onScrollState),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -179,7 +188,8 @@ private fun PasswordContent(
             PasswordDescription()
 
             PasswordAuthField(
-                modifier = Modifier.focusRequester(passwordFocusRequester),
+                modifier = Modifier.focusRequester(passwordFocusRequester)
+                    .testTag(stringResource(R.string.password_screen_password_field)),
                 textState = passwordState,
                 supportingText = passwordError,
                 imeAction = ImeAction.Next
@@ -189,7 +199,8 @@ private fun PasswordContent(
 
             PasswordAuthField(
                 label = "Confirm Password",
-                modifier = Modifier.focusRequester(confirmPasswordFocusRequester),
+                modifier = Modifier.focusRequester(confirmPasswordFocusRequester)
+                    .testTag(stringResource(R.string.password_screen_confirm_password_field)),
                 textState = confirmPasswordState,
                 supportingText = confirmPasswordError,
                 imeAction = ImeAction.Send
@@ -198,8 +209,9 @@ private fun PasswordContent(
             }
 
             AuthButton(
+                modifier = Modifier.testTag(stringResource(R.string.password_screen_register_button)),
                 onClick = onRegisterClick,
-                text = "Register",
+                text = stringResource(R.string.password_screen_register_button),
                 isError = passwordError.isNotEmpty() || confirmPasswordError.isNotEmpty()
             )
 
@@ -216,7 +228,7 @@ private fun PasswordTitle() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Yo Password",
+            text = stringResource(R.string.password_screen_title),
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold
         )
@@ -231,7 +243,7 @@ private fun PasswordDescription() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Enter your secure password",
+            text = stringResource(R.string.password_screen_description),
             style = MaterialTheme.typography.bodyMedium,
         )
     }

@@ -11,7 +11,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val authorizationUseCase: AuthorizationUseCase
+    authorizationUseCase: AuthorizationUseCase
 ) : ViewModel(){
     val userState: StateFlow<AuthState> = authorizationUseCase.userState
 

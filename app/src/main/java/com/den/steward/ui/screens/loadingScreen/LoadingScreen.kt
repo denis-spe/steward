@@ -11,6 +11,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import com.den.steward.R
 
 @Composable
 fun LoadingScreen() {
@@ -25,6 +28,7 @@ fun LoadingScreen() {
             verticalArrangement = Arrangement.Center
         ) {
             CircularProgressIndicator(
+                modifier = Modifier.testTag(stringResource(R.string.loading_indicator)),
                 trackColor = Color.Transparent
             )
         }

@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -24,10 +26,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import com.den.steward.R
 import com.den.steward.backend.viewModels.RegisterViewModel
 import com.den.steward.helper.isEmailValid
 import com.den.steward.helper.pop
@@ -70,8 +75,11 @@ private fun EmailScreenContent(
     backStack: NavBackStack<NavKey>,
     registerViewModel: RegisterViewModel
 ) {
+    val onScrollState = rememberScrollState()
+
     Column(
         modifier = Modifier.fillMaxSize()
+            .verticalScroll(onScrollState)
             .padding(padding),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -107,7 +115,7 @@ private fun EmailTitle() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            "User Email",
+            stringResource(R.string.email_screen_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold
         )
@@ -122,7 +130,7 @@ private fun EmailDescription() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            "Please enter your email address",
+            stringResource(R.string.email_screen_description),
             style = MaterialTheme.typography.bodyMedium
         )
     }
@@ -150,7 +158,8 @@ private fun EmailForm(backStack: NavBackStack<NavKey>, registerViewModel: Regist
     }
 
     EmailAuthField(
-        modifier = Modifier.focusRequester(focusRequester),
+        modifier = Modifier.focusRequester(focusRequester)
+            .testTag(stringResource(R.string.email_screen_email_field)),
         textState = emailState,
         supportingText = errorMessage.value,
         onNextClick = {
@@ -164,7 +173,8 @@ private fun EmailForm(backStack: NavBackStack<NavKey>, registerViewModel: Regist
     )
 
     AuthButton(
-        text = "Next",
+        modifier = Modifier.testTag(stringResource(R.string.email_screen_next_button)),
+        text = stringResource(R.string.email_screen_next_button),
         isError = errorMessage.value.isNotEmpty(),
     ) {
         if (isEmailValid == null) {

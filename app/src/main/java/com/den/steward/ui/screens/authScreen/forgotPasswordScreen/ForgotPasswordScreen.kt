@@ -28,12 +28,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import com.den.steward.R
 import com.den.steward.backend.states.AuthState
 import com.den.steward.backend.viewModels.ForgotPasswordViewModel
 import com.den.steward.helper.isEmailValid
@@ -109,7 +112,8 @@ fun ForgotPasswordScreen(
         ) {
             BoxNotification(
                 visible = serverMessage != null,
-                serverErrorMessage = serverMessage
+                notificationText = serverMessage,
+                isSuccessMessage = userState is AuthState.Success
             )
 
             ForgotPasswordContent(
@@ -127,7 +131,8 @@ fun ForgotPasswordScreen(
             if (isLoading) {
                 LinearProgressIndicator(
                     modifier = Modifier.fillMaxWidth()
-                        .align(Alignment.BottomCenter),
+                        .align(Alignment.BottomCenter)
+                        .testTag(stringResource(R.string.loading_indicator)),
                     trackColor = MaterialTheme.colorScheme.background,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -164,15 +169,17 @@ private fun ForgotPasswordContent(
             ForgotPasswordDescription()
 
             EmailAuthField(
-                modifier = Modifier.focusRequester(focusRequester),
+                modifier = Modifier.focusRequester(focusRequester)
+                    .testTag(stringResource(R.string.forgot_password_email_field)),
                 textState = emailState,
                 supportingText = emailError,
                 onNextClick = onResetClick
             )
 
             AuthButton(
+                modifier = Modifier.testTag(stringResource(R.string.forgot_password_send_button)),
                 onClick = onResetClick,
-                text = "Send Recovery Email",
+                text = stringResource(R.string.forgot_password_send_button),
                 isError = emailError.isNotEmpty()
             )
 
@@ -189,7 +196,7 @@ private fun ForgotPasswordTitle() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Forgot Password",
+            text = stringResource(R.string.forgot_password_title),
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold
         )
@@ -204,7 +211,7 @@ private fun ForgotPasswordDescription() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Enter your email to receive a password reset link",
+            text = stringResource(R.string.forgot_password_description),
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center
         )

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="name_screen_title">User Names</string>
+    <string name="name_screen_description">Please enter your names</string>
+    <string name="name_screen_first_name_field">first name field</string>
+    <string name="name_screen_last_name_field">last name field</string>
+    <string name="name_screen_next_button">next button</string>
+</resources>

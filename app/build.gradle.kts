@@ -18,7 +18,7 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "com.den.steward.HiltTestRunner"
     }
 
     buildTypes {
@@ -36,6 +36,13 @@ android {
 
         debug {
             isMinifyEnabled = false
+        }
+
+        create("benchmark") {
+            initWith(getByName("release"))
+            matchingFallbacks.add("release")
+            signingConfig = signingConfigs.getByName("debug")
+            proguardFiles("benchmark-rules.pro")
         }
     }
 
@@ -106,26 +113,37 @@ dependencies {
     implementation(libs.androidx.hilt.work)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.profileinstaller)
     // When using Kotlin.
     ksp(libs.hilt.android.compiler)
     ksp(libs.androidx.hilt.compiler)
+    ksp(libs.androidx.room.compiler)
+    ksp(libs.moshi.kotlin.codegen)
     // For Robolectric tests.
     testImplementation(libs.hilt.android.testing)
     kspTest(libs.hilt.android.compiler)
+    kspTest(libs.androidx.room.compiler)
+    kspTest(libs.moshi.kotlin.codegen)
 
     // For instrumented tests.
     androidTestImplementation(libs.dagger.hilt.android.testing)
     kspAndroidTest(libs.hilt.android.compiler)
+    kspAndroidTest(libs.androidx.room.compiler)
+    kspAndroidTest(libs.moshi.kotlin.codegen)
 
     // Compose UI test rule.
+    debugImplementation(platform(libs.androidx.compose.bom))
     debugImplementation(libs.androidx.ui.test.manifest)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     testImplementation(libs.androidx.core)
     testImplementation(libs.androidx.junit)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.mockk)
+    testImplementation(libs.turbine)
+    androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.runner)
     debugImplementation(libs.androidx.compose.ui.tooling)
-    "ksp"(libs.androidx.room.compiler)
-    "ksp"(libs.moshi.kotlin.codegen)
 }

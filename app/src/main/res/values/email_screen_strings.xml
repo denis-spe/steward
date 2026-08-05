@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="email_screen_title">User Email</string>
+    <string name="email_screen_description">Please enter your email address</string>
+    <string name="email_screen_email_field">email field</string>
+    <string name="email_screen_next_button">next button</string>
+</resources>
