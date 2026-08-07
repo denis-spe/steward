@@ -3,6 +3,7 @@ package com.den.steward.helper
 
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import com.den.steward.backend.dataStructure.Transaction
 
 val String.title: String
     get() {
@@ -48,3 +49,12 @@ fun NavBackStack<NavKey>.pop() {
         this.removeLastOrNull()
     }
 }
+
+val Any.toTransaction: List<Transaction>
+    get() {
+        val raw = this as List<*>
+        val transaction = raw.filterIsInstance<Map<String, Any>>()
+        return transaction.map {
+            it as Transaction
+        }
+    }
