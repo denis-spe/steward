@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="earning">Earnings</string>
+    <string name="expense">Expense</string>
+    <string name="loan">Loan</string>
+    <string name="debt">Debt</string>
+    <string name="repayment">Repayment</string>
+    <string name="refund">Refund</string>
+    <string name="goal">Goal</string>
+    <string name="attain">Attain</string>
+    <string name="achievement">Achievement</string>
+
+    <string name="earning_desc">Add an earnings transaction</string>
+    <string name="expense_desc">Add an expense transaction</string>
+    <string name="loan_desc">Add a loan transaction</string>
+    <string name="debt_desc">Add a debt transaction</string>
+    <string name="repayment_desc">Add a repayment transaction</string>
+    <string name="refund_desc">Add a refund transaction</string>
+    <string name="goal_desc">Add a goal transaction</string>
+    <string name="attain_desc">Add an attain transaction</string>
+    <string name="achievement_desc">Add an achievement transaction</string>
+
+    <color name="earnings">#00FF00</color>
+    <color name="expense">#FF0000</color>
+    <color name="loan">#A94B44</color>
+    <color name="debt">#2828DC</color>
+    <color name="repayment">#8834F6</color>
+    <color name="refund">#FF00FF</color>
+    <color name="goal">#20D08B</color>
+    <color name="attain">#00FF00</color>
+    <color name="achievement">#CDDC39</color>
+
+</resources>
+

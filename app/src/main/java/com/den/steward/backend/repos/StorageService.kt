@@ -2,15 +2,14 @@ package com.den.steward.backend.repos
 
 import android.util.Log
 import com.den.steward.backend.dataStructure.Transaction
+import com.den.steward.backend.dataStructure.TransactionType
 import com.den.steward.backend.repoInterfaces.Storage
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChangedBy
@@ -18,7 +17,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
@@ -32,6 +30,7 @@ class StorageService @Inject constructor(
         private const val REPAYMENT_COLLECTION = "Repayments"
         private const val REFUND_COLLECTION = "Refunds"
         private const val ATTAIN_COLLECTION = "Attain"
+        private const val ACHIEVEMENT_COLLECTION = "Achievement"
         private const val TAG = "StorageService"
     }
 
@@ -42,14 +41,12 @@ class StorageService @Inject constructor(
     // a single "amount" field. Uses named-argument lambdas (not bound constructor references) so
     // this compiles regardless of each subtype's actual declared parameter order.
     private val amountFactories: Map<String, (id: String, label: String, amount: Double, note: String, createdAt: Long) -> Transaction> = mapOf(
-        "earnings" to { id, label, amount, note, createdAt -> Transaction.Earning(id = id, label = label, amount = amount, note = note, createdAt = createdAt) },
-        "expense" to { id, label, amount, note, createdAt -> Transaction.Expense(id = id, label = label, amount = amount, note = note, createdAt = createdAt) },
-        "loan" to { id, label, amount, note, createdAt -> Transaction.Loan(id = id, label = label, amount = amount, note = note, createdAt = createdAt) },
-        "debt" to { id, label, amount, note, createdAt -> Transaction.Debt(id = id, label = label, amount = amount, note = note, createdAt = createdAt) },
-        "repayment" to { id, label, amount, note, createdAt -> Transaction.Repayment(id = id, label = label, amount = amount, note = note, createdAt = createdAt) },
-        "refund" to { id, label, amount, note, createdAt -> Transaction.Refund(id = id, label = label, amount = amount, note = note, createdAt = createdAt) },
-        "targetAmount" to { id, label, amount, note, createdAt -> Transaction.TargetAmount(id = id, label = label, amount = amount, note = note, createdAt = createdAt) },
-        "targetAttain" to { id, label, amount, note, createdAt -> Transaction.TargetAttain(id = id, label = label, amount = amount, note = note, createdAt = createdAt) }
+        TransactionType.EARNINGS.name to { id, label, amount, note, createdAt -> Transaction.Earning(id = id, label = label, amount = amount, note = note, createdAt = createdAt) },
+        TransactionType.EXPENSE.name to { id, label, amount, note, createdAt -> Transaction.Expense(id = id, label = label, amount = amount, note = note, createdAt = createdAt) },
+        TransactionType.LOAN.name to { id, label, amount, note, createdAt -> Transaction.Loan(id = id, label = label, amount = amount, note = note, createdAt = createdAt) },
+        TransactionType.DEBT.name to { id, label, amount, note, createdAt -> Transaction.Debt(id = id, label = label, amount = amount, note = note, createdAt = createdAt) },
+        TransactionType.REPAYMENT.name to { id, label, amount, note, createdAt -> Transaction.Repayment(id = id, label = label, amount = amount, note = note, createdAt = createdAt) },
+        TransactionType.REFUND.name to { id, label, amount, note, createdAt -> Transaction.Refund(id = id, label = label, amount = amount, note = note, createdAt = createdAt) },
     )
 
     fun DocumentSnapshot.toDTO(): Transaction? {
@@ -65,14 +62,19 @@ class StorageService @Inject constructor(
         }
 
         return when (type) {
-            "countTarget" -> {
-                val count = getLong("count") ?: 0L
-                Transaction.CountTarget(id = id, label = label, count = count, note = note, createdAt = createdAt)
+            TransactionType.EARNINGS.name -> {
+                val value = getDouble("value") ?: 0.0
+                Transaction.Goal(id = id, label = label, value = value, note = note, createdAt = createdAt)
             }
 
-            "countTargetAttain" -> {
-                val count = getLong("count") ?: 0L
-                Transaction.CountTargetAttain(id = id, label = label, count = count, note = note, createdAt = createdAt)
+            TransactionType.ATTAIN.name -> {
+                val value = getDouble("value") ?: 0.0
+                Transaction.Attain(id = id, value = value, createdAt = createdAt)
+            }
+
+            TransactionType.ACHIEVEMENT.name -> {
+                val value = getDouble("value") ?: 0.0
+                Transaction.Achievement(id = id, value = value, createdAt = createdAt)
             }
 
             else -> {
@@ -99,6 +101,23 @@ class StorageService @Inject constructor(
         }
     }
 
+    override suspend fun addEarnings(userId: String, earnings: Transaction.Earning): Result<Unit> {
+        return try {
+            val earningsRef = docRef.document(userId)
+                .collection(TRANSACTION_COLLECTION)
+                .document()
+
+            val earningsData = earnings.toMap
+            earningsData["id"] = earningsRef.id
+
+            earningsRef.set(earningsData).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to add earnings for user $userId", e)
+            Result.failure(e)
+        }
+    }
+
     override suspend fun addRepayment(
         userId: String,
         loanId: String,
@@ -120,7 +139,7 @@ class StorageService @Inject constructor(
         }
     }
 
-    fun fetchTransactionFulfillment(userId: String, transaction: Transaction): Flow<Result<List<Transaction>>> {
+    override fun fetchTransactionFulfillment(userId: String, transaction: Transaction): Flow<Result<List<Transaction>>> {
         val collection = when (transaction) {
             is Transaction.Loan -> docRef.document(userId)
                 .collection(TRANSACTION_COLLECTION)
@@ -132,15 +151,16 @@ class StorageService @Inject constructor(
                 .document(transaction.id)
                 .collection(REFUND_COLLECTION)
 
-            is Transaction.TargetAmount -> docRef.document(userId)
+            is Transaction.Goal -> docRef.document(userId)
                 .collection(TRANSACTION_COLLECTION)
                 .document(transaction.id)
                 .collection(ATTAIN_COLLECTION)
 
-            is Transaction.CountTarget -> docRef.document(userId)
+            is Transaction.Achievement -> docRef.document(userId)
                 .collection(TRANSACTION_COLLECTION)
                 .document(transaction.id)
-                .collection(ATTAIN_COLLECTION)
+                .collection(ACHIEVEMENT_COLLECTION)
+
 
             else -> return flowOf(Result.success(emptyList()))
         }
@@ -229,8 +249,7 @@ class StorageService @Inject constructor(
                         when (transaction) {
                             is Transaction.Loan -> transaction.copy(repayment = subItems.filterIsInstance<Transaction.Repayment>())
                             is Transaction.Debt -> transaction.copy(refund = subItems.filterIsInstance<Transaction.Refund>())
-                            is Transaction.TargetAmount -> transaction.copy(attain = subItems.filterIsInstance<Transaction.TargetAttain>())
-                            is Transaction.CountTarget -> transaction.copy(attain = subItems.filterIsInstance<Transaction.CountTargetAttain>())
+                            is Transaction.Goal -> transaction.copy(attain = subItems.filterIsInstance<Transaction.Attain>())
                             else -> transaction
                         }
                     }

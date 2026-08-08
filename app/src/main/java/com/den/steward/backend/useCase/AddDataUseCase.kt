@@ -18,4 +18,8 @@ class AddDataUseCase @Inject constructor(
     suspend fun addRepayment(loanId: String, repayment: Transaction.Repayment) {
         storageService.addRepayment(userId, loanId, repayment)
     }
+
+    suspend fun addEarnings(earnings: Transaction.Earning) {
+        storageService.addEarnings(userId, earnings)
+    }
 }

@@ -1,6 +1,6 @@
 // Love the LORD your GOD with all your soul and with all your heart
 // and with all your might and love your neighbor as yourself
-package com.den.steward.ui.screens.components
+package com.den.steward.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

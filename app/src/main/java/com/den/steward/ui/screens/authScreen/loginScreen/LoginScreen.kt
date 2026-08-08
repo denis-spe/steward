@@ -30,11 +30,9 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
@@ -47,10 +45,10 @@ import com.den.steward.helper.pop
 import com.den.steward.ui.screens.authScreen.authComponent.AuthButton
 import com.den.steward.ui.screens.authScreen.authComponent.AuthForgotPassword
 import com.den.steward.ui.screens.authScreen.authComponent.EmailAuthField
-import com.den.steward.ui.screens.components.Footer
+import com.den.steward.ui.components.Footer
 import com.den.steward.ui.screens.authScreen.authComponent.PasswordAuthField
 import com.den.steward.ui.screens.componentExtenison.BoxNotification
-import com.den.steward.ui.screens.components.BackButton
+import com.den.steward.ui.components.BackButton
 import com.den.steward.ui.screens.screenManager.ForgotPasswordRouter
 import com.den.steward.ui.screens.screenManager.HomeRouter
 import kotlinx.coroutines.delay

@@ -63,6 +63,7 @@ dependencies {
         }
     }
     implementation(platform(libs.firebase.bom))
+    implementation(libs.androidx.ui)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(platform(libs.androidx.compose.bom))
@@ -114,6 +115,7 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.profileinstaller)
+    implementation(libs.exp4j)
     // When using Kotlin.
     ksp(libs.hilt.android.compiler)
     ksp(libs.androidx.hilt.compiler)

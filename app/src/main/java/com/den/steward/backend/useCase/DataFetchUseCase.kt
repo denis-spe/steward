@@ -23,10 +23,9 @@ class DataFetchUseCase @Inject constructor(
             val dataList = originalTransactions.flatMap { transaction ->
                 // 2. Capture the sub-items from the 'when' statement
                 val subItems = when (transaction) {
-                    is Transaction.Loan -> transaction.repayment
-                    is Transaction.Debt -> transaction.refund
-                    is Transaction.TargetAmount -> transaction.attain
-                    is Transaction.CountTarget -> transaction.attain
+                    is Transaction.Loan -> transaction.repayment.map { it.copy(loan = transaction) }
+                    is Transaction.Debt -> transaction.refund.map { it.copy(debt = transaction) }
+                    is Transaction.Goal -> transaction.attain.map { it.copy(goal = transaction) }
                     else -> emptyList()
                 }
 

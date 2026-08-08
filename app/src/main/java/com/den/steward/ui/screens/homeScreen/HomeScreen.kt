@@ -23,15 +23,18 @@ import com.den.steward.R
 import com.den.steward.backend.dataStructure.Transaction
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.viewModels.HomeViewModel
-import com.den.steward.helper.toTransaction
+import com.den.steward.ui.dataAddition.TransactionAddition
 import com.den.steward.ui.screens.screenManager.SettingsRouter
 
 @Composable
 fun HomeScreen(backStack: NavBackStack<NavKey>, homeViewModel: HomeViewModel) {
-    val todayTransactions by homeViewModel.yesterdayTransactions.collectAsStateWithLifecycle()
+    val todayTransactions by homeViewModel.todayTransactions.collectAsStateWithLifecycle()
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        floatingActionButton = {
+            TransactionAddition(homeViewModel::transactionDataSubmission)
+        }
     ) { padding ->
         Column(
             modifier = Modifier.fillMaxSize()
@@ -51,7 +54,6 @@ fun HomeScreen(backStack: NavBackStack<NavKey>, homeViewModel: HomeViewModel) {
             Button(
                 modifier = Modifier,
                 onClick = {
-                    homeViewModel.addLoan()
                 }
             ) {
                 Text("Add data")

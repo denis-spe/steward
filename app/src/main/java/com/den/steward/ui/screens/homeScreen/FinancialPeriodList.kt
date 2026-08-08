@@ -43,7 +43,7 @@ fun FinancialPeriodList(transactions: DataState<List<Transaction>>) {
 @Composable
 fun TransactionItem(transaction: Transaction) {
     ListItem(
-        headlineContent = { Text(transaction.label) },
-        supportingContent = { Text(transaction.note) }
+        headlineContent = { Text(transaction.getLabelOrNull ?: "") },
+        supportingContent = { Text(transaction.getNoteOrNull ?: "") }
     )
 }

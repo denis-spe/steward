@@ -37,9 +37,9 @@ import com.den.steward.backend.viewModels.RegisterViewModel
 import com.den.steward.helper.isNameValid
 import com.den.steward.helper.pop
 import com.den.steward.ui.screens.authScreen.authComponent.AuthButton
-import com.den.steward.ui.screens.components.Footer
+import com.den.steward.ui.components.Footer
 import com.den.steward.ui.screens.authScreen.authComponent.NameAuthField
-import com.den.steward.ui.screens.components.BackButton
+import com.den.steward.ui.components.BackButton
 import com.den.steward.ui.screens.screenManager.EmailRouter
 
 @OptIn(ExperimentalMaterial3Api::class)

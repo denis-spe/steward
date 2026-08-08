@@ -1,5 +1,5 @@
 // Glory be the name of LORD GOD
-package com.den.steward.ui.screens.components
+package com.den.steward.ui.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack

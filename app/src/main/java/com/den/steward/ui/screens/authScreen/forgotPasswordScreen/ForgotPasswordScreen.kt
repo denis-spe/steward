@@ -18,7 +18,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,8 +43,8 @@ import com.den.steward.helper.pop
 import com.den.steward.ui.screens.authScreen.authComponent.AuthButton
 import com.den.steward.ui.screens.authScreen.authComponent.EmailAuthField
 import com.den.steward.ui.screens.componentExtenison.BoxNotification
-import com.den.steward.ui.screens.components.BackButton
-import com.den.steward.ui.screens.components.Footer
+import com.den.steward.ui.components.BackButton
+import com.den.steward.ui.components.Footer
 import com.den.steward.ui.screens.screenManager.HomeRouter
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
