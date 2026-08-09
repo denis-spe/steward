@@ -34,12 +34,12 @@ fun FulfillmentAddition() {
         title = "Fulfillment",
         description = "Choose the type of fulfillment you're adding",
         show = onShow.value,
-        onDismissRequest = { onShow.value = false }
+        onDismissRequest = { onShow.value = false },
     ) {
         TransactionType.entries.filter {
             it == TransactionType.REPAYMENT ||
-            it == TransactionType.REFUND ||
-            it == TransactionType.ATTAIN
+                    it == TransactionType.REFUND ||
+                    it == TransactionType.ATTAIN
         }.forEach { type ->
             BottomDrawerSheetItem(
                 title = stringResource(id = type.label),

@@ -15,12 +15,12 @@ import androidx.compose.ui.res.stringResource
 import com.den.steward.backend.dataStructure.TransactionType
 import com.den.steward.ui.components.bottomDrawerSheet.BottomDrawerSheet
 import com.den.steward.ui.components.bottomDrawerSheet.BottomDrawerSheetItem
-import com.den.steward.ui.components.bottomDrawerSheet.BottomSheetDataSubmitted
+import com.den.steward.backend.viewModels.DataTransferToViewModel
 import com.den.steward.ui.components.bottomDrawerSheet.TransactionBottomDrawerSheet
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TransactionAddition(onSubmit: (bottomSheetDataSubmitted: BottomSheetDataSubmitted) -> Unit) {
+fun TransactionAddition(onSubmit: (dataTransferToViewModel: DataTransferToViewModel) -> Unit) {
     val onShow = remember { mutableStateOf(false) }
     val onShowTransaction = remember { mutableStateOf(false) }
     val selectedTransaction = remember { mutableStateOf<TransactionType?>(null) }
@@ -39,14 +39,14 @@ fun TransactionAddition(onSubmit: (bottomSheetDataSubmitted: BottomSheetDataSubm
         title = "Transactions",
         description = "Select the type of transaction you're adding",
         show = onShow.value,
-        onDismissRequest = { onShow.value = false }
+        onDismissRequest = { onShow.value = false },
     ) {
         TransactionType.entries.filter {
             it == TransactionType.EARNINGS ||
-            it == TransactionType.EXPENSE ||
-            it == TransactionType.LOAN ||
-            it == TransactionType.DEBT ||
-            it == TransactionType.GOAL
+                    it == TransactionType.EXPENSE ||
+                    it == TransactionType.LOAN ||
+                    it == TransactionType.DEBT ||
+                    it == TransactionType.GOAL
         }.forEach { type ->
             BottomDrawerSheetItem(
                 title = stringResource(id = type.label),
@@ -60,17 +60,22 @@ fun TransactionAddition(onSubmit: (bottomSheetDataSubmitted: BottomSheetDataSubm
                 }
             ) {
                 selectedTransaction.value = type
-                onShow.value = false
-                onShowTransaction.value = true
+                onShow.value = false // Hide the first sheet immediately
+                onShowTransaction.value = true // Then show the second sheet
             }
         }
     }
 
     // 2. Show the Transaction Bottom Drawer Sheet
-    TransactionBottomDrawerSheet(
-        transactionType = selectedTransaction.value ?: TransactionType.EARNINGS,
-        show = onShowTransaction.value,
-        onDismissRequest = { onShowTransaction.value = false },
-        onSubmit = onSubmit
-    )
+    selectedTransaction.value?.let {
+        TransactionBottomDrawerSheet(
+            transactionType = it,
+            show = onShowTransaction.value,
+            onDismissRequest = {
+                onShowTransaction.value = false
+                onShow.value = false
+            },
+            onSubmit = onSubmit
+        )
+    }
 }

@@ -1,6 +1,8 @@
 package com.den.steward.backend.dataStructure
 
 import androidx.compose.runtime.Stable
+import com.den.steward.helper.formatResult
+import com.den.steward.helper.title
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 
@@ -180,21 +182,21 @@ sealed class Transaction {
             }
             return mapping
         }
-    val getLabelOrNull: String?
+    val getLabel: String
         get() {
             return when (this) {
-                is Earning -> this.label
-                is Expense -> this.label
-                is Loan -> this.label
-                is Debt -> this.label
-                is Goal -> this.label
-                is Repayment -> this.label
-                is Refund -> this.label
-                is Attain -> null
-                is Achievement -> null
+                is Earning -> this.label.title
+                is Expense -> this.label.title
+                is Loan -> this.label.title
+                is Debt -> this.label.title
+                is Goal -> this.label.title
+                is Repayment -> this.label.title
+                is Refund -> this.label.title
+                is Attain -> "${this.goal.label.title} Attainment"
+                is Achievement -> "${this.goal.label.title} Achievement"
             }
         }
-    val getNoteOrNull: String?
+    val getNote: String
         get() {
             return when (this) {
                 is Earning -> this.note
@@ -204,31 +206,46 @@ sealed class Transaction {
                 is Goal -> this.note
                 is Repayment -> this.note
                 is Refund -> this.note
-                is Attain -> null
-                is Achievement -> null
+                is Attain -> "Attained ${this.value} of ${this.goal.value}"
+                is Achievement -> "Achieved ${this.value} of ${this.goal.value}"
             }
         }
-    val getAmountOrNull: Double?
+    val getAmountOrValue: Double?
         get() {
             return when (this) {
                 is Earning -> this.amount
                 is Expense -> this.amount
                 is Loan -> this.amount
                 is Debt -> this.amount
-                is Goal -> null
+                is Goal -> this.value
                 is Repayment -> this.amount
                 is Refund -> this.amount
-                is Attain -> null
-                is Achievement -> null
-            }
-        }
-    val getValueOrNull: Double?
-        get() {
-            return when (this) {
-                is Goal -> this.value
                 is Attain -> this.value
                 is Achievement -> this.value
-                else -> null
+            }
+        }
+
+    val getFormattedAmountOrValue: String
+        get() {
+            return when (this) {
+                is Earning -> this.amount.formatResult
+                is Expense -> this.amount.formatResult
+                is Loan -> this.amount.formatResult
+                is Debt -> this.amount.formatResult
+                is Goal -> {
+                    if (this.goalType == GoalType.AMOUNT) this.value.formatResult
+                    else this.value.toString()
+                }
+                is Repayment -> this.amount.formatResult
+                is Refund -> this.amount.formatResult
+                is Attain -> {
+                    if (this.goal.goalType == GoalType.AMOUNT) this.value.formatResult
+                    else this.value.toString()
+                }
+                is Achievement -> {
+                    if (this.goal.goalType == GoalType.AMOUNT) this.value.formatResult
+                    else this.value.toString()
+                }
             }
         }
 }

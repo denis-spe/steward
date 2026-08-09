@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
@@ -48,6 +49,10 @@ class StorageService @Inject constructor(
         TransactionType.REPAYMENT.name to { id, label, amount, note, createdAt -> Transaction.Repayment(id = id, label = label, amount = amount, note = note, createdAt = createdAt) },
         TransactionType.REFUND.name to { id, label, amount, note, createdAt -> Transaction.Refund(id = id, label = label, amount = amount, note = note, createdAt = createdAt) },
     )
+
+    fun transactionCollectionRef(transaction: Transaction) {
+
+    }
 
     fun DocumentSnapshot.toDTO(): Transaction? {
         val id = getString("id").let { if (it.isNullOrEmpty()) this.id else it }
@@ -84,57 +89,49 @@ class StorageService @Inject constructor(
         }
     }
 
-    override suspend fun addLoan(userId: String, loan: Transaction.Loan): Result<Unit> {
+    override suspend fun addTransaction(userId: String, transaction: Transaction): Result<Unit> {
         return try {
-            val loanRef = docRef.document(userId)
+            val transactionRef = docRef.document(userId)
                 .collection(TRANSACTION_COLLECTION)
                 .document()
 
-            val loanData = loan.toMap
-            loanData["id"] = loanRef.id
+            val transactionData = transaction.toMap
+            transactionData["id"] = transactionRef.id
 
-            loanRef.set(loanData).await()
+            transactionRef.set(transactionData).await()
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to add loan for user $userId", e)
+            Log.e(TAG, "Failed to add transaction for user $userId", e)
             Result.failure(e)
         }
     }
 
-    override suspend fun addEarnings(userId: String, earnings: Transaction.Earning): Result<Unit> {
-        return try {
-            val earningsRef = docRef.document(userId)
-                .collection(TRANSACTION_COLLECTION)
-                .document()
-
-            val earningsData = earnings.toMap
-            earningsData["id"] = earningsRef.id
-
-            earningsRef.set(earningsData).await()
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to add earnings for user $userId", e)
-            Result.failure(e)
-        }
-    }
-
-    override suspend fun addRepayment(
+    override suspend fun addFulfillment(
         userId: String,
-        loanId: String,
-        repayment: Transaction.Repayment
+        transactionId: String,
+        fulfillment: Transaction
     ): Result<Unit> {
+        val collection = when (fulfillment) {
+            is Transaction.Repayment -> REPAYMENT_COLLECTION
+            is Transaction.Refund -> REFUND_COLLECTION
+            is Transaction.Attain -> ATTAIN_COLLECTION
+            is Transaction.Achievement -> ACHIEVEMENT_COLLECTION
+            else -> return Result.failure(
+                IllegalArgumentException("Invalid fulfillment type " +
+                        "${fulfillment.javaClass.simpleName}"))
+        }
         return try {
-            val repaymentRef = docRef.document(userId)
+            val transactionRef = docRef.document(userId)
                 .collection(TRANSACTION_COLLECTION)
-                .document(loanId)
+                .document(transactionId)
 
-            val repaymentData = repayment.toMap
-            repaymentRef.collection(REPAYMENT_COLLECTION)
-                .add(repaymentData)
+            val fulfillmentData = fulfillment.toMap
+            transactionRef.collection(collection)
+                .add(fulfillmentData)
                 .await()
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to add repayment for loan $loanId (user $userId)", e)
+            Log.e(TAG, "Failed to add fulfillment for transaction $transactionId (user $userId)", e)
             Result.failure(e)
         }
     }
@@ -221,8 +218,19 @@ class StorageService @Inject constructor(
                 // Each flow now carries Result<Transaction> instead of a bare Transaction, so a
                 // failure in any single subcollection listener is no longer silently downgraded
                 // to "no items" — it propagates out of fetchAllTransactions instead.
+                //
+                // Each per-transaction flow also starts with an immediate "no sub-items yet"
+                // placeholder via onStart. Without this, combine() below waits for EVERY
+                // sub-collection listener to deliver its first snapshot before emitting
+                // anything at all. If the device is offline and even one sub-collection has
+                // no local cache yet (e.g. a Loan/Debt/Goal created while offline, before
+                // Firestore ever synced that subcollection), that single stalled listener
+                // used to block the entire transaction list from displaying — including
+                // transactions that had nothing to do with it and were already cached.
                 val perTransactionFlows: List<Flow<Pair<String, Result<List<Transaction>>>>> = transactions.map { transaction ->
-                    fetchTransactionFulfillment(userId, transaction).map { subResult -> transaction.id to subResult }
+                    fetchTransactionFulfillment(userId, transaction)
+                        .map { subResult -> transaction.id to subResult }
+                        .onStart { emit(transaction.id to Result.success(emptyList())) }
                 }
 
                 combine(perTransactionFlows) { pairs ->

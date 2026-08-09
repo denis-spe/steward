@@ -173,7 +173,7 @@ fun TransactionNoteField(
                         ) {
                             Text(
                                 "Cancel", fontSize = FONT_SIZE,
-                                color = color,
+                                color = MaterialTheme.colorScheme.onBackground,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -195,7 +195,7 @@ fun TransactionNoteField(
                             Text(
                                 "OK",
                                 fontSize = FONT_SIZE,
-                                color = color,
+                                color = MaterialTheme.colorScheme.onBackground,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -235,8 +235,8 @@ private fun TransactionNoteFieldItem(
                 },
             leadingContent = {
                 Image(
-                    painter = painterResource(R.drawable.label),
-                    contentDescription = "labelOrNote",
+                    painter = painterResource(R.drawable.note),
+                    contentDescription = "note",
                     modifier = Modifier.size(ICON_SIZE)
                 )
             },

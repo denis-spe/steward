@@ -10,12 +10,9 @@ import com.den.steward.backend.useCase.AuthorizationUseCase
 import com.den.steward.backend.useCase.AddDataUseCase
 import com.den.steward.backend.useCase.DataFetchUseCase
 import com.den.steward.backend.useCase.DataFilterUseCase
-import com.den.steward.ui.components.bottomDrawerSheet.BottomSheetDataSubmitted
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -52,36 +49,51 @@ class HomeViewModel @Inject constructor(
         )
 
 
-    fun addRepayment(loanId: String, repayment: Transaction.Repayment) {
+    fun addFulfillment(transactionId: String, fulfillment: Transaction) {
         viewModelScope.launch {
-            addDataUseCase.addRepayment(loanId, repayment)
+            addDataUseCase.addFulfillment(transactionId, fulfillment)
         }
     }
 
-    fun transactionDataSubmission(bottomSheetDataSubmitted: BottomSheetDataSubmitted) {
+    fun transactionDataSubmission(dataTransferToViewModel: DataTransferToViewModel) {
         viewModelScope.launch {
-            when (bottomSheetDataSubmitted.transactionType) {
-                TransactionType.EARNINGS -> {
-                    addDataUseCase.addEarnings(
-                        Transaction.Earning(
-                            label = bottomSheetDataSubmitted.label,
-                            amount = bottomSheetDataSubmitted.amount.toDouble(),
-                            note = bottomSheetDataSubmitted.note
-                        )
-                    )
-                }
+            val amount = dataTransferToViewModel.amount.toDoubleOrNull() ?: 0.0
+            val transaction = when (dataTransferToViewModel.transactionType) {
+                TransactionType.EARNINGS -> Transaction.Earning(
+                    label = dataTransferToViewModel.label,
+                    amount = amount,
+                    note = dataTransferToViewModel.note,
+                    createdAt = dataTransferToViewModel.createdAt
+                )
+                TransactionType.EXPENSE -> Transaction.Expense(
+                    label = dataTransferToViewModel.label,
+                    amount = amount,
+                    note = dataTransferToViewModel.note,
+                    createdAt = dataTransferToViewModel.createdAt
+                )
+                TransactionType.LOAN -> Transaction.Loan(
+                    label = dataTransferToViewModel.label,
+                    amount = amount,
+                    note = dataTransferToViewModel.note,
+                    createdAt = dataTransferToViewModel.createdAt
+                )
+                TransactionType.DEBT -> Transaction.Debt(
+                    label = dataTransferToViewModel.label,
+                    amount = amount,
+                    note = dataTransferToViewModel.note,
+                    createdAt = dataTransferToViewModel.createdAt
+                )
+                TransactionType.GOAL -> Transaction.Goal(
+                    label = dataTransferToViewModel.label,
+                    value = amount,
+                    note = dataTransferToViewModel.note,
+                    createdAt = dataTransferToViewModel.createdAt
+                )
+                else -> null
+            }
 
-                TransactionType.LOAN -> {
-                    addDataUseCase.addLoan(
-                        Transaction.Loan(
-                            label = bottomSheetDataSubmitted.label,
-                            amount = bottomSheetDataSubmitted.amount.toDouble(),
-                            note = bottomSheetDataSubmitted.note
-                        )
-                    )
-                }
-
-                else -> {}
+            transaction?.let {
+                addDataUseCase.addTransaction(it)
             }
         }
     }

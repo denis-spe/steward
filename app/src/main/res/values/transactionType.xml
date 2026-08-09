@@ -10,25 +10,25 @@
     <string name="attain">Attain</string>
     <string name="achievement">Achievement</string>
 
-    <string name="earning_desc">Add an earnings transaction</string>
-    <string name="expense_desc">Add an expense transaction</string>
-    <string name="loan_desc">Add a loan transaction</string>
-    <string name="debt_desc">Add a debt transaction</string>
-    <string name="repayment_desc">Add a repayment transaction</string>
-    <string name="refund_desc">Add a refund transaction</string>
-    <string name="goal_desc">Add a goal transaction</string>
-    <string name="attain_desc">Add an attain transaction</string>
-    <string name="achievement_desc">Add an achievement transaction</string>
+    <string name="earning_desc">Record money you\'ve received, like a salary or side income</string>
+    <string name="expense_desc">Record money you\'ve spent on bills, purchases, or other costs</string>
+    <string name="loan_desc">Track money you\'ve lent to someone and expect to be repaid</string>
+    <string name="debt_desc">Track money you owe to someone and need to repay</string>
+    <string name="repayment_desc">Log a payment received against a loan you gave out</string>
+    <string name="refund_desc">Log a payment you\'ve made toward a debt you owe</string>
+    <string name="goal_desc">Set a savings target you\'re working toward</string>
+    <string name="attain_desc">Log progress made toward one of your savings goals</string>
+    <string name="achievement_desc">Record a milestone you\'ve reached</string>
 
-    <color name="earnings">#00FF00</color>
-    <color name="expense">#FF0000</color>
-    <color name="loan">#A94B44</color>
-    <color name="debt">#2828DC</color>
-    <color name="repayment">#8834F6</color>
-    <color name="refund">#FF00FF</color>
-    <color name="goal">#20D08B</color>
-    <color name="attain">#00FF00</color>
-    <color name="achievement">#CDDC39</color>
+    <!-- Distinct, colorblind-friendlier palette — no two types share a hue -->
+    <color name="earnings">#2E7D32</color>
+    <color name="expense">#C62828</color>
+    <color name="loan">#8D6E63</color>
+    <color name="debt">#1565C0</color>
+    <color name="repayment">#7B1FA2</color>
+    <color name="refund">#EC407A</color>
+    <color name="goal">#00897B</color>
+    <color name="attain">#9E9D24</color>
+    <color name="achievement">#F9A825</color>
 
 </resources>
-

@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -63,6 +64,7 @@ fun TransactionLabelField(
     textLength: Int = 16,
     wasSuccess: MutableState<TransactionFieldState>,
     lineLimits: TextFieldLineLimits = TextFieldLineLimits.SingleLine,
+    colorResId: Int,
 ) {
     val isError = state.text.isEmpty() && wasSuccess.value is TransactionFieldState.Error
     val color = if (isError)
@@ -72,11 +74,10 @@ fun TransactionLabelField(
         "Fill the Label" else placeholder
 
     val onDialogShow = remember { mutableStateOf(false) }
-    val optionsTitle = if (title == "Label") "Required" else
-        "Optional"
+    val optionsTitle = "Required"
     val focusRequester = remember { FocusRequester() }
 
-    LaunchedEffect(state) {
+    LaunchedEffect(state.text) {
         wasSuccess.value = TransactionFieldState.Initial
     }
 
@@ -187,15 +188,16 @@ fun TransactionLabelField(
                         ) {
                             Text(
                                 "Cancel", fontSize = FONT_SIZE,
-                                color = color,
-                                fontWeight = FontWeight.Bold
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground
                             )
                         }
 
                         Text(
                             "|",
-                            color = color,
-                            modifier = Modifier.padding(horizontal = 2.dp)
+                            modifier = Modifier.padding(horizontal = 2.dp),
+                            color = colorResource(colorResId)
                         )
 
                         TextButton(
@@ -209,8 +211,9 @@ fun TransactionLabelField(
                             Text(
                                 "OK",
                                 fontSize = FONT_SIZE,
-                                color = color,
-                                fontWeight = FontWeight.Bold
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground
                             )
                         }
                     }
@@ -221,7 +224,7 @@ fun TransactionLabelField(
     }
 
     TransactionLabelFieldItem(
-        title = title,
+        title = "Label",
         optionsTitle = optionsTitle,
         modifier = modifier,
         onDialogShow = onDialogShow,

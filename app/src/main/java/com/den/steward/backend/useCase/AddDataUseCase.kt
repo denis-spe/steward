@@ -11,15 +11,11 @@ class AddDataUseCase @Inject constructor(
 ) {
     val userId = accountService.currentUserId
 
-    suspend fun addLoan(loan: Transaction.Loan) {
-        storageService.addLoan(userId, loan)
+    suspend fun addFulfillment(transactionId: String, fulfillment: Transaction) {
+        storageService.addFulfillment(userId, transactionId, fulfillment)
     }
 
-    suspend fun addRepayment(loanId: String, repayment: Transaction.Repayment) {
-        storageService.addRepayment(userId, loanId, repayment)
-    }
-
-    suspend fun addEarnings(earnings: Transaction.Earning) {
-        storageService.addEarnings(userId, earnings)
+    suspend fun addTransaction(transaction: Transaction) {
+        storageService.addTransaction(userId, transaction)
     }
 }

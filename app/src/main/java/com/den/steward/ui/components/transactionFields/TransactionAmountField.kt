@@ -188,7 +188,7 @@ fun TransactionAmountField(
                             state = state,
                             focusRequester = focusRequester,
                             visible = showCustomKeyboard.value,
-                            contentColor = color,
+                            contentColor = MaterialTheme.colorScheme.onBackground,
                             onDone = {
                                 if (state.text.isNotEmpty()) {
                                     state.setTextAndPlaceCursorAtEnd(state.text.toString())

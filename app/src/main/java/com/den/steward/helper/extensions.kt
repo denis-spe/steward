@@ -13,7 +13,9 @@ import java.math.RoundingMode
 import java.text.DecimalFormat
 import java.text.NumberFormat
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.Locale
@@ -320,14 +322,21 @@ val LocalDateTime.formatedDateTime: String
         return "$day $month $year, $hour:$minute"
     }
 
-val LocalDateTime.formattedDate: String
+val LocalDate.formattedDate: String
     get() {
-        val day = this.toLocalDate()
+        val day = this
             .dayOfMonth
             .addZeroIfLessThenTen
         val month = this.month.name.take(3).title
         val year = this.year
         return "$day $month $year"
+    }
+
+val LocalTime.formattedTime: String
+    get() {
+        val hour = this.hour.addZeroIfLessThenTen
+        val minute = this.minute.addZeroIfLessThenTen
+        return "$hour:$minute"
     }
 
 val LocalDateTime.formattedTime: String
@@ -336,3 +345,12 @@ val LocalDateTime.formattedTime: String
         val minute = this.minute.addZeroIfLessThenTen
         return "$hour:$minute"
     }
+
+val LocalDate.toEpochMillis: Long
+    get() {
+        return this.atStartOfDay().toEpochMillis(ZoneId.systemDefault())
+    }
+
+infix fun LocalDate.combine(time: LocalTime): Long {
+    return this.atTime(time).toEpochMillis(ZoneId.systemDefault())
+}
