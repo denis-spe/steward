@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
@@ -56,6 +58,7 @@ fun TransactionDateField(
     localDateState: MutableState<LocalDate>,
 ) {
     val showDatePicker = remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
 
     if (showDatePicker.value) {
         val datePickerState = rememberDatePickerState(
@@ -65,6 +68,7 @@ fun TransactionDateField(
                 .toEpochMilli()
         )
         DatePickerDialog(
+            modifier = Modifier.verticalScroll(scrollState),
             onDismissRequest = {
                 showDatePicker.value = false
             },

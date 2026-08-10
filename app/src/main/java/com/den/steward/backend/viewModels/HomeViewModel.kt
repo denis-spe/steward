@@ -83,6 +83,12 @@ class HomeViewModel @Inject constructor(
                     note = dataTransferToViewModel.note,
                     createdAt = dataTransferToViewModel.createdAt
                 )
+                TransactionType.SAVINGS -> Transaction.Savings(
+                    label = dataTransferToViewModel.label,
+                    amount = amount,
+                    note = dataTransferToViewModel.note,
+                    createdAt = dataTransferToViewModel.createdAt
+                )
                 TransactionType.GOAL -> Transaction.Goal(
                     label = dataTransferToViewModel.label,
                     value = amount,

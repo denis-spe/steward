@@ -46,6 +46,7 @@ fun TransactionAddition(onSubmit: (dataTransferToViewModel: DataTransferToViewMo
                     it == TransactionType.EXPENSE ||
                     it == TransactionType.LOAN ||
                     it == TransactionType.DEBT ||
+                    it == TransactionType.SAVINGS ||
                     it == TransactionType.GOAL
         }.forEach { type ->
             BottomDrawerSheetItem(

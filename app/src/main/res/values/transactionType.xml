@@ -9,6 +9,8 @@
     <string name="goal">Goal</string>
     <string name="attain">Attain</string>
     <string name="achievement">Achievement</string>
+    <string name="savings">Savings</string>
+
 
     <string name="earning_desc">Record money you\'ve received, like a salary or side income</string>
     <string name="expense_desc">Record money you\'ve spent on bills, purchases, or other costs</string>
@@ -19,6 +21,7 @@
     <string name="goal_desc">Set a savings target you\'re working toward</string>
     <string name="attain_desc">Log progress made toward one of your savings goals</string>
     <string name="achievement_desc">Record a milestone you\'ve reached</string>
+    <string name="savings_desc">Record money you\'ve saved</string>
 
     <!-- Distinct, colorblind-friendlier palette — no two types share a hue -->
     <color name="earnings">#2E7D32</color>
@@ -30,5 +33,6 @@
     <color name="goal">#00897B</color>
     <color name="attain">#9E9D24</color>
     <color name="achievement">#F9A825</color>
+    <color name="savings">#616161</color>
 
 </resources>

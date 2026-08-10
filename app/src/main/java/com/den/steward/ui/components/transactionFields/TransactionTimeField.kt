@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.outlined.ModeEdit
@@ -57,6 +59,7 @@ fun TransactionTimeField(
 ) {
     val showTimePicker = remember { mutableStateOf(false) }
     val timePickerMode = remember { mutableStateOf("Clock") }
+    val scrollState = rememberScrollState()
 
     if (showTimePicker.value) {
         val timePickerState = rememberTimePickerState(
@@ -65,6 +68,7 @@ fun TransactionTimeField(
             is24Hour = true
         )
         TimePickerDialog(
+            modifier = Modifier.verticalScroll(scrollState),
             title = {
                 Column(
                     modifier = Modifier.fillMaxWidth(),

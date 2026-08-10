@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,6 +40,7 @@ fun BottomDrawerSheet(
     content: @Composable (ColumnScope.() -> Unit),
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scrollState = rememberScrollState()
 
     if (show) {
         ModalBottomSheet(
@@ -60,7 +63,8 @@ fun BottomDrawerSheet(
                 tonalElevation = 2.dp // Lowered to keep it subtle inside the sheet
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth()
+                        .verticalScroll(scrollState),
                     content = content
                 )
             }

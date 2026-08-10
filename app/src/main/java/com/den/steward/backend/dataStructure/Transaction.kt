@@ -2,6 +2,7 @@ package com.den.steward.backend.dataStructure
 
 import androidx.compose.runtime.Stable
 import com.den.steward.helper.formatResult
+import com.den.steward.helper.formatToAmount
 import com.den.steward.helper.title
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
@@ -23,6 +24,16 @@ sealed class Transaction {
 
     @Stable
     data class Expense(
+        override val id: String = "",
+        val label: String = "",
+        val note: String = "",
+        val amount: Double = 0.0,
+        override val type: TransactionType = TransactionType.EXPENSE,
+        override val createdAt: Long = System.currentTimeMillis()
+    ) : Transaction()
+
+    @Stable
+    data class Savings(
         override val id: String = "",
         val label: String = "",
         val note: String = "",
@@ -92,8 +103,31 @@ sealed class Transaction {
         val remainingValue: Double = value - attain.sumOf { it.value },
         val totalValue: Double = attain.sumOf { it.value },
         val goalType: GoalType = GoalType.AMOUNT,
-        override val createdAt: Long = System.currentTimeMillis()
-    ) : Transaction()
+        override val createdAt: Long = System.currentTimeMillis(),
+        val startedAt: Long = System.currentTimeMillis(),
+        val endAt: Long = System.currentTimeMillis(),
+        val status: GoalStatus = GoalStatus.NOT_STARTED,
+        val repeatable: GoalRepeat = GoalRepeat.NONE
+    ) : Transaction() {
+
+        fun calculateSchedule(now: Long): Goal {
+            val schedule = this.repeatable.onSchedule
+
+            if (schedule == 0L) return this
+
+            return this.copy(
+                startedAt = now,
+                endAt = now + schedule
+            )
+        }
+
+        fun calculateStatus(now: Long): Goal {
+            if (this.status != GoalStatus.NOT_STARTED) return this
+            if (now < this.startedAt) return this.copy(status = GoalStatus.NOT_STARTED)
+            if (now > this.endAt) return this.copy(status = GoalStatus.COMPLETED)
+            return this.copy(status = GoalStatus.IN_PROGRESS)
+        }
+    }
 
     @Stable
     data class Attain(
@@ -110,6 +144,8 @@ sealed class Transaction {
         val value: Double = 0.0,
         override val type: TransactionType = TransactionType.ACHIEVEMENT,
         override val createdAt: Long = System.currentTimeMillis(),
+        val startAt: Long = System.currentTimeMillis(),
+        val endAt: Long = System.currentTimeMillis(),
         val goal: Goal = Goal()
     ) : Transaction()
 
@@ -153,11 +189,29 @@ sealed class Transaction {
                     mapping["note"] = this.note
                 }
 
+                is Savings -> {
+                    mapping["amount"] = this.amount
+                    mapping["label"] = this.label
+                    mapping["note"] = this.note
+                }
+
                 is Goal -> {
                     mapping["value"] = this.value
                     mapping["label"] = this.label
                     mapping["note"] = this.note
                     mapping["goalType"] = this.goalType.name
+                    mapping["status"] = this.status.name
+                    mapping["repeatable"] = this.repeatable.name
+                    mapping["startedAt"] = if (this.startedAt < System.currentTimeMillis() - 1000) {
+                        Timestamp(java.util.Date(this.startedAt))
+                    } else {
+                        FieldValue.serverTimestamp()
+                    }
+                    mapping["endAt"] = if (this.endAt < System.currentTimeMillis() - 1000) {
+                        Timestamp(java.util.Date(this.endAt))
+                    } else {
+                        FieldValue.serverTimestamp()
+                    }
                 }
 
                 is Attain -> {
@@ -194,6 +248,7 @@ sealed class Transaction {
                 is Refund -> this.label.title
                 is Attain -> "${this.goal.label.title} Attainment"
                 is Achievement -> "${this.goal.label.title} Achievement"
+                is Savings -> this.label.title
             }
         }
     val getNote: String
@@ -206,6 +261,7 @@ sealed class Transaction {
                 is Goal -> this.note
                 is Repayment -> this.note
                 is Refund -> this.note
+                is Savings -> this.note
                 is Attain -> "Attained ${this.value} of ${this.goal.value}"
                 is Achievement -> "Achieved ${this.value} of ${this.goal.value}"
             }
@@ -216,6 +272,7 @@ sealed class Transaction {
                 is Earning -> this.amount
                 is Expense -> this.amount
                 is Loan -> this.amount
+                is Savings -> this.amount
                 is Debt -> this.amount
                 is Goal -> this.value
                 is Repayment -> this.amount
@@ -228,22 +285,23 @@ sealed class Transaction {
     val getFormattedAmountOrValue: String
         get() {
             return when (this) {
-                is Earning -> this.amount.formatResult
-                is Expense -> this.amount.formatResult
-                is Loan -> this.amount.formatResult
-                is Debt -> this.amount.formatResult
+                is Earning -> this.amount.formatToAmount()
+                is Expense -> this.amount.formatToAmount()
+                is Loan -> this.amount.formatToAmount()
+                is Debt -> this.amount.formatToAmount()
+                is Savings -> this.amount.formatToAmount()
                 is Goal -> {
-                    if (this.goalType == GoalType.AMOUNT) this.value.formatResult
+                    if (this.goalType == GoalType.AMOUNT) this.value.formatToAmount()
                     else this.value.toString()
                 }
-                is Repayment -> this.amount.formatResult
-                is Refund -> this.amount.formatResult
+                is Repayment -> this.amount.formatToAmount()
+                is Refund -> this.amount.formatToAmount()
                 is Attain -> {
-                    if (this.goal.goalType == GoalType.AMOUNT) this.value.formatResult
+                    if (this.goal.goalType == GoalType.AMOUNT) this.value.formatToAmount()
                     else this.value.toString()
                 }
                 is Achievement -> {
-                    if (this.goal.goalType == GoalType.AMOUNT) this.value.formatResult
+                    if (this.goal.goalType == GoalType.AMOUNT) this.value.formatToAmount()
                     else this.value.toString()
                 }
             }

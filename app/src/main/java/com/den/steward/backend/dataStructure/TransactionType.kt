@@ -69,5 +69,12 @@ enum class TransactionType(
         R.string.achievement_desc,
         R.drawable.ic_achievement,
         R.color.achievement
+    ),
+
+    SAVINGS(
+        R.string.savings,
+        R.string.savings_desc,
+        R.drawable.ic_savings,
+        R.color.savings
     )
 }
