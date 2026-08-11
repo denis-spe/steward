@@ -2,6 +2,7 @@
 // and with all your might and love your neighbor as yourself
 package com.den.steward.ui.components.transactionbuttons
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Button
@@ -18,15 +19,19 @@ import androidx.compose.ui.graphics.LinearGradientShader
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import com.den.steward.backend.dataStructure.TransactionType
 
 @Composable
 fun TransactionButtons(
+    colorResId: Int,
     modifier: Modifier = Modifier,
     transactionType: TransactionType,
     isErrors: Boolean = false,
     onClick: () -> Unit
 ) {
+
+    val color = colorResource(id = colorResId)
 
     val desc = when (transactionType) {
         TransactionType.EARNINGS -> "Add your earnings"
@@ -57,18 +62,8 @@ fun TransactionButtons(
     OutlinedButton(
         modifier = modifier,
         onClick = onClick,
-        border = ButtonDefaults.outlinedButtonBorder().copy(
-            brush = if (isErrors) {
-                Brush.linearGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.error,
-                        MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
-                    )
-                )
-            } else {
-                ButtonDefaults.outlinedButtonBorder().brush
-            }
-        )
+        border = BorderStroke(2.dp, if (isErrors)
+            MaterialTheme.colorScheme.error else color)
     ) {
         Column(
             verticalArrangement = Arrangement.Center,
@@ -76,12 +71,12 @@ fun TransactionButtons(
         ) {
             Text(
                 label,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold
             )
             Text(
                 desc,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.labelMedium,
             )
         }
     }

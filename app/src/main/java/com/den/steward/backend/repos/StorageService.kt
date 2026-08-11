@@ -1,9 +1,14 @@
 package com.den.steward.backend.repos
 
 import android.util.Log
+import com.den.steward.backend.dataStructure.GoalStatus
+import com.den.steward.backend.dataStructure.GoalType
+import com.den.steward.backend.dataStructure.PaymentMethod
 import com.den.steward.backend.dataStructure.Transaction
 import com.den.steward.backend.dataStructure.TransactionType
 import com.den.steward.backend.repoInterfaces.Storage
+import com.den.steward.helper.toMap
+import com.den.steward.helper.toTransaction
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
@@ -37,57 +42,6 @@ class StorageService @Inject constructor(
 
     private val docRef = firestore
         .collection(USER_COLLECTION)
-
-    // Maps a transaction "type" string to a factory that only needs id/label/note/createdAt plus
-    // a single "amount" field. Uses named-argument lambdas (not bound constructor references) so
-    // this compiles regardless of each subtype's actual declared parameter order.
-    private val amountFactories: Map<String, (id: String, label: String, amount: Double, note: String, createdAt: Long) -> Transaction> = mapOf(
-        TransactionType.EARNINGS.name to { id, label, amount, note, createdAt -> Transaction.Earning(id = id, label = label, amount = amount, note = note, createdAt = createdAt) },
-        TransactionType.EXPENSE.name to { id, label, amount, note, createdAt -> Transaction.Expense(id = id, label = label, amount = amount, note = note, createdAt = createdAt) },
-        TransactionType.LOAN.name to { id, label, amount, note, createdAt -> Transaction.Loan(id = id, label = label, amount = amount, note = note, createdAt = createdAt) },
-        TransactionType.DEBT.name to { id, label, amount, note, createdAt -> Transaction.Debt(id = id, label = label, amount = amount, note = note, createdAt = createdAt) },
-        TransactionType.REPAYMENT.name to { id, label, amount, note, createdAt -> Transaction.Repayment(id = id, label = label, amount = amount, note = note, createdAt = createdAt) },
-        TransactionType.REFUND.name to { id, label, amount, note, createdAt -> Transaction.Refund(id = id, label = label, amount = amount, note = note, createdAt = createdAt) },
-    )
-
-    fun transactionCollectionRef(transaction: Transaction) {
-
-    }
-
-    fun DocumentSnapshot.toDTO(): Transaction? {
-        val id = getString("id").let { if (it.isNullOrEmpty()) this.id else it }
-        val label = getString("label") ?: ""
-        val type = getString("type") ?: ""
-        val note = getString("note") ?: ""
-        val createdAt = getTimestamp("createdAt")?.toDate()?.time ?: System.currentTimeMillis()
-
-        amountFactories[type]?.let { factory ->
-            val amount = getDouble("amount") ?: 0.0
-            return factory(id, label, amount, note, createdAt)
-        }
-
-        return when (type) {
-            TransactionType.EARNINGS.name -> {
-                val value = getDouble("value") ?: 0.0
-                Transaction.Goal(id = id, label = label, value = value, note = note, createdAt = createdAt)
-            }
-
-            TransactionType.ATTAIN.name -> {
-                val value = getDouble("value") ?: 0.0
-                Transaction.Attain(id = id, value = value, createdAt = createdAt)
-            }
-
-            TransactionType.ACHIEVEMENT.name -> {
-                val value = getDouble("value") ?: 0.0
-                Transaction.Achievement(id = id, value = value, createdAt = createdAt)
-            }
-
-            else -> {
-                Log.w(TAG, "Unknown transaction type '$type' on document ${this.id}, dropping")
-                null
-            }
-        }
-    }
 
     override suspend fun addTransaction(userId: String, transaction: Transaction): Result<Unit> {
         return try {
@@ -170,7 +124,7 @@ class StorageService @Inject constructor(
                         trySend(Result.failure(error))
                         return@addSnapshotListener
                     }
-                    val subItems = subSnapshot?.documents?.mapNotNull { it.toDTO() } ?: emptyList()
+                    val subItems = subSnapshot?.documents?.mapNotNull { it.toTransaction } ?: emptyList()
                     trySend(Result.success(subItems))
                 }
             awaitClose { subListener.remove() }
@@ -192,7 +146,7 @@ class StorageService @Inject constructor(
                         return@addSnapshotListener
                     }
 
-                    val transactions = snapshot?.documents?.mapNotNull { it.toDTO() } ?: emptyList()
+                    val transactions = snapshot?.documents?.mapNotNull { it.toTransaction } ?: emptyList()
                     trySend(Result.success(transactions))
                 }
 

@@ -1,7 +1,6 @@
 package com.den.steward.backend.dataStructure
 
 import androidx.compose.runtime.Stable
-import com.den.steward.helper.formatResult
 import com.den.steward.helper.formatToAmount
 import com.den.steward.helper.title
 import com.google.firebase.Timestamp
@@ -13,14 +12,18 @@ sealed class Transaction {
 
     abstract val createdAt: Long
     @Stable
-    data class Earning(
+    data class Earnings(
         override val id: String = "",
         val label: String = "",
         val note: String = "",
         val amount: Double = 0.0,
         override val type: TransactionType = TransactionType.EARNINGS,
-        override val createdAt: Long = System.currentTimeMillis()
-    ) : Transaction()
+        override val createdAt: Long = System.currentTimeMillis(),
+        val paymentMethod: PaymentMethod = PaymentMethod.CASH,
+        val affectAmount: Boolean = false,
+    ) : Transaction() {
+
+    }
 
     @Stable
     data class Expense(
@@ -29,7 +32,9 @@ sealed class Transaction {
         val note: String = "",
         val amount: Double = 0.0,
         override val type: TransactionType = TransactionType.EXPENSE,
-        override val createdAt: Long = System.currentTimeMillis()
+        override val createdAt: Long = System.currentTimeMillis(),
+        val paymentMethod: PaymentMethod = PaymentMethod.CASH,
+        val affectAmount: Boolean = false,
     ) : Transaction()
 
     @Stable
@@ -38,8 +43,10 @@ sealed class Transaction {
         val label: String = "",
         val note: String = "",
         val amount: Double = 0.0,
-        override val type: TransactionType = TransactionType.EXPENSE,
-        override val createdAt: Long = System.currentTimeMillis()
+        override val type: TransactionType = TransactionType.SAVINGS,
+        override val createdAt: Long = System.currentTimeMillis(),
+        val paymentMethod: PaymentMethod = PaymentMethod.CASH,
+        val affectAmount: Boolean = false,
     ) : Transaction()
 
     @Stable
@@ -50,10 +57,13 @@ sealed class Transaction {
         val amount: Double = 0.0,
         override val type: TransactionType = TransactionType.LOAN,
         val repayment: List<Repayment> = emptyList(),
-        val totalRepayment: Double = repayment.sumOf { it.amount },
-        val remainingAmount: Double = amount - totalRepayment,
-       override val createdAt: Long = System.currentTimeMillis()
-    ) : Transaction()
+        override val createdAt: Long = System.currentTimeMillis(),
+        val paymentMethod: PaymentMethod = PaymentMethod.CASH,
+        val affectAmount: Boolean = false
+    ) : Transaction() {
+        val totalRepayment: Double get() = repayment.sumOf { it.amount }
+        val remainingAmount: Double get() = amount - totalRepayment
+    }
 
     @Stable
     data class Debt(
@@ -63,10 +73,13 @@ sealed class Transaction {
         val amount: Double = 0.0,
         override val type: TransactionType = TransactionType.DEBT,
         val refund: List<Refund> = emptyList(),
-        val totalRefund: Double = refund.sumOf { it.amount },
-        val remainingAmount: Double = amount - totalRefund,
-        override val createdAt: Long = System.currentTimeMillis()
-    ) : Transaction()
+        override val createdAt: Long = System.currentTimeMillis(),
+        val paymentMethod: PaymentMethod = PaymentMethod.CASH,
+        val affectAmount: Boolean = false
+    ) : Transaction() {
+        val totalRefund: Double get() = refund.sumOf { it.amount }
+        val remainingAmount: Double get() = amount - totalRefund
+    }
 
 
     @Stable
@@ -77,7 +90,9 @@ sealed class Transaction {
         val amount: Double = 0.0,
         override val type: TransactionType = TransactionType.REPAYMENT,
         override val createdAt: Long = System.currentTimeMillis(),
-        val loan: Loan = Loan()
+        val loan: Loan = Loan(),
+        val paymentMethod: PaymentMethod = PaymentMethod.CASH,
+        val affectAmount: Boolean = false
     ) : Transaction()
 
     @Stable
@@ -88,7 +103,9 @@ sealed class Transaction {
         val amount: Double = 0.0,
         override val type: TransactionType = TransactionType.REFUND,
         override val createdAt: Long = System.currentTimeMillis(),
-        val debt: Debt = Debt()
+        val debt: Debt = Debt(),
+        val paymentMethod: PaymentMethod = PaymentMethod.CASH,
+        val affectAmount: Boolean = false
     ) : Transaction()
 
     @Stable
@@ -100,15 +117,15 @@ sealed class Transaction {
         override val type: TransactionType = TransactionType.GOAL,
         val attain: List<Attain> = emptyList(),
         val achievement: List<Achievement> = emptyList(),
-        val remainingValue: Double = value - attain.sumOf { it.value },
-        val totalValue: Double = attain.sumOf { it.value },
         val goalType: GoalType = GoalType.AMOUNT,
         override val createdAt: Long = System.currentTimeMillis(),
         val startedAt: Long = System.currentTimeMillis(),
         val endAt: Long = System.currentTimeMillis(),
         val status: GoalStatus = GoalStatus.NOT_STARTED,
-        val repeatable: GoalRepeat = GoalRepeat.NONE
+        val repeatable: RecurrencePattern = RecurrencePattern.NONE,
     ) : Transaction() {
+        val remainingValue: Double get() = value - attain.sumOf { it.value }
+        val totalValue: Double get() = attain.sumOf { it.value }
 
         fun calculateSchedule(now: Long): Goal {
             val schedule = this.repeatable.onSchedule
@@ -149,97 +166,10 @@ sealed class Transaction {
         val goal: Goal = Goal()
     ) : Transaction()
 
-
-    val toMap: MutableMap<String, Any>
-        get() {
-            val mapping = mutableMapOf<String, Any>(
-                "id" to this.id,
-                "type" to this.type.name,
-                // Use the object's createdAt if it's not "now" (useful for testing/backdating)
-                // Otherwise let Firestore set the precise server time.
-                "createdAt" to if (this.createdAt < System.currentTimeMillis() - 1000) {
-                    Timestamp(java.util.Date(this.createdAt))
-                } else {
-                    FieldValue.serverTimestamp()
-                }
-            )
-
-            when(this) {
-                is Earning -> {
-                    mapping["amount"] = this.amount
-                    mapping["label"] = this.label
-                    mapping["note"] = this.note
-                }
-
-                is Expense -> {
-                    mapping["amount"] = this.amount
-                    mapping["label"] = this.label
-                    mapping["note"] = this.note
-                }
-
-                is Loan -> {
-                    mapping["amount"] = this.amount
-                    mapping["label"] = this.label
-                    mapping["note"] = this.note
-                }
-
-                is Debt -> {
-                    mapping["amount"] = this.amount
-                    mapping["label"] = this.label
-                    mapping["note"] = this.note
-                }
-
-                is Savings -> {
-                    mapping["amount"] = this.amount
-                    mapping["label"] = this.label
-                    mapping["note"] = this.note
-                }
-
-                is Goal -> {
-                    mapping["value"] = this.value
-                    mapping["label"] = this.label
-                    mapping["note"] = this.note
-                    mapping["goalType"] = this.goalType.name
-                    mapping["status"] = this.status.name
-                    mapping["repeatable"] = this.repeatable.name
-                    mapping["startedAt"] = if (this.startedAt < System.currentTimeMillis() - 1000) {
-                        Timestamp(java.util.Date(this.startedAt))
-                    } else {
-                        FieldValue.serverTimestamp()
-                    }
-                    mapping["endAt"] = if (this.endAt < System.currentTimeMillis() - 1000) {
-                        Timestamp(java.util.Date(this.endAt))
-                    } else {
-                        FieldValue.serverTimestamp()
-                    }
-                }
-
-                is Attain -> {
-                    mapping["value"] = this.value
-                }
-
-                is Repayment -> {
-                    mapping["amount"] = this.amount
-                    mapping["label"] = this.label
-                    mapping["note"] = this.note
-                }
-
-                is Refund -> {
-                    mapping["amount"] = this.amount
-                    mapping["label"] = this.label
-                    mapping["note"] = this.note
-                }
-
-                is Achievement -> {
-                    mapping["value"] = this.value
-                }
-            }
-            return mapping
-        }
     val getLabel: String
         get() {
             return when (this) {
-                is Earning -> this.label.title
+                is Earnings -> this.label.title
                 is Expense -> this.label.title
                 is Loan -> this.label.title
                 is Debt -> this.label.title
@@ -251,10 +181,27 @@ sealed class Transaction {
                 is Savings -> this.label.title
             }
         }
+
+    val getPaymentMethodOrNull: PaymentMethod?
+        get() {
+            return when (this) {
+                is Earnings -> this.paymentMethod
+                is Expense -> this.paymentMethod
+                is Loan -> this.paymentMethod
+                is Debt -> this.paymentMethod
+                is Goal -> null
+                is Repayment -> this.paymentMethod
+                is Refund -> this.paymentMethod
+                is Savings -> this.paymentMethod
+                is Attain -> null
+                is Achievement -> null
+            }
+        }
+
     val getNote: String
         get() {
             return when (this) {
-                is Earning -> this.note
+                is Earnings -> this.note
                 is Expense -> this.note
                 is Loan -> this.note
                 is Debt -> this.note
@@ -269,7 +216,7 @@ sealed class Transaction {
     val getAmountOrValue: Double?
         get() {
             return when (this) {
-                is Earning -> this.amount
+                is Earnings -> this.amount
                 is Expense -> this.amount
                 is Loan -> this.amount
                 is Savings -> this.amount
@@ -285,7 +232,7 @@ sealed class Transaction {
     val getFormattedAmountOrValue: String
         get() {
             return when (this) {
-                is Earning -> this.amount.formatToAmount()
+                is Earnings -> this.amount.formatToAmount()
                 is Expense -> this.amount.formatToAmount()
                 is Loan -> this.amount.formatToAmount()
                 is Debt -> this.amount.formatToAmount()

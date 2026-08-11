@@ -233,46 +233,31 @@ private fun TransactionAmountFieldItem(
     symbol: String,
     color: Color
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        ListItem(
-            modifier = Modifier
-                .fillMaxWidth()
-                .then(modifier)
-                .height(LIST_ITEM_HEIGHT)
-                .clickable {
-                    showCustomKeyboard.value = true
-                    onDialogShow.value = true
-                },
-            headlineContent = {
-                Text("Amount", fontSize = FONT_SIZE, fontWeight = FONT_WEIGHT)
-            },
-            colors = ListItemDefaults.colors(
-                containerColor = color,
-            ),
-            leadingContent = {
-                Image(
-                    painter = painterResource(id = R.drawable.amount),
-                    contentDescription = "Amount",
-                    modifier = Modifier.size(ICON_SIZE)
-                )
-            },
-            trailingContent = {
-                val amountText = try {
-                    if (displayState.value.isEmpty()) "$symbol 0.0" else
-                        displayState.value.toDouble().formatToAmount()
-                } catch (e: Exception) {
-                    "$symbol 0.0"
-                }
-                Text(amountText, fontSize = FONT_SIZE)
-            }
 
-        )
-        HorizontalDivider(
-            modifier = Modifier.padding(bottom = 2.dp),
-            color = MaterialTheme.colorScheme.onPrimary
-        )
+    TransactionFieldCard(
+        title = "Amount",
+        modifier = modifier,
+        leadingContent = {
+            Image(
+                painter = painterResource(id = R.drawable.amount),
+                contentDescription = "Amount",
+                modifier = Modifier.size(ICON_SIZE)
+            )
+        },
+        colors = ListItemDefaults.colors(
+            containerColor = color
+        ),
+        trailingContent = {
+            val amountText = try {
+                if (displayState.value.isEmpty()) "$symbol 0.0" else
+                    displayState.value.toDouble().formatToAmount()
+            } catch (e: Exception) {
+                "$symbol 0.0"
+            }
+            Text(amountText, fontSize = FONT_SIZE)
+        }
+    ) {
+        showCustomKeyboard.value = true
+        onDialogShow.value = true
     }
 }

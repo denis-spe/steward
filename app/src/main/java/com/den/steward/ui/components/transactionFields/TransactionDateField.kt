@@ -37,12 +37,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.den.steward.R
 import com.den.steward.helper.formattedDate
 import com.den.steward.helper.toEpochMillis
 import com.den.steward.helper.yesterday
+import com.den.steward.ui.components.DateDialog
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -53,91 +55,24 @@ import java.time.ZoneOffset
 @Composable
 fun TransactionDateField(
     title: String,
-    color: Color,
+    colorResId: Int,
     modifier: Modifier = Modifier,
     localDateState: MutableState<LocalDate>,
 ) {
     val showDatePicker = remember { mutableStateOf(false) }
-    val scrollState = rememberScrollState()
+    val color = colorResource(id = colorResId)
 
     if (showDatePicker.value) {
-        val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = localDateState.value
-                .atStartOfDay(ZoneOffset.UTC)
-                .toInstant()
-                .toEpochMilli()
+        DateDialog(
+            title = title,
+            color = color,
+            showDatePicker = showDatePicker,
+            localDateState = localDateState
         )
-        DatePickerDialog(
-            modifier = Modifier.verticalScroll(scrollState),
-            onDismissRequest = {
-                showDatePicker.value = false
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        showDatePicker.value = false
-                    }
-                ) {
-                    Text(
-                        "Cancel",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-            },
-            confirmButton = {
-
-                Button(
-                    onClick = {
-                        val selectedDateMillis = datePickerState.selectedDateMillis
-                        if (selectedDateMillis != null) {
-                            localDateState.value = Instant.ofEpochMilli(selectedDateMillis)
-                                .atZone(ZoneOffset.UTC)
-                                .toLocalDate()
-                        }
-                        showDatePicker.value = false
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = color
-                    )
-                ) {
-                    Text(
-                        "OK",
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
-            },
-        ) {
-            DatePicker(
-                state = datePickerState,
-                headline = {
-                    Column(
-                        modifier = Modifier.padding(start = 16.dp)
-                    ) {
-                        Text(
-                            text = "Date",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = color,
-                        )
-                        Text(
-                            text = "Set date for $title",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = Color.Gray,
-                        )
-                    }
-                },
-                colors = DatePickerDefaults.colors(
-                    titleContentColor = color,
-                    headlineContentColor = color,
-                    todayContentColor = color,
-                    todayDateBorderColor = color,
-                    selectedDayContainerColor = color,
-                )
-            )
-        }
     }
 
     TransactionDateFieldItem(
+        color = color,
         modifier = modifier,
         showDatePicker = showDatePicker,
         displayState = localDateState,
@@ -146,6 +81,7 @@ fun TransactionDateField(
 
 @Composable
 private fun TransactionDateFieldItem(
+    color: Color,
     modifier: Modifier = Modifier,
     showDatePicker: MutableState<Boolean>,
     displayState: MutableState<LocalDate>,
@@ -164,86 +100,73 @@ private fun TransactionDateFieldItem(
         }
     }
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        ListItem(
-            modifier = Modifier
-                .fillMaxWidth()
-                .then(modifier)
-                .height(LIST_ITEM_HEIGHT)
-                .clickable {
-                    showDatePicker.value = true
-                },
-            leadingContent = {
-                Image(
-                    painter = painterResource(R.drawable.calendar),
-                    contentDescription = "calendar",
-                    modifier = Modifier.size(ICON_SIZE)
-                )
-            },
-
-            headlineContent = {
-                Text("Date", fontSize = FONT_SIZE, fontWeight = FONT_WEIGHT)
-            },
-
-            trailingContent = {
-                val textValue = displayState.value.formattedDate
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.Center
+    TransactionFieldCard(
+        title = "Date",
+        modifier = modifier,
+        leadingContent = {
+            Image(
+                painter = painterResource(R.drawable.calendar),
+                contentDescription = "calendar",
+                modifier = Modifier.size(ICON_SIZE)
+            )
+        },
+        trailingContent = {
+            val textValue = displayState.value.formattedDate
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(textValue, fontSize = FONT_SIZE)
+                Spacer(modifier = Modifier.size(4.dp))
+                Row(
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(textValue, fontSize = FONT_SIZE)
-                    Spacer(modifier = Modifier.size(4.dp))
-                    Row(
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
+                    TextButton(
+                        onClick = {
+                            displayState.value = LocalDate.now()
+                        },
+                        contentPadding = PaddingValues(0.dp),
+                        border = if (wasTodayYesterdayClick.value == "Today")
+                            BorderStroke(1.dp, color)
+                        else null,
+                        shape = MaterialTheme.shapes.small,
                     ) {
-                        TextButton(
-                            onClick = {
-                                displayState.value = LocalDate.now()
-                            },
-                            contentPadding = PaddingValues(0.dp),
-                            border = if (wasTodayYesterdayClick.value == "Today")
-                                BorderStroke(1.dp, MaterialTheme.colorScheme.onBackground)
-                            else null,
-                            shape = MaterialTheme.shapes.small,
-                        ) {
-                            Text(
-                                "Today",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onBackground
-                            )
-                        }
+                        Text(
+                            "Today",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (wasTodayYesterdayClick.value == "Today") {
+                                color
+                            } else {
+                                MaterialTheme.colorScheme.onBackground
+                            }
+                        )
+                    }
 
-                        Spacer(modifier = Modifier.size(8.dp))
+                    Spacer(modifier = Modifier.size(8.dp))
 
-                        TextButton(
-                            onClick = {
-                                displayState.value = yesterday
-                            },
-                            contentPadding = PaddingValues(0.dp),
-                            border = if (wasTodayYesterdayClick.value == "Yesterday")
-                                BorderStroke(1.dp, MaterialTheme.colorScheme.onBackground)
-                            else null,
-                            shape = MaterialTheme.shapes.small,
-                        ) {
-                            Text(
-                                "Yesterday",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onBackground,
-                                modifier = Modifier.padding(4.dp)
-                            )
-                        }
+                    TextButton(
+                        onClick = {
+                            displayState.value = yesterday
+                        },
+                        contentPadding = PaddingValues(0.dp),
+                        border = if (wasTodayYesterdayClick.value == "Yesterday")
+                            BorderStroke(1.dp, color)
+                        else null,
+                        shape = MaterialTheme.shapes.small,
+                    ) {
+                        Text(
+                            "Yesterday",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (wasTodayYesterdayClick.value == "Yesterday")
+                                color else MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.padding(4.dp)
+                        )
                     }
                 }
             }
-        )
-
-        HorizontalDivider(
-            modifier = Modifier.padding(bottom = 2.dp),
-            color = MaterialTheme.colorScheme.onPrimary
-        )
+        }
+    ) {
+        showDatePicker.value = true
     }
 }

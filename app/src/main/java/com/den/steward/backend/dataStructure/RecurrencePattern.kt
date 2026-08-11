@@ -1,12 +1,12 @@
 package com.den.steward.backend.dataStructure
 
-sealed class GoalRepeat() {
-    data object NONE : GoalRepeat()
-    data object DAILY : GoalRepeat()
-    data object WEEKLY : GoalRepeat()
-    data object MONTHLY : GoalRepeat()
-    data object YEARLY : GoalRepeat()
-    data class Custom(val days: List<Int>) : GoalRepeat()
+sealed class RecurrencePattern() {
+    data object NONE : RecurrencePattern()
+    data object DAILY : RecurrencePattern()
+    data object WEEKLY : RecurrencePattern()
+    data object MONTHLY : RecurrencePattern()
+    data object YEARLY : RecurrencePattern()
+    data class Custom(val days: List<Int>) : RecurrencePattern()
 
     val name: String
         get() = when (this) {
@@ -17,6 +17,15 @@ sealed class GoalRepeat() {
             is YEARLY -> "Yearly"
             is Custom -> "Custom"
         }
+    companion object {
+        val entries = listOf(
+            NONE,
+            DAILY,
+            WEEKLY,
+            MONTHLY,
+            YEARLY,
+        )
+    }
 
     val onSchedule: Long
         get() = when (this) {

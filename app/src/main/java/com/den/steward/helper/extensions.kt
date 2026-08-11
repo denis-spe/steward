@@ -332,6 +332,16 @@ val LocalDate.formattedDate: String
         return "$day $month $year"
     }
 
+val LocalDateTime.formattedDate: String
+    get() {
+        val day =  this
+            .dayOfMonth
+            .addZeroIfLessThenTen
+        val month = this.month.name.take(3).title
+        val year = this.year
+        return "$day $month $year"
+    }
+
 val LocalTime.formattedTime: String
     get() {
         val hour = this.hour.addZeroIfLessThenTen

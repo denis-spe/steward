@@ -57,50 +57,7 @@ class HomeViewModel @Inject constructor(
 
     fun transactionDataSubmission(dataTransferToViewModel: DataTransferToViewModel) {
         viewModelScope.launch {
-            val amount = dataTransferToViewModel.amount.toDoubleOrNull() ?: 0.0
-            val transaction = when (dataTransferToViewModel.transactionType) {
-                TransactionType.EARNINGS -> Transaction.Earning(
-                    label = dataTransferToViewModel.label,
-                    amount = amount,
-                    note = dataTransferToViewModel.note,
-                    createdAt = dataTransferToViewModel.createdAt
-                )
-                TransactionType.EXPENSE -> Transaction.Expense(
-                    label = dataTransferToViewModel.label,
-                    amount = amount,
-                    note = dataTransferToViewModel.note,
-                    createdAt = dataTransferToViewModel.createdAt
-                )
-                TransactionType.LOAN -> Transaction.Loan(
-                    label = dataTransferToViewModel.label,
-                    amount = amount,
-                    note = dataTransferToViewModel.note,
-                    createdAt = dataTransferToViewModel.createdAt
-                )
-                TransactionType.DEBT -> Transaction.Debt(
-                    label = dataTransferToViewModel.label,
-                    amount = amount,
-                    note = dataTransferToViewModel.note,
-                    createdAt = dataTransferToViewModel.createdAt
-                )
-                TransactionType.SAVINGS -> Transaction.Savings(
-                    label = dataTransferToViewModel.label,
-                    amount = amount,
-                    note = dataTransferToViewModel.note,
-                    createdAt = dataTransferToViewModel.createdAt
-                )
-                TransactionType.GOAL -> Transaction.Goal(
-                    label = dataTransferToViewModel.label,
-                    value = amount,
-                    note = dataTransferToViewModel.note,
-                    createdAt = dataTransferToViewModel.createdAt
-                )
-                else -> null
-            }
-
-            transaction?.let {
-                addDataUseCase.addTransaction(it)
-            }
+            addDataUseCase.addTransaction(dataTransferToViewModel = dataTransferToViewModel)
         }
     }
 }

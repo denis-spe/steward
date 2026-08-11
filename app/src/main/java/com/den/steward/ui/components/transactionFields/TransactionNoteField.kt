@@ -221,42 +221,25 @@ private fun TransactionNoteFieldItem(
     onDialogShow: MutableState<Boolean>,
     displayState: MutableState<String>,
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+
+    TransactionFieldCard(
+        title = title,
+        modifier = modifier,
+        leadingContent = {
+            Image(
+                painter = painterResource(R.drawable.note),
+                contentDescription = "note",
+                modifier = Modifier.size(ICON_SIZE)
+            )
+        },
+        trailingContent = {
+            val textValue = if (displayState.value.length > MAX_LABEL_LENGTH)
+                displayState.value.take(MAX_LABEL_LENGTH) + "..." else
+                (displayState.value.ifEmpty { "..." })
+
+            Text(textValue, fontSize = FONT_SIZE)
+        }
     ) {
-        ListItem(
-            modifier = Modifier
-                .fillMaxWidth()
-                .then(modifier)
-                .height(LIST_ITEM_HEIGHT)
-                .clickable {
-                    onDialogShow.value = true
-                },
-            leadingContent = {
-                Image(
-                    painter = painterResource(R.drawable.note),
-                    contentDescription = "note",
-                    modifier = Modifier.size(ICON_SIZE)
-                )
-            },
-
-            headlineContent = {
-                Text(title, fontSize = FONT_SIZE, fontWeight = FONT_WEIGHT)
-            },
-
-            trailingContent = {
-                val textValue = if (displayState.value.length > MAX_LABEL_LENGTH)
-                    displayState.value.take(MAX_LABEL_LENGTH) + "..." else
-                    (displayState.value.ifEmpty { "..." })
-
-                Text(textValue, fontSize = FONT_SIZE)
-            }
-        )
-
-        HorizontalDivider(
-            modifier = Modifier.padding(bottom = 2.dp),
-            color = MaterialTheme.colorScheme.onPrimary
-        )
+        onDialogShow.value = true
     }
 }

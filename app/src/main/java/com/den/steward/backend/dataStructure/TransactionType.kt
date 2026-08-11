@@ -53,7 +53,7 @@ enum class TransactionType(
     GOAL(
         R.string.goal,
         R.string.goal_desc,
-        R.drawable.ic_goal,
+        R.drawable.ic_finance_target,
         R.color.goal
     ),
 
