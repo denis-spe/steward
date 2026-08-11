@@ -6,7 +6,7 @@ sealed class RecurrencePattern() {
     data object WEEKLY : RecurrencePattern()
     data object MONTHLY : RecurrencePattern()
     data object YEARLY : RecurrencePattern()
-    data class Custom(val days: List<Int>) : RecurrencePattern()
+    data class Custom(val days: List<Int> = emptyList()) : RecurrencePattern()
 
     val name: String
         get() = when (this) {
@@ -24,6 +24,7 @@ sealed class RecurrencePattern() {
             WEEKLY,
             MONTHLY,
             YEARLY,
+            Custom()
         )
     }
 

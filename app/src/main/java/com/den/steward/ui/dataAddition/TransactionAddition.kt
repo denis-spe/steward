@@ -146,6 +146,14 @@ fun TransactionBottomDrawerSheet(
         displayedLabelState.value = ""
         displayedNoteState.value = ""
 
+        startAt.value = System.currentTimeMillis().toLocalDateTime()
+        endAt.value = System.currentTimeMillis().toLocalDateTime()
+        recurrence.value = RecurrencePattern.NONE
+
+        createdAt.value = System.currentTimeMillis().toLocalDateTime()
+        createdAtLocalDate.value = createdAt.value.toLocalDate()
+        createdAtLocalTime.value = createdAt.value.toLocalTime()
+
         wasAmountSuccess.value = TransactionFieldState.Initial
         wasLabelSuccess.value = TransactionFieldState.Initial
 

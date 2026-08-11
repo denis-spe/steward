@@ -2,32 +2,48 @@
 package com.den.steward.ui.components.transactionFields
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -37,8 +53,11 @@ import com.den.steward.helper.formatedDateTime
 import com.den.steward.helper.formattedDate
 import com.den.steward.helper.formattedTime
 import com.den.steward.ui.components.DateDialog
+import com.den.steward.ui.components.DateRangeDialog
 import com.den.steward.ui.components.TimeDialog
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 @Composable
 fun TransactionRecurrenceField(
@@ -50,20 +69,34 @@ fun TransactionRecurrenceField(
     val onDialogShow = remember { mutableStateOf(false) }
     val color = colorResource(id = colorResId)
 
+    val selectedStartAt = remember { mutableStateOf<LocalDateTime?>(null) }
+    val selectedEndAt = remember { mutableStateOf<LocalDateTime?>(null) }
+
     if (onDialogShow.value) {
         RecurrenceDialog(
             color = color,
             startedAt = startedAt,
             endAt = endAt,
             recurrence = recurrence,
-            onDismissRequest = { onDialogShow.value = false }
-        )
+            onDismissRequest = {
+                onDialogShow.value = false
+            }
+        ) { finalStartDate, finalEndDate ->
+            if (finalStartDate != null) {
+                startedAt.value = finalStartDate
+                selectedStartAt.value = finalStartDate
+            }
+            if (finalEndDate != null) {
+                endAt.value = finalEndDate
+                selectedEndAt.value = finalEndDate
+            }
+        }
     }
 
     TransactionRecurrenceFieldItem(
         onDialogShow = onDialogShow,
-        startedAt = startedAt,
-        endAt = endAt,
+        startedAt = selectedStartAt.value,
+        endAt = selectedEndAt.value,
         recurrence = recurrence
     )
 }
@@ -71,8 +104,8 @@ fun TransactionRecurrenceField(
 @Composable
 private fun TransactionRecurrenceFieldItem(
     onDialogShow: MutableState<Boolean>,
-    startedAt: MutableState<LocalDateTime>,
-    endAt: MutableState<LocalDateTime>,
+    startedAt: LocalDateTime?,
+    endAt: LocalDateTime?,
     recurrence: MutableState<RecurrencePattern>
 ) {
     TransactionFieldCard(
@@ -86,19 +119,23 @@ private fun TransactionRecurrenceFieldItem(
         },
 
         headlineContent = {
-            if (endAt.value > startedAt.value) {
-                Column (
-                    horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.Center
-                ) {
+            Column(
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.Center
+            ) {
+                if (startedAt != null) {
                     Text(
-                        startedAt.value.formatedDateTime,
-                        style = MaterialTheme.typography.labelSmall
+                        text = "Starts: ${startedAt.formatedDateTime}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
 
+                if (endAt != null && startedAt != null && endAt.isAfter(startedAt)) {
                     Text(
-                        endAt.value.formatedDateTime,
-                        style = MaterialTheme.typography.labelSmall
+                        text = "Ends: ${endAt.formatedDateTime}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -113,7 +150,9 @@ private fun TransactionRecurrenceFieldItem(
                     is RecurrencePattern.YEARLY -> "Yearly"
                     is RecurrencePattern.Custom -> "Schedule"
                 },
-                style = MaterialTheme.typography.labelMedium
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Bold
             )
         }
     ) {
@@ -127,14 +166,17 @@ private fun RecurrenceDialog(
     startedAt: MutableState<LocalDateTime>,
     endAt: MutableState<LocalDateTime>,
     recurrence: MutableState<RecurrencePattern>,
-    onDismissRequest: () -> Unit
+    onDismissRequest: () -> Unit,
+    onSubmit: (finalStartDate: LocalDateTime?, finalEndDate: LocalDateTime?) -> Unit,
 ) {
     Dialog(
         onDismissRequest =  onDismissRequest
     ) {
         Card {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
@@ -142,12 +184,13 @@ private fun RecurrenceDialog(
                 RecurrenceHeaderContent()
 
                 // Recurrence Content
-                RecurrenceContent(
+                RecurrenceDialogContent(
                     color = color,
                     startedAt = startedAt,
                     endAt = endAt,
                     recurrence = recurrence,
-                    onDismissRequest = onDismissRequest
+                    onDismissRequest = onDismissRequest,
+                    onSubmit = onSubmit
                 )
             }
         }
@@ -190,14 +233,15 @@ private fun RecurrenceRow(
 }
 
 @Composable
-private fun RecurrenceContent(
+private fun RecurrenceDialogContent(
     color: Color,
     startedAt: MutableState<LocalDateTime>,
     endAt: MutableState<LocalDateTime>,
     recurrence: MutableState<RecurrencePattern>,
-    onDismissRequest: () -> Unit
+    onDismissRequest: () -> Unit,
+    onSubmit: (finalStartDate: LocalDateTime?, finalEndDate: LocalDateTime?) -> Unit,
 ) {
-    val startedAtDate = remember { mutableStateOf(startedAt.value.toLocalDate() ) }
+    val startedAtDate = remember { mutableStateOf(startedAt.value.toLocalDate()) }
     val startedAtTime = remember { mutableStateOf(startedAt.value.toLocalTime()) }
 
     val endAtDate = remember { mutableStateOf(endAt.value.toLocalDate()) }
@@ -208,46 +252,43 @@ private fun RecurrenceContent(
     val showRecurrencePicker = remember { mutableStateOf("") }
     val transactionFieldState = remember { mutableStateOf<TransactionFieldState>(TransactionFieldState.Initial) }
 
+    // Select by date
     RecurrenceRow {
+
         RecurrenceDateContent(
-            title = "Start At",
+            title = "Date Range",
             color = color,
-            dateText = startedAtDate.value.formattedDate,
-            timeText = startedAtTime.value.formattedTime,
+            startDateText = startedAtDate.value.formattedDate,
+            lastDateText = endAtDate.value.formattedDate,
+            startTimeText = startedAtTime.value.formattedTime,
+            lastTimeText = endAtTime.value.formattedTime,
             onDateClick = {
                 showDatePicker.value = true
-                showRecurrencePicker.value = "Starting Date"
             },
-            onTimeClick = {
+            onStartTimeClick = {
                 showTimePicker.value = true
                 showRecurrencePicker.value = "Starting Time"
-            }
-        )
-
-
-        RecurrenceDateContent(
-            title = "End At",
-            color = color,
-            dateText = endAtDate.value.formattedDate,
-            timeText = endAtTime.value.formattedTime,
-            onDateClick = {
-                showDatePicker.value = true
-                showRecurrencePicker.value = "Deadline Date"
             },
-            onTimeClick = {
+            onLastTimeClick = {
                 showTimePicker.value = true
-                showRecurrencePicker.value = "Deadline Time"
+                showRecurrencePicker.value = "Ending Time"
             }
         )
     }
 
+    // Select by recurrence
+    RecurrenceOptionsContent(
+        color = color,
+        recurrence = recurrence
+    )
+
     if (showDatePicker.value) {
-        DateDialog(
+        DateRangeDialog(
             title = "recurrence",
             color = color,
-            headerTitle = showRecurrencePicker.value,
             showDatePicker = showDatePicker,
-            localDateState = if (showRecurrencePicker.value == "Starting Date") startedAtDate else endAtDate
+            startLocalDateState = startedAtDate,
+            endLocalDateState = endAtDate
         )
     }
 
@@ -259,37 +300,26 @@ private fun RecurrenceContent(
             val newEnd = endAtDate.value.atTime(endAtTime.value)
 
             when {
-                newEnd <= newStart -> {
-                    transactionFieldState.value = TransactionFieldState.Error("End date must be after start date")
+                !newEnd.isAfter(newStart) -> {
+                    transactionFieldState.value = TransactionFieldState.Error("End time must be after start time")
                 }
-                // Allow a 1-minute grace period for "now"
-                newStart < LocalDateTime.now().minusMinutes(1) -> {
-                    transactionFieldState.value = TransactionFieldState.Error("Start date cannot be in the past")
-                }
-                newEnd > LocalDateTime.now().plusYears(1) -> {
+                newEnd.isAfter(LocalDateTime.now().plusYears(1)) -> {
                     transactionFieldState.value = TransactionFieldState.Error("End date must be within 1 year")
                 }
+                recurrence.value is RecurrencePattern.Custom && (recurrence.value as RecurrencePattern.Custom).days.isEmpty() -> {
+                    transactionFieldState.value = TransactionFieldState.Error("Select at least one day for custom recurrence")
+                }
                 else -> {
-                    startedAt.value = newStart
-                    endAt.value = newEnd
                     transactionFieldState.value = TransactionFieldState.Success
+                    onSubmit(newStart, newEnd)
                     onDismissRequest()
                 }
-            }
-
-
-            if (transactionFieldState.value is TransactionFieldState.Success) {
-                onDismissRequest()
             }
         },
         onCancel = {
             onDismissRequest()
-
             showDatePicker.value = false
             showTimePicker.value = false
-
-            startedAt.value = LocalDateTime.now()
-            endAt.value = LocalDateTime.now()
         }
     )
 
@@ -314,49 +344,230 @@ private fun RecurrenceContent(
 }
 
 @Composable
+fun RecurrenceOptionsContent(
+    color: Color,
+    recurrence: MutableState<RecurrencePattern>,
+) {
+    val selectedDays = remember {
+        mutableStateListOf<Int>().apply {
+            if (recurrence.value is RecurrencePattern.Custom) {
+                addAll((recurrence.value as RecurrencePattern.Custom).days)
+            }
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp),
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = "Select Recurrence",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = FontWeight.Bold
+        )
+
+        LazyRow (
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            RecurrencePattern.entries.forEach { pattern ->
+                item(key = pattern.name) {
+                    RecurrenceItemButton(
+                        title = pattern.name,
+                        color = color,
+                        isSelected = when {
+                            recurrence.value is RecurrencePattern.Custom && pattern is RecurrencePattern.Custom -> true
+                            else -> recurrence.value == pattern
+                        },
+                        onClick = {
+                            recurrence.value = if (pattern is RecurrencePattern.Custom) {
+                                RecurrencePattern.Custom(selectedDays.toList())
+                            } else {
+                                pattern
+                            }
+                        }
+                    )
+                }
+            }
+        }
+
+        if (recurrence.value is RecurrencePattern.Custom) {
+            RecurrenceWeekDay(
+                color = color,
+                dayState = selectedDays,
+                onDaysChanged = { updatedDays ->
+                    recurrence.value = RecurrencePattern.Custom(updatedDays)
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun RecurrenceWeekDay(
+    color: Color,
+    dayState: SnapshotStateList<Int>,
+    onDaysChanged: (List<Int>) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 10.dp),
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = "Select Days",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = FontWeight.Bold
+        )
+
+        Row (
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val dayNames = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+            dayNames.forEachIndexed { index, day ->
+                RecurrenceDayCircle(
+                    title = day.take(1),
+                    color = color,
+                    isSelected = index in dayState,
+                    onClick = {
+                        if (index in dayState) {
+                            dayState.remove(index)
+                        } else {
+                            dayState.add(index)
+                        }
+                        onDaysChanged(dayState.toList())
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun RecurrenceDayCircle(
+    title: String,
+    color: Color,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .size(36.dp)
+            .clip(CircleShape)
+            .background(if (isSelected) color else Color.Transparent)
+            .border(
+                width = 1.dp,
+                color = if (isSelected) color else MaterialTheme.colorScheme.outline,
+                shape = CircleShape
+            )
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelSmall,
+            color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
 private fun RecurrenceDateContent(
     title: String,
-    dateText: String,
-    timeText: String,
+    startDateText: String,
+    lastDateText: String,
+    startTimeText: String,
+    lastTimeText: String,
     color: Color,
     onDateClick: () -> Unit = {},
-    onTimeClick: () -> Unit = {}
+    onStartTimeClick: () -> Unit = {},
+    onLastTimeClick: () -> Unit = {}
 ) {
-    Surface(
-        tonalElevation = 4.dp,
-        shadowElevation = 2.dp,
-        shape = MaterialTheme.shapes.medium,
+    Column(
+        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                title,
-                style = MaterialTheme.typography.labelMedium
-            )
+        Text(
+            title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            "Select a date range for this transaction",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
 
-            MaterialTheme(
-                colorScheme = MaterialTheme.colorScheme.copy(
-                   primary = color
-                )
+        MaterialTheme(
+            colorScheme = MaterialTheme.colorScheme.copy(
+               primary = color
+            )
+        ) {
+
+            OutlinedButton(
+                onClick = onDateClick,
+                colors = ButtonDefaults.outlinedButtonColors().copy(
+                    contentColor = color
+                ),
+                border = BorderStroke(1.dp, color)
             ) {
-                TextButton(
-                    onClick = onDateClick,
+                Text(
+                    "$startDateText - $lastDateText",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = color,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedButton(
+                    onClick = onStartTimeClick,
+                    colors = ButtonDefaults.outlinedButtonColors().copy(
+                        contentColor = color
+                    ),
+                    border = BorderStroke(1.dp, color)
                 ) {
                     Text(
-                        dateText,
-                        style = MaterialTheme.typography.labelSmall
+                        startTimeText,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = color,
+                        fontWeight = FontWeight.Bold
                     )
                 }
 
-                TextButton(
-                    onClick = onTimeClick,
+                Text(
+                    "to",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                OutlinedButton(
+                    onClick = onLastTimeClick,
+                    colors = ButtonDefaults.outlinedButtonColors().copy(
+                        contentColor = color
+                    ),
+                    border = BorderStroke(1.dp, color)
                 ) {
                     Text(
-                        timeText,
-                        style = MaterialTheme.typography.labelSmall
+                        lastTimeText,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = color,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
@@ -389,8 +600,8 @@ private fun RecurrenceBottomButton(
     transactionFieldState: MutableState<TransactionFieldState>,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.End,
+        modifier = Modifier,
+        horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
         TextButton(
@@ -402,6 +613,8 @@ private fun RecurrenceBottomButton(
         ) {
             Text("Cancel")
         }
+
+        Spacer(modifier = Modifier.width(5.dp))
 
         Button (
             onClick = onConfirm,
@@ -417,5 +630,41 @@ private fun RecurrenceBottomButton(
                 color = Color.White
             )
         }
+    }
+}
+
+@Composable
+fun RecurrenceItemButton(
+    title: String,
+    color: Color,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val stroke = if (isSelected) {
+        BorderStroke(1.dp, color)
+    } else {
+        BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+    }
+
+    Surface (
+        modifier = Modifier
+            .border(stroke, MaterialTheme.shapes.medium),
+        shape = MaterialTheme.shapes.medium,
+        color = if (isSelected) color.copy(alpha = 0.1f) else Color.Transparent,
+        onClick = onClick
+    ) {
+        Text(
+            title,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier
+                .clip(MaterialTheme.shapes.medium)
+                .padding(10.dp),
+            color = if (isSelected) {
+                color
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+            fontWeight = FontWeight.Bold
+        )
     }
 }

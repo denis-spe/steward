@@ -63,12 +63,18 @@ fun TransactionTimeField(
     val color = colorResource(id = colorResId)
 
     if (showTimePicker.value) {
-        TimeDialog(
-            title = title,
-            color = color,
-            showTimePicker = showTimePicker,
-            localTimeState = localTimeState
-        )
+        MaterialTheme(
+            colorScheme = MaterialTheme.colorScheme.copy(
+                primary = color,
+            )
+        ) {
+            TimeDialog(
+                title = title,
+                color = color,
+                showTimePicker = showTimePicker,
+                localTimeState = localTimeState
+            )
+        }
     }
 
     TransactionTimeFieldItem(

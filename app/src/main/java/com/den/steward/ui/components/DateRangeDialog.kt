@@ -1,19 +1,18 @@
-// Glory be to LORD our GOD
+// Love the LORD your GOD with all your soul and with all your mind
+// and with all your strenght and love your neighbor as yourself
 package com.den.steward.ui.components
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DateRangePicker
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
@@ -23,27 +22,25 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DateDialog(
+fun DateRangeDialog(
     title: String,
     color: Color,
-    headerTitle: String = "Date",
     showDatePicker: MutableState<Boolean>,
-    localDateState: MutableState<LocalDate>,
+    startLocalDateState: MutableState<LocalDate>,
+    endLocalDateState: MutableState<LocalDate>,
 ) {
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = localDateState.value
-            .atStartOfDay(ZoneOffset.UTC)
-            .toInstant()
-            .toEpochMilli()
+    // Initializing with current UI values, ensuring UTC for DateRangePicker
+    val datePickerState = rememberDateRangePickerState(
+        initialSelectedStartDateMillis = startLocalDateState.value.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
+        initialSelectedEndDateMillis = endLocalDateState.value.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
     )
-    val scrollState = rememberScrollState()
 
     MaterialTheme(
         colorScheme = MaterialTheme.colorScheme.copy(primary = color)
     ) {
         DatePickerDialog(
-            modifier = Modifier.verticalScroll(scrollState),
             onDismissRequest = {
                 showDatePicker.value = false
             },
@@ -61,20 +58,25 @@ fun DateDialog(
                 }
             },
             confirmButton = {
-
                 Button(
                     onClick = {
-                        val selectedDateMillis = datePickerState.selectedDateMillis
-                        if (selectedDateMillis != null) {
-                            localDateState.value = Instant.ofEpochMilli(selectedDateMillis)
-                                .atZone(ZoneOffset.UTC)
-                                .toLocalDate()
+                        val startMillis = datePickerState.selectedStartDateMillis
+                        val endMillis = datePickerState.selectedEndDateMillis
+
+                        if (startMillis != null && endMillis != null) {
+                            // Converting UTC millis back to LocalDate
+                            startLocalDateState.value = Instant.ofEpochMilli(startMillis)
+                                .atZone(ZoneOffset.UTC).toLocalDate()
+                            endLocalDateState.value = Instant.ofEpochMilli(endMillis)
+                                .atZone(ZoneOffset.UTC).toLocalDate()
+                            showDatePicker.value = false
                         }
-                        showDatePicker.value = false
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = color
-                    )
+                    ),
+                    enabled = datePickerState.selectedStartDateMillis != null && 
+                             datePickerState.selectedEndDateMillis != null
                 ) {
                     Text(
                         "OK",
@@ -83,24 +85,23 @@ fun DateDialog(
                 }
             },
         ) {
-            DatePicker(
+            DateRangePicker(
                 state = datePickerState,
-                headline = {
-                    Column(
-                        modifier = Modifier.padding(start = 16.dp)
-                    ) {
-                        Text(
-                            text = headerTitle,
-                            style = MaterialTheme.typography.titleLarge,
-                            color = color,
-                        )
-                        Text(
-                            text = "Set date for $title",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = Color.Gray,
-                        )
-                    }
+                title = {
+                    Text(
+                        text = "Select Range",
+                        modifier = Modifier.padding(start = 16.dp, top = 16.dp)
+                    )
                 },
+                headline = {
+                    Text(
+                        text = "Set a range for $title",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(start = 16.dp)
+                    )
+                },
+                showModeToggle = false,
                 colors = DatePickerDefaults.colors(
                     titleContentColor = color,
                     headlineContentColor = color,
