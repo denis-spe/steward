@@ -8,8 +8,9 @@ import com.den.steward.backend.viewModels.DataTransferToViewModel
 import javax.inject.Inject
 
 class AddDataUseCase @Inject constructor(
-    private val accountService: Account,
-    private val storageService: Storage
+    accountService: Account,
+    private val storageService: Storage,
+    private val goalToolUseCase: GoalToolUseCase
 ) {
     val userId = accountService.currentUserId
 
@@ -61,11 +62,22 @@ class AddDataUseCase @Inject constructor(
                 note = dataTransferToViewModel.note,
                 createdAt = dataTransferToViewModel.createdAt,
                 startedAt = dataTransferToViewModel.startedAt,
-                endAt = dataTransferToViewModel.endAt // Will be updated if recurrence is added later
+                endAt = dataTransferToViewModel.endAt,
+                repeatable = dataTransferToViewModel.repeatable
             )
             else -> null
         } ?: return
 
-        storageService.addTransaction(userId, transaction)
+        val result = storageService.addTransaction(userId, transaction)
+        
+        if (result.isSuccess) {
+            val transactionId = result.getOrThrow()
+            if (transaction is Transaction.Goal) {
+                android.util.Log.i("AddDataUseCase", "Scheduling Goal worker for $transactionId")
+                goalToolUseCase.schedule(transactionId, transaction)
+            }
+        } else {
+            android.util.Log.e("AddDataUseCase", "Failed to save transaction: ${result.exceptionOrNull()?.message}")
+        }
     }
 }

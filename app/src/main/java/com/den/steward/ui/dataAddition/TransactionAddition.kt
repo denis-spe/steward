@@ -28,6 +28,7 @@ import com.den.steward.ui.components.bottomDrawerSheet.BottomDrawerSheet
 import com.den.steward.ui.components.bottomDrawerSheet.BottomDrawerSheetItem
 import com.den.steward.backend.viewModels.DataTransferToViewModel
 import com.den.steward.helper.combine
+import com.den.steward.helper.toEpochMillis
 import com.den.steward.helper.toLocalDateTime
 import com.den.steward.ui.components.transactionFields.TransactionAmountField
 import com.den.steward.ui.components.transactionFields.TransactionDateField
@@ -250,7 +251,10 @@ fun TransactionBottomDrawerSheet(
                             amount = displayedAmountState.value,
                             note = displayedNoteState.value,
                             createdAt = createdAtLocalDate.value combine (createdAtLocalTime.value),
-                            paymentMethod = paymentMethodState.value
+                            paymentMethod = paymentMethodState.value,
+                            startedAt = startAt.value.toEpochMillis(),
+                            endAt = endAt.value.toEpochMillis(),
+                            repeatable = recurrence.value
                         )
                     )
 

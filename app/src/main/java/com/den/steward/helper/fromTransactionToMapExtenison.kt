@@ -103,9 +103,9 @@ val Transaction.toMap: MutableMap<String, Any>
             }
 
             is Achievement -> {
-                mapping["value"] = this.value
-                mapping["startAt"] = Timestamp(java.util.Date(this.startAt))
-                mapping["endAt"] = Timestamp(java.util.Date(this.endAt))
+                mapping["value"] = this.goal.attain.sumOf { it.value }
+                mapping["startAt"] = Timestamp(java.util.Date(this.goal.startedAt))
+                mapping["endAt"] = Timestamp(java.util.Date(this.goal.endAt))
             }
         }
         return mapping

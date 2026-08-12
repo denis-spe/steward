@@ -13,7 +13,7 @@ import javax.inject.Inject
 
 class DataFetchUseCase @Inject constructor(
     accountService: Account,
-    storageService: Storage
+    private val storageService: Storage
 ) {
     private val userId = accountService.currentUserId
 
@@ -47,4 +47,8 @@ class DataFetchUseCase @Inject constructor(
             // 4. Provide a fallback for null messages
             emit(DataState.Error(e.message ?: "An unknown error occurred"))
         }
+
+    suspend fun getTransaction(transactionId: String): Result<Transaction?> {
+        return storageService.getTransaction(userId, transactionId)
+    }
 }

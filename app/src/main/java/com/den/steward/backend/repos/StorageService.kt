@@ -1,15 +1,10 @@
 package com.den.steward.backend.repos
 
 import android.util.Log
-import com.den.steward.backend.dataStructure.GoalStatus
-import com.den.steward.backend.dataStructure.GoalType
-import com.den.steward.backend.dataStructure.PaymentMethod
 import com.den.steward.backend.dataStructure.Transaction
-import com.den.steward.backend.dataStructure.TransactionType
 import com.den.steward.backend.repoInterfaces.Storage
 import com.den.steward.helper.toMap
 import com.den.steward.helper.toTransaction
-import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -43,7 +38,7 @@ class StorageService @Inject constructor(
     private val docRef = firestore
         .collection(USER_COLLECTION)
 
-    override suspend fun addTransaction(userId: String, transaction: Transaction): Result<Unit> {
+    override suspend fun addTransaction(userId: String, transaction: Transaction): Result<String> {
         return try {
             val transactionRef = docRef.document(userId)
                 .collection(TRANSACTION_COLLECTION)
@@ -52,7 +47,106 @@ class StorageService @Inject constructor(
             val transactionData = transaction.toMap
             transactionData["id"] = transactionRef.id
 
-            transactionRef.set(transactionData).await()
+            // Use set without .await() to ensure we can schedule workers immediately (offline-first)
+            transactionRef.set(transactionData)
+            
+            Result.success(transactionRef.id)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to initiate transaction add for user $userId", e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun resetGoalAttain(userId: String, transaction: Transaction.Goal): Result<Unit> {
+        return try {
+            val transactionRef = docRef.document(userId)
+                .collection(TRANSACTION_COLLECTION)
+                .document(transaction.id)
+            
+            val attainRef = transactionRef.collection(ATTAIN_COLLECTION)
+            val snapshots = attainRef.get().await()
+
+            firestore.runBatch { batch ->
+                // 1. Delete all attainment records
+                for (doc in snapshots.documents) {
+                    batch.delete(doc.reference)
+                }
+
+                // 2. If it's a recurring goal, update the dates in the same batch
+                if (transaction.repeatable != com.den.steward.backend.dataStructure.RecurrencePattern.NONE) {
+                    val nextSchedule = transaction.calculateSchedule(System.currentTimeMillis())
+                    batch.update(
+                        transactionRef,
+                        mapOf(
+                            "startedAt" to com.google.firebase.Timestamp(java.util.Date(nextSchedule.startedAt)),
+                            "endAt" to com.google.firebase.Timestamp(java.util.Date(nextSchedule.endAt))
+                        )
+                    )
+                }
+            }.await()
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to reset goal for user $userId", e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getTransaction(userId: String, transactionId: String): Result<Transaction?> {
+        return try {
+            val transactionRef = docRef.document(userId)
+                .collection(TRANSACTION_COLLECTION)
+                .document(transactionId)
+
+            val transaction = transactionRef.get().await().toTransaction ?: return Result.success(null)
+
+            val fulfillmentCollection = when (transaction) {
+                is Transaction.Loan -> REPAYMENT_COLLECTION
+                is Transaction.Debt -> REFUND_COLLECTION
+                is Transaction.Goal -> ATTAIN_COLLECTION
+                else -> null
+            }
+
+            if (fulfillmentCollection != null) {
+                val subItems = transactionRef.collection(fulfillmentCollection)
+                    .get().await()
+                    .documents.mapNotNull { it.toTransaction }
+                
+                val updatedTransaction = when (transaction) {
+                    is Transaction.Loan -> transaction.copy(repayment = subItems.filterIsInstance<Transaction.Repayment>())
+                    is Transaction.Debt -> transaction.copy(refund = subItems.filterIsInstance<Transaction.Refund>())
+                    is Transaction.Goal -> transaction.copy(attain = subItems.filterIsInstance<Transaction.Attain>())
+                    else -> transaction
+                }
+                Result.success(updatedTransaction)
+            } else {
+                Result.success(transaction)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to get transaction $transactionId for user $userId", e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun addGoalAchieved(userId: String, transaction: Transaction.Goal): Result<Unit> {
+        return try {
+            val achievedRef = docRef.document(userId)
+                .collection(TRANSACTION_COLLECTION)
+                .document(transaction.id)
+                .collection(ACHIEVEMENT_COLLECTION)
+                .document()
+
+            val achievement = Transaction.Achievement(
+                id = achievedRef.id,
+                value = transaction.attain.sumOf { it.value },
+                createdAt = System.currentTimeMillis(),
+                startAt = transaction.startedAt,
+                endAt = transaction.endAt,
+                goal = transaction
+            )
+
+            val achievedData = achievement.toMap
+            achievedRef.set(achievedData).await()
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to add transaction for user $userId", e)
