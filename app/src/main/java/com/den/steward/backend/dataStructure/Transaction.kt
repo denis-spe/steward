@@ -1,11 +1,13 @@
 package com.den.steward.backend.dataStructure
 
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import com.den.steward.helper.formatToAmount
 import com.den.steward.helper.title
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 
+@Stable
 sealed class Transaction {
     abstract val id: String
     abstract val type: TransactionType
@@ -241,12 +243,14 @@ sealed class Transaction {
                     if (this.goalType == GoalType.AMOUNT) this.value.formatToAmount()
                     else this.value.toString()
                 }
+
                 is Repayment -> this.amount.formatToAmount()
                 is Refund -> this.amount.formatToAmount()
                 is Attain -> {
                     if (this.goal.goalType == GoalType.AMOUNT) this.value.formatToAmount()
                     else this.value.toString()
                 }
+
                 is Achievement -> {
                     if (this.goal.goalType == GoalType.AMOUNT) this.value.formatToAmount()
                     else this.value.toString()

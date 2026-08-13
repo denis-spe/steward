@@ -237,36 +237,6 @@ fun TextFieldState.setTextAndPlaceCursorAtEnd(text: String) {
     }
 }
 
-fun Double.formatToAmount(): String {
-    val locale = Locale.getDefault()
-    val numberFormat = NumberFormat.getCurrencyInstance(locale)
-    val symbol = numberFormat.currency?.symbol ?: "$"
-
-    val absValue = abs(this)
-    val sign = if (this < 0) "-" else ""
-
-    if (absValue < 1_000_000) {
-        val rounding = BigDecimal(this).setScale(2, RoundingMode.HALF_UP)
-
-        val formattedAmount = rounding.abs().toString()
-            .replace(Regex("\\B(?=(\\d{3})+(?!\\d))"), ",")
-            .replace(Regex("\\.00$"), "")
-        return "$sign$symbol $formattedAmount"
-    }
-
-    val suffixes = charArrayOf('M', 'B', 'T', 'Q')
-    val formatter = DecimalFormat("#.##") // Using 2 decimals for precision
-    val base = (log10(absValue) / 3).toInt()
-    val scaledNumber = absValue / 1000.0.pow(base.toDouble())
-
-    val suffixIndex = base - 2
-    return if (suffixIndex >= 0 && suffixIndex < suffixes.size) {
-        "$sign$symbol ${formatter.format(scaledNumber)}${suffixes[suffixIndex]}"
-    } else {
-        // Fallback for extremely large numbers or unexpected base
-        "$sign$symbol ${String.format(Locale.US, "%.2f", absValue)}"
-    }
-}
 
 infix fun Int.formatToTime(minutes: Int): String = String.format(
     Locale.getDefault(),
@@ -279,6 +249,44 @@ fun String.limitLength(maxLength: Int): String {
         this.substring(0, maxLength) + "..."
     } else {
         this
+    }
+}
+
+
+// Cache the formatter so it isn't recreated on every invocation
+private val cachedDecimalFormat = DecimalFormat("#.##")
+private val suffixes = charArrayOf('M', 'B', 'T', 'Q')
+
+fun Double.formatToAmount(): String {
+    val absValue = abs(this)
+    val sign = if (this < 0) "-" else ""
+
+    // Resolve system currency symbol without full heavy instance creation where possible
+    val symbol = try {
+        NumberFormat.getCurrencyInstance(Locale.getDefault()).currency?.symbol ?: "$"
+    } catch (e: Exception) {
+        "$"
+    }
+
+    if (absValue < 1_000_000) {
+        val rounding = BigDecimal(this).setScale(2, RoundingMode.HALF_UP)
+        // Use Java/Kotlin built-in group formatting instead of heavy Regex replaces
+        val formattedAmount = NumberFormat.getNumberInstance(Locale.getDefault()).apply {
+            maximumFractionDigits = 2
+            minimumFractionDigits = 0
+        }.format(rounding.abs())
+
+        return "$sign$symbol $formattedAmount"
+    }
+
+    val base = (log10(absValue) / 3).toInt()
+    val scaledNumber = absValue / 1000.0.pow(base.toDouble())
+    val suffixIndex = base - 2
+
+    return if (suffixIndex in suffixes.indices) {
+        "$sign$symbol ${cachedDecimalFormat.format(scaledNumber)}${suffixes[suffixIndex]}"
+    } else {
+        "$sign$symbol ${String.format(Locale.US, "%.2f", absValue)}"
     }
 }
 

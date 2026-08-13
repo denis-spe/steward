@@ -5,7 +5,10 @@ import com.den.steward.backend.dataStructure.Transaction
 import com.den.steward.backend.repoInterfaces.Account
 import com.den.steward.backend.repoInterfaces.Storage
 import com.den.steward.backend.states.DataState
+import com.den.steward.helper.formatToAmount
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import javax.inject.Inject
@@ -46,7 +49,7 @@ class DataFetchUseCase @Inject constructor(
         .catch { e ->
             // 4. Provide a fallback for null messages
             emit(DataState.Error(e.message ?: "An unknown error occurred"))
-        }
+        }.flowOn(Dispatchers.IO)
 
     suspend fun getTransaction(transactionId: String): Result<Transaction?> {
         return storageService.getTransaction(userId, transactionId)

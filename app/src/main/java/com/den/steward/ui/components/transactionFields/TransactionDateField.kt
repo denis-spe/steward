@@ -91,6 +91,14 @@ private fun TransactionDateFieldItem(
         .yesterday().toLocalDate()
 
     val wasTodayYesterdayClick = remember { mutableStateOf("Initial") }
+    val onBackground = MaterialTheme.colorScheme.onBackground
+    val colorState = remember(wasTodayYesterdayClick) {
+        if (wasTodayYesterdayClick.value == "Today") {
+            color
+        } else {
+           onBackground
+        }
+    }
 
     LaunchedEffect(displayState.value) {
         wasTodayYesterdayClick.value = when (displayState.value) {
@@ -135,11 +143,7 @@ private fun TransactionDateFieldItem(
                         Text(
                             "Today",
                             style = MaterialTheme.typography.labelMedium,
-                            color = if (wasTodayYesterdayClick.value == "Today") {
-                                color
-                            } else {
-                                MaterialTheme.colorScheme.onBackground
-                            }
+                            color = colorState
                         )
                     }
 

@@ -47,6 +47,15 @@ fun TransactionAddition(onSubmit: (dataTransferToViewModel: DataTransferToViewMo
     val onShow = remember { mutableStateOf(false) }
     val onShowTransaction = remember { mutableStateOf(false) }
     val selectedTransaction = remember { mutableStateOf<TransactionType?>(null) }
+    val transactionTypes = remember { TransactionType.entries.filter {
+        it == TransactionType.EARNINGS ||
+                it == TransactionType.EXPENSE ||
+                it == TransactionType.LOAN ||
+                it == TransactionType.DEBT ||
+                it == TransactionType.SAVINGS ||
+                it == TransactionType.GOAL
+        }
+    }
 
     FloatingActionButton(
         onClick = { onShow.value = true }
@@ -64,14 +73,7 @@ fun TransactionAddition(onSubmit: (dataTransferToViewModel: DataTransferToViewMo
         show = onShow.value,
         onDismissRequest = { onShow.value = false },
     ) {
-        TransactionType.entries.filter {
-            it == TransactionType.EARNINGS ||
-                    it == TransactionType.EXPENSE ||
-                    it == TransactionType.LOAN ||
-                    it == TransactionType.DEBT ||
-                    it == TransactionType.SAVINGS ||
-                    it == TransactionType.GOAL
-        }.forEach { type ->
+        transactionTypes.forEach { type ->
             BottomDrawerSheetItem(
                 title = stringResource(id = type.label),
                 description = stringResource(id = type.description),

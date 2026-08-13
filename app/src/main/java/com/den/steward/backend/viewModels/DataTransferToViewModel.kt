@@ -1,11 +1,13 @@
 package com.den.steward.backend.viewModels
 
+import androidx.compose.runtime.Immutable
 import com.den.steward.backend.dataStructure.PaymentMethod
 import com.den.steward.backend.dataStructure.RecurrencePattern
 import com.den.steward.backend.dataStructure.TransactionType
 import com.den.steward.helper.toEpochMillis
 import java.time.LocalDateTime
 
+@Immutable
 data class DataTransferToViewModel(
     val transactionType: TransactionType,
     val label: String,
