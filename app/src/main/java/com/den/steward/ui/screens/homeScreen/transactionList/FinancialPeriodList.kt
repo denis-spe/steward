@@ -42,19 +42,19 @@ fun FinancialPeriodList(
             }
             is DataState.Success -> {
                 val transactions = state.data
-                if (transactions.isEmpty()) {
-                    FinancialPeriodListEmpty(
-                        modifier = modifier
-                    )
-                } else {
-                    FinancialPeriodLazyList(
-                        modifier = modifier,
-                        transactions = transactions
-                    )
-                }
+                FinancialPeriodLazyList(
+                    modifier = modifier,
+                    transactions = transactions
+                )
             }
             is DataState.Error -> {
                 FinancialPeriodListError()
+            }
+
+            is DataState.Empty -> {
+                FinancialPeriodListEmpty(
+                    modifier = modifier
+                )
             }
         }
     }

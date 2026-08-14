@@ -21,7 +21,12 @@ class DataFilterUseCase @Inject constructor(
                 val filtered = state.data.filter { transaction ->
                     transaction.createdAt in startOfToday until startOfTomorrow
                 }
-                DataState.Success(filtered)
+
+                if (filtered.isEmpty()) {
+                    DataState.Empty
+                } else {
+                    DataState.Success(filtered)
+                }
             }
             else -> state // Pass along Loading or Error states
         }
@@ -37,7 +42,12 @@ class DataFilterUseCase @Inject constructor(
                 val filtered = state.data.filter { transaction ->
                     transaction.createdAt in startOfYesterday until startOfToday
                 }
-                DataState.Success(filtered)
+
+                if (filtered.isEmpty()) {
+                    DataState.Empty
+                } else {
+                    DataState.Success(filtered)
+                }
             }
             else -> state
         }

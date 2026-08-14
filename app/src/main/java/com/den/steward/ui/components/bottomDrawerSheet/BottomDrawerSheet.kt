@@ -48,7 +48,7 @@ fun BottomDrawerSheet(
         ModalBottomSheet(
             onDismissRequest = onDismissRequest,
             sheetState = sheetState,
-            dragHandle = null
+            dragHandle = null,
         ) {
             BottomDrawerSheetDesc(
                 title = title,

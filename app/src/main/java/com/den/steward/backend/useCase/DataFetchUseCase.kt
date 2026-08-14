@@ -44,7 +44,11 @@ class DataFetchUseCase @Inject constructor(
                 listOf(transaction) + subItems
             }
 
-            DataState.Success(dataList) as DataState<List<Transaction>>
+            if (dataList.isEmpty()) {
+                DataState.Empty
+            } else {
+                DataState.Success(dataList) as DataState<List<Transaction>>
+            }
         }
         .catch { e ->
             // 4. Provide a fallback for null messages

@@ -303,10 +303,10 @@ val Double.formatResult: String
                 .trimEnd('.')
         }
     }
-
+private val evalRegex = Regex("(\\s)")
 val CharSequence.eval: Double
     get() {
-        val expression = replace(Regex("(\\s)"), "")
+        val expression = replace(evalRegex, "")
             .replace('÷', '/')
             .replace('×', '*')
             .replace(",", "")
@@ -327,7 +327,7 @@ val LocalDateTime.formatedDateTime: String
         val year = this.year
         val hour = this.hour.addZeroIfLessThenTen
         val minute = this.minute.addZeroIfLessThenTen
-        return "$day $month $year, $hour:$minute"
+        return "$day ${month.title} $year, $hour:$minute"
     }
 
 val LocalDate.formattedDate: String

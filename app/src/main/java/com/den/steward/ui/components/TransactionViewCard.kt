@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -14,11 +16,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import coil.compose.AsyncImage
 import com.den.steward.backend.dataStructure.PaymentMethod
 import com.den.steward.backend.dataStructure.Transaction
+import com.den.steward.backend.dataStructure.TransactionType
+import com.den.steward.helper.formatToAmount
 import com.den.steward.helper.formatedDateTime
+import com.den.steward.helper.limitLength
+import com.den.steward.helper.title
 import com.den.steward.helper.toLocalDateTime
 import java.time.LocalDateTime
 
@@ -42,6 +53,7 @@ fun TransactionViewCard(
                     .padding(horizontal = 16.dp)
                     .padding(bottom = 16.dp)
             ) {
+
                 when(transaction) {
                     is Transaction.Expense -> {
                         TransactionCard(
@@ -50,6 +62,7 @@ fun TransactionViewCard(
                             amount = transaction.amount,
                             createdAt = transaction.createdAt.toLocalDateTime(),
                             paymentMethod = transaction.paymentMethod,
+                            transactionType = transaction.type,
                             affectAmount = transaction.affectAmount
                         )
                     }
@@ -61,7 +74,8 @@ fun TransactionViewCard(
                             amount = transaction.amount,
                             createdAt = transaction.createdAt.toLocalDateTime(),
                             paymentMethod = transaction.paymentMethod,
-                            affectAmount = transaction.affectAmount
+                            affectAmount = transaction.affectAmount,
+                            transactionType = transaction.type
                         )
                     }
 
@@ -79,23 +93,32 @@ fun TransactionCard(
     amount: Double,
     createdAt: LocalDateTime,
     paymentMethod: PaymentMethod,
-    affectAmount: Boolean
+    affectAmount: Boolean,
+    transactionType: TransactionType
 ) {
+    val transactionTypeLabel = stringResource(id = transactionType.label)
+    val transactionTypeIcon = painterResource(transactionType.icon)
+    val transactionTypeColor = colorResource(transactionType.color)
+
     Column(
         modifier = Modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(5.dp)
     ) {
-        TransactionRow(
-            key = "Label",
-            value = label
+
+        TransactionViewTitle(
+            title = label,
+            icon = {
+                Icon(
+                    painter = transactionTypeIcon,
+                    contentDescription = transactionTypeLabel,
+                    tint = transactionTypeColor
+                )
+            }
         )
-        TransactionRow(
-            key = "Note",
-            value = note
-        )
+
         TransactionRow(
             key = "Amount",
-            value = amount.toString()
+            value = amount.formatToAmount()
         )
         TransactionRow(
             key = "Created At",
@@ -109,6 +132,12 @@ fun TransactionCard(
             key = "Affect Amount",
             value = if (affectAmount) "Yes" else "No"
         )
+
+        if (note.isNotBlank()) {
+            TransactionNoteView(
+                note = note
+            )
+        }
     }
 }
 
@@ -120,8 +149,7 @@ fun TransactionRow(
 ) {
     Row(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -132,10 +160,65 @@ fun TransactionRow(
         )
         Text(
             value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = MaterialTheme.typography.bodyMedium.fontWeight,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = MaterialTheme.typography.labelMedium.fontWeight,
             color = Color.Gray
         )
     }
 }
 
+@Composable
+fun TransactionNoteView(
+    note: String
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            "Note",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = MaterialTheme.typography.titleMedium.fontWeight,
+            textDecoration = MaterialTheme.typography.titleMedium.textDecoration
+        )
+        Text(
+            note.limitLength(210),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = MaterialTheme.typography.labelMedium.fontWeight,
+            textAlign = TextAlign.Center,
+            color = Color.Gray
+        )
+    }
+}
+
+@Composable
+fun TransactionViewTitle(
+    title: String,
+    icon: @Composable () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            icon()
+            Text(
+                title.title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = MaterialTheme.typography.titleMedium.fontWeight
+            )
+        }
+
+        HorizontalDivider(
+            color = Color.Gray,
+            thickness = 1.dp,
+            modifier = Modifier.padding(vertical = 10.dp)
+        )
+    }
+}

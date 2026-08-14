@@ -257,4 +257,23 @@ sealed class Transaction {
                 }
             }
         }
+
+    val getAffectAmount: String?
+        get() {
+            val affectAmount = when (this) {
+                is Earnings -> this.affectAmount
+                is Expense -> this.affectAmount
+                is Loan -> this.affectAmount
+                is Debt -> this.affectAmount
+                is Savings -> this.affectAmount
+                is Goal -> null
+                is Repayment -> this.affectAmount
+                is Refund -> this.affectAmount
+                is Attain -> null
+                is Achievement -> null
+            }
+
+            if (affectAmount == null) return null
+            return if (affectAmount) "Yes" else "No"
+        }
 }

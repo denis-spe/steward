@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.den.steward.backend.dataStructure.Transaction
@@ -66,14 +67,19 @@ fun FinancialPeriodListItem(transaction: Transaction) {
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = MaterialTheme.typography.bodyMedium.fontWeight
                 )
-                if (transaction.getLabel.isNotEmpty() && transaction.getNote.isNotBlank()) {
+
+                if (transaction.getAffectAmount != null) {
                     Text(
-                        transaction.getNote,
+                        buildAnnotatedString {
+                            append("Affected: ")
+                            append(transaction.getAffectAmount)
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = MaterialTheme.typography.bodySmall.fontWeight,
                         color = Color.Gray
                     )
                 }
+
             }
             Column(
                 horizontalAlignment = Alignment.End,
