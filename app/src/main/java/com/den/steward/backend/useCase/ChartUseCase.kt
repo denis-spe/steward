@@ -8,7 +8,6 @@ import com.den.steward.backend.states.DataState
 import com.den.steward.ui.components.charts.DonutChartData
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
@@ -39,17 +38,42 @@ class ChartUseCase @Inject constructor (
                         )
                     }
 
-                    if (data.isEmpty()) {
-                        DataState.Empty
-                    } else {
-                        DataState.Success(data)
-                    }
+                    DataState.Success(data)
 
                 }
                 is DataState.Loading -> DataState.Loading
-                is DataState.Empty -> DataState.Empty
                 is DataState.Error -> DataState.Error(state.message)
             }
         }
+
+    val donutChartCenterAmount: Flow<Double> = dataFilterUseCase.todayTransactions
+        .map { state ->
+            var outgoing = 0.0
+            var incoming = 0.0
+
+            if (state is DataState.Success) {
+                state.data.forEach { transaction ->
+                    if (transaction.getAffectAmount == "Yes") {
+                        when (transaction.type) {
+                            TransactionType.EARNINGS,
+                            TransactionType.DEBT,
+                            TransactionType.SAVINGS,
+                            TransactionType.REPAYMENT -> {
+                                incoming += transaction.getAmountOrValue ?: 0.0
+                            }
+
+                            TransactionType.EXPENSE,
+                            TransactionType.LENT,
+                            TransactionType.REFUND -> {
+                                outgoing += transaction.getAmountOrValue ?: 0.0
+                            }
+                            else -> {}
+                        }
+                    }
+                }
+            }
+            incoming - outgoing
+        }
+
     val yesterdayTransactions = dataFilterUseCase.yesterdayTransactions
 }

@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,6 +24,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ListItemColors
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -52,19 +53,18 @@ import com.den.steward.backend.dataStructure.RecurrencePattern
 import com.den.steward.helper.formatedDateTime
 import com.den.steward.helper.formattedDate
 import com.den.steward.helper.formattedTime
-import com.den.steward.ui.components.DateDialog
 import com.den.steward.ui.components.DateRangeDialog
 import com.den.steward.ui.components.TimeDialog
-import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 
 @Composable
 fun TransactionRecurrenceField(
     colorResId: Int,
     startedAt: MutableState<LocalDateTime>,
     endAt: MutableState<LocalDateTime>,
-    recurrence: MutableState<RecurrencePattern>
+    recurrence: MutableState<RecurrencePattern>,
+    wasDateTimeSet: MutableState<TransactionFieldState>,
+    colors: ListItemColors = ListItemDefaults.colors()
 ) {
     val onDialogShow = remember { mutableStateOf(false) }
     val color = colorResource(id = colorResId)
@@ -94,20 +94,35 @@ fun TransactionRecurrenceField(
     }
 
     TransactionRecurrenceFieldItem(
+        colors = if (wasDateTimeSet.value is TransactionFieldState.Error)
+            colors.copy(
+                containerColor = MaterialTheme.colorScheme.error
+            ) else colors,
         onDialogShow = onDialogShow,
         startedAt = selectedStartAt.value,
         endAt = selectedEndAt.value,
-        recurrence = recurrence
+        recurrence = recurrence,
+        wasDateTimeSet = wasDateTimeSet
     )
 }
 
 @Composable
 private fun TransactionRecurrenceFieldItem(
+    modifier: Modifier = Modifier,
     onDialogShow: MutableState<Boolean>,
     startedAt: LocalDateTime?,
     endAt: LocalDateTime?,
-    recurrence: MutableState<RecurrencePattern>
+    recurrence: MutableState<RecurrencePattern>,
+    colors: ListItemColors,
+    wasDateTimeSet: MutableState<TransactionFieldState>,
 ) {
+
+    LaunchedEffect(
+        endAt
+    ) {
+        wasDateTimeSet.value = TransactionFieldState.Initial
+    }
+
     TransactionFieldCard(
         title = "Recurrence",
         leadingContent = {
@@ -117,7 +132,8 @@ private fun TransactionRecurrenceFieldItem(
                 modifier = Modifier.size(ICON_SIZE)
             )
         },
-
+        modifier = modifier,
+        colors = colors,
         headlineContent = {
             Column(
                 horizontalAlignment = Alignment.Start,
@@ -141,18 +157,22 @@ private fun TransactionRecurrenceFieldItem(
             }
         },
         trailingContent = {
+            val text = if (wasDateTimeSet.value is TransactionFieldState.Error)
+                    "Required"
+                else when (recurrence.value) {
+                is RecurrencePattern.NONE -> "Not Repeatable"
+                is RecurrencePattern.DAILY -> "Daily"
+                is RecurrencePattern.WEEKLY -> "Weekly"
+                is RecurrencePattern.MONTHLY -> "Monthly"
+                is RecurrencePattern.YEARLY -> "Yearly"
+                is RecurrencePattern.Custom -> "Schedule"
+            }
             Text(
-                when (recurrence.value) {
-                    is RecurrencePattern.NONE -> "Not Repeatable"
-                    is RecurrencePattern.DAILY -> "Daily"
-                    is RecurrencePattern.WEEKLY -> "Weekly"
-                    is RecurrencePattern.MONTHLY -> "Monthly"
-                    is RecurrencePattern.YEARLY -> "Yearly"
-                    is RecurrencePattern.Custom -> "Schedule"
-                },
+                text = text,
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = if (wasDateTimeSet.value is TransactionFieldState.Error)
+                    Color.Red else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     ) {

@@ -5,12 +5,11 @@ import com.den.steward.backend.dataStructure.Transaction
 import com.den.steward.backend.repoInterfaces.Account
 import com.den.steward.backend.repoInterfaces.Storage
 import com.den.steward.backend.states.DataState
-import com.den.steward.helper.formatToAmount
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
 import javax.inject.Inject
 
 
@@ -26,7 +25,7 @@ class DataFetchUseCase @Inject constructor(
         // Firestore listener, a slow cold start, etc). Without this, a stall upstream
         // means the collector (ViewModel/UI) never receives ANY value — not success,
         // not error — and is left on its initial loading state indefinitely.
-        .onStart { emit(Result.success(emptyList())) }
+        .distinctUntilChanged()
         .map { result ->
             // 1. Rename lambda parameter to 'result' to avoid shadowing
             val originalTransactions = result.getOrThrow()
@@ -34,7 +33,7 @@ class DataFetchUseCase @Inject constructor(
             val dataList = originalTransactions.flatMap { transaction ->
                 // 2. Capture the sub-items from the 'when' statement
                 val subItems = when (transaction) {
-                    is Transaction.Loan -> transaction.repayment.map { it.copy(loan = transaction) }
+                    is Transaction.Lent -> transaction.repayment.map { it.copy(lent = transaction) }
                     is Transaction.Debt -> transaction.refund.map { it.copy(debt = transaction) }
                     is Transaction.Goal -> transaction.attain.map { it.copy(goal = transaction) }
                     else -> emptyList()
@@ -44,11 +43,7 @@ class DataFetchUseCase @Inject constructor(
                 listOf(transaction) + subItems
             }
 
-            if (dataList.isEmpty()) {
-                DataState.Empty
-            } else {
-                DataState.Success(dataList) as DataState<List<Transaction>>
-            }
+            DataState.Success(dataList) as DataState<List<Transaction>>
         }
         .catch { e ->
             // 4. Provide a fallback for null messages

@@ -86,27 +86,19 @@ private fun TransactionDateFieldItem(
     showDatePicker: MutableState<Boolean>,
     displayState: MutableState<LocalDate>,
 ) {
-    val today = LocalDate.now()
-    val yesterday = LocalDateTime.now()
-        .yesterday().toLocalDate()
+    val yesterday = remember { LocalDateTime.now().yesterday().toLocalDate() }
 
-    val wasTodayYesterdayClick = remember { mutableStateOf("Initial") }
-    val onBackground = MaterialTheme.colorScheme.onBackground
-    val colorState = remember(wasTodayYesterdayClick) {
-        if (wasTodayYesterdayClick.value == "Today") {
-            color
-        } else {
-           onBackground
-        }
-    }
-
-    LaunchedEffect(displayState.value) {
-        wasTodayYesterdayClick.value = when (displayState.value) {
+    val clickedType = remember(displayState.value) {
+        val today = LocalDate.now()
+        when (displayState.value) {
             today -> "Today"
             yesterday -> "Yesterday"
             else -> "Initial"
         }
     }
+
+    val onBackground = MaterialTheme.colorScheme.onBackground
+    val colorState = if (clickedType == "Today") color else onBackground
 
     TransactionFieldCard(
         title = "Date",
@@ -135,7 +127,7 @@ private fun TransactionDateFieldItem(
                             displayState.value = LocalDate.now()
                         },
                         contentPadding = PaddingValues(0.dp),
-                        border = if (wasTodayYesterdayClick.value == "Today")
+                        border = if (clickedType == "Today")
                             BorderStroke(1.dp, color)
                         else null,
                         shape = MaterialTheme.shapes.small,
@@ -154,7 +146,7 @@ private fun TransactionDateFieldItem(
                             displayState.value = yesterday
                         },
                         contentPadding = PaddingValues(0.dp),
-                        border = if (wasTodayYesterdayClick.value == "Yesterday")
+                        border = if (clickedType == "Yesterday")
                             BorderStroke(1.dp, color)
                         else null,
                         shape = MaterialTheme.shapes.small,
@@ -162,8 +154,8 @@ private fun TransactionDateFieldItem(
                         Text(
                             "Yesterday",
                             style = MaterialTheme.typography.labelMedium,
-                            color = if (wasTodayYesterdayClick.value == "Yesterday")
-                                color else MaterialTheme.colorScheme.onBackground,
+                            color = if (clickedType == "Yesterday")
+                                color else onBackground,
                             modifier = Modifier.padding(4.dp)
                         )
                     }

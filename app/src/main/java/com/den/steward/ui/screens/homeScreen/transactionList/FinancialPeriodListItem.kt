@@ -1,12 +1,15 @@
 // Glory be to LORD our GOD
 package com.den.steward.ui.screens.homeScreen.transactionList
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -15,6 +18,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.colorResource
@@ -78,6 +82,27 @@ fun FinancialPeriodListItem(transaction: Transaction) {
                         fontWeight = MaterialTheme.typography.bodySmall.fontWeight,
                         color = Color.Gray
                     )
+                }
+
+                if (transaction is Transaction.Goal) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier.size(10.dp)
+                                .background(colorResource(id = transaction.status.color))
+                        )
+                        Text(
+                            buildAnnotatedString {
+                                append("Status: ")
+                                append(transaction.status.label)
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = MaterialTheme.typography.bodySmall.fontWeight,
+                            color = Color.Gray
+                        )
+                    }
                 }
 
             }

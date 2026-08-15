@@ -18,4 +18,5 @@ data class DataTransferToViewModel(
     val endAt: Long = LocalDateTime.now().toEpochMillis(),
     val startedAt: Long = LocalDateTime.now().toEpochMillis(),
     val repeatable: RecurrencePattern = RecurrencePattern.NONE,
+    val isAffectingAmount: Boolean? = null,
 )

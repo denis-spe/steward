@@ -22,11 +22,8 @@ class DataFilterUseCase @Inject constructor(
                     transaction.createdAt in startOfToday until startOfTomorrow
                 }
 
-                if (filtered.isEmpty()) {
-                    DataState.Empty
-                } else {
-                    DataState.Success(filtered)
-                }
+
+                DataState.Success(filtered)
             }
             else -> state // Pass along Loading or Error states
         }
@@ -43,11 +40,7 @@ class DataFilterUseCase @Inject constructor(
                     transaction.createdAt in startOfYesterday until startOfToday
                 }
 
-                if (filtered.isEmpty()) {
-                    DataState.Empty
-                } else {
-                    DataState.Success(filtered)
-                }
+                DataState.Success(filtered)
             }
             else -> state
         }

@@ -26,35 +26,40 @@ class AddDataUseCase @Inject constructor(
                 amount = amount,
                 note = dataTransferToViewModel.note,
                 createdAt = dataTransferToViewModel.createdAt,
-                paymentMethod = dataTransferToViewModel.paymentMethod
+                paymentMethod = dataTransferToViewModel.paymentMethod,
+                affectAmount = dataTransferToViewModel.isAffectingAmount ?: false
             )
             TransactionType.EXPENSE -> Transaction.Expense(
                 label = dataTransferToViewModel.label,
                 amount = amount,
                 note = dataTransferToViewModel.note,
                 createdAt = dataTransferToViewModel.createdAt,
-                paymentMethod = dataTransferToViewModel.paymentMethod
+                paymentMethod = dataTransferToViewModel.paymentMethod,
+                affectAmount = dataTransferToViewModel.isAffectingAmount ?: false
             )
-            TransactionType.LOAN -> Transaction.Loan(
+            TransactionType.LENT -> Transaction.Lent(
                 label = dataTransferToViewModel.label,
                 amount = amount,
                 note = dataTransferToViewModel.note,
                 createdAt = dataTransferToViewModel.createdAt,
-                paymentMethod = dataTransferToViewModel.paymentMethod
+                paymentMethod = dataTransferToViewModel.paymentMethod,
+                affectAmount = dataTransferToViewModel.isAffectingAmount ?: false
             )
             TransactionType.DEBT -> Transaction.Debt(
                 label = dataTransferToViewModel.label,
                 amount = amount,
                 note = dataTransferToViewModel.note,
                 createdAt = dataTransferToViewModel.createdAt,
-                paymentMethod = dataTransferToViewModel.paymentMethod
+                paymentMethod = dataTransferToViewModel.paymentMethod,
+                affectAmount = dataTransferToViewModel.isAffectingAmount ?: false
             )
             TransactionType.SAVINGS -> Transaction.Savings(
                 label = dataTransferToViewModel.label,
                 amount = amount,
                 note = dataTransferToViewModel.note,
                 createdAt = dataTransferToViewModel.createdAt,
-                paymentMethod = dataTransferToViewModel.paymentMethod
+                paymentMethod = dataTransferToViewModel.paymentMethod,
+                affectAmount = dataTransferToViewModel.isAffectingAmount ?: false
             )
             TransactionType.GOAL -> Transaction.Goal(
                 label = dataTransferToViewModel.label,

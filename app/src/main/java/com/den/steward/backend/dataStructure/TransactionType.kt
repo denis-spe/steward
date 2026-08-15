@@ -1,6 +1,5 @@
 package com.den.steward.backend.dataStructure
 
-import androidx.compose.ui.graphics.Color
 import com.den.steward.R
 
 enum class TransactionType(
@@ -22,11 +21,11 @@ enum class TransactionType(
         R.color.expense
     ),
 
-    LOAN(
-        R.string.loan,
-        R.string.loan_desc,
+    LENT(
+        R.string.lent,
+        R.string.lent_desc,
         R.drawable.ic_loan,
-        R.color.loan
+        R.color.lent
     ),
 
     DEBT(

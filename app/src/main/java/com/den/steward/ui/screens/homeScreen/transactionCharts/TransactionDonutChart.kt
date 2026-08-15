@@ -7,6 +7,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.viewModels.HomeViewModel
@@ -20,11 +21,19 @@ fun TransactionDonutChart(
     viewModel: HomeViewModel
 ) {
     val donutChartState by viewModel.donutChart.collectAsStateWithLifecycle()
+    val donutChartCenterAmount by viewModel.donutChartCenterAmount.collectAsStateWithLifecycle()
 
     when(donutChartState) {
         is DataState.Success -> {
-            val data = (donutChartState as DataState.Success).data
-            TransactionDonutChartView(data = data)
+            val donutChartData = (donutChartState as DataState.Success).data
+            if (donutChartData.isEmpty()) {
+                TransactionDonutChartEmptyView()
+            } else {
+                TransactionDonutChartView(
+                    donutChartData = donutChartData,
+                    donutChartCenterAmount = donutChartCenterAmount
+                )
+            }
         }
 
         is DataState.Error -> {
@@ -35,26 +44,23 @@ fun TransactionDonutChart(
         is DataState.Loading -> {
             TransactionDonutChartShimmerView()
         }
-
-        is DataState.Empty -> {
-            TransactionDonutChartEmptyView()
-        }
     }
 }
 
 @Composable
 fun TransactionDonutChartView(
-    data: List<DonutChartData>
+    donutChartData: List<DonutChartData>,
+    donutChartCenterAmount: Double,
 ) {
     DonutChart(
-        data = DonutChartDataCollection(data)
+        data = DonutChartDataCollection(donutChartData)
     ) { selectedItem ->
         if (selectedItem == null) {
             Text(
-                text = data.sumOf { it.amount.toDouble() }.formatToAmount(),
+                text = donutChartCenterAmount.formatToAmount(),
                 maxLines = 1,
                 softWrap = false,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                overflow = TextOverflow.Ellipsis,
             )
         } else {
             Column(

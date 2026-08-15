@@ -19,6 +19,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,6 +41,7 @@ import com.den.steward.ui.screens.screenManager.SettingsRouter
 
 @Composable
 fun HomeScreen(backStack: NavBackStack<NavKey>, homeViewModel: HomeViewModel) {
+
     val todayTransactions by homeViewModel.todayTransactions.collectAsStateWithLifecycle()
 
     Scaffold(
@@ -102,7 +106,6 @@ fun HomeScreen(backStack: NavBackStack<NavKey>, homeViewModel: HomeViewModel) {
                 modifier = Modifier.weight(1f),
                 transactions = todayTransactions
             )
-
         }
     }
 }

@@ -1,11 +1,8 @@
 package com.den.steward.backend.dataStructure
 
-import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import com.den.steward.helper.formatToAmount
 import com.den.steward.helper.title
-import com.google.firebase.Timestamp
-import com.google.firebase.firestore.FieldValue
 
 @Stable
 sealed class Transaction {
@@ -52,12 +49,12 @@ sealed class Transaction {
     ) : Transaction()
 
     @Stable
-    data class Loan(
+    data class Lent(
         override val id: String = "",
         val label: String = "",
         val note: String = "",
         val amount: Double = 0.0,
-        override val type: TransactionType = TransactionType.LOAN,
+        override val type: TransactionType = TransactionType.LENT,
         val repayment: List<Repayment> = emptyList(),
         override val createdAt: Long = System.currentTimeMillis(),
         val paymentMethod: PaymentMethod = PaymentMethod.CASH,
@@ -92,7 +89,7 @@ sealed class Transaction {
         val amount: Double = 0.0,
         override val type: TransactionType = TransactionType.REPAYMENT,
         override val createdAt: Long = System.currentTimeMillis(),
-        val loan: Loan = Loan(),
+        val lent: Lent = Lent(),
         val paymentMethod: PaymentMethod = PaymentMethod.CASH,
         val affectAmount: Boolean = false
     ) : Transaction()
@@ -126,8 +123,8 @@ sealed class Transaction {
         val status: GoalStatus = GoalStatus.NOT_STARTED,
         val repeatable: RecurrencePattern = RecurrencePattern.NONE,
     ) : Transaction() {
-        val remainingValue: Double get() = value - attain.sumOf { it.value }
-        val totalValue: Double get() = attain.sumOf { it.value }
+        val totalAttain = attain.sumOf { it.value }
+        val remainingValue: Double get() = value - totalAttain
 
         fun calculateSchedule(now: Long): Goal {
             val schedule = this.repeatable.onSchedule
@@ -143,7 +140,9 @@ sealed class Transaction {
         fun calculateStatus(now: Long): Goal {
             if (this.status != GoalStatus.NOT_STARTED) return this
             if (now < this.startedAt) return this.copy(status = GoalStatus.NOT_STARTED)
-            if (now > this.endAt) return this.copy(status = GoalStatus.COMPLETED)
+            if (now > this.endAt && this.totalAttain > this.value ) return this.copy(status = GoalStatus.COMPLETED)
+            if (now > this.endAt) return this.copy(status = GoalStatus.FIELD)
+
             return this.copy(status = GoalStatus.IN_PROGRESS)
         }
     }
@@ -173,7 +172,7 @@ sealed class Transaction {
             return when (this) {
                 is Earnings -> this.label.title
                 is Expense -> this.label.title
-                is Loan -> this.label.title
+                is Lent -> this.label.title
                 is Debt -> this.label.title
                 is Goal -> this.label.title
                 is Repayment -> this.label.title
@@ -189,7 +188,7 @@ sealed class Transaction {
             return when (this) {
                 is Earnings -> this.paymentMethod
                 is Expense -> this.paymentMethod
-                is Loan -> this.paymentMethod
+                is Lent -> this.paymentMethod
                 is Debt -> this.paymentMethod
                 is Goal -> null
                 is Repayment -> this.paymentMethod
@@ -205,7 +204,7 @@ sealed class Transaction {
             return when (this) {
                 is Earnings -> this.note
                 is Expense -> this.note
-                is Loan -> this.note
+                is Lent -> this.note
                 is Debt -> this.note
                 is Goal -> this.note
                 is Repayment -> this.note
@@ -220,7 +219,7 @@ sealed class Transaction {
             return when (this) {
                 is Earnings -> this.amount
                 is Expense -> this.amount
-                is Loan -> this.amount
+                is Lent -> this.amount
                 is Savings -> this.amount
                 is Debt -> this.amount
                 is Goal -> this.value
@@ -236,7 +235,7 @@ sealed class Transaction {
             return when (this) {
                 is Earnings -> this.amount.formatToAmount()
                 is Expense -> this.amount.formatToAmount()
-                is Loan -> this.amount.formatToAmount()
+                is Lent -> this.amount.formatToAmount()
                 is Debt -> this.amount.formatToAmount()
                 is Savings -> this.amount.formatToAmount()
                 is Goal -> {
@@ -263,7 +262,7 @@ sealed class Transaction {
             val affectAmount = when (this) {
                 is Earnings -> this.affectAmount
                 is Expense -> this.affectAmount
-                is Loan -> this.affectAmount
+                is Lent -> this.affectAmount
                 is Debt -> this.affectAmount
                 is Savings -> this.affectAmount
                 is Goal -> null

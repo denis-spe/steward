@@ -7,4 +7,10 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Status color -->
+    <color name="not_started">#FF7651</color>
+    <color name="in_progress">#FFFF00</color>
+    <color name="completed">#00FF00</color>
+    <color name="field">#FF0000</color>
 </resources>

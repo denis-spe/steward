@@ -92,13 +92,14 @@ private fun TransactionTimeFieldItem(
     showTimePicker: MutableState<Boolean>,
     displayState: MutableState<LocalTime>,
 ) {
-    val isNowClick = remember { mutableStateOf(false) }
-
-    LaunchedEffect(displayState.value) {
-        val now = LocalTime.now()
-        isNowClick.value = displayState.value.hour == now.hour &&
-                displayState.value.minute == now.minute
+    val isNowActive = remember(displayState.value) {
+        val currentTime = LocalTime.now()
+        displayState.value.hour == currentTime.hour && displayState.value.minute == currentTime.minute
     }
+
+    val onBackground = MaterialTheme.colorScheme.onBackground
+    val colorState = if (isNowActive) color else onBackground
+    val border = if (isNowActive) BorderStroke(1.dp, color) else null
 
     TransactionFieldCard(
         title = "Time",
@@ -123,19 +124,13 @@ private fun TransactionTimeFieldItem(
                         displayState.value = LocalTime.now()
                     },
                     contentPadding = PaddingValues(0.dp),
-                    border = if (isNowClick.value)
-                        BorderStroke(1.dp, color)
-                    else null,
+                    border = border,
                     shape = MaterialTheme.shapes.small,
                 ) {
                     Text(
                         "Now",
                         style = MaterialTheme.typography.labelMedium,
-                        color = if (isNowClick.value) {
-                            color
-                        } else {
-                            MaterialTheme.colorScheme.onBackground
-                        },
+                        color = colorState,
                         modifier = Modifier.padding(horizontal = 8.dp)
                     )
                 }

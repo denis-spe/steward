@@ -36,15 +36,15 @@ import com.den.steward.backend.dataStructure.TransactionType
 fun BottomDrawerSheet(
     title: String,
     description: String,
-    show: Boolean,
+    show: () -> Boolean,
     transactionType: TransactionType? = null,
     onDismissRequest: () -> Unit,
     content: @Composable (ColumnScope.() -> Unit),
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val scrollState = rememberScrollState()
+    if (show()) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        val scrollState = rememberScrollState()
 
-    if (show) {
         ModalBottomSheet(
             onDismissRequest = onDismissRequest,
             sheetState = sheetState,
@@ -62,7 +62,7 @@ fun BottomDrawerSheet(
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp, vertical = 8.dp),
                 shape = MaterialTheme.shapes.medium,
-                tonalElevation = 2.dp // Lowered to keep it subtle inside the sheet
+                tonalElevation = 2.dp
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth()

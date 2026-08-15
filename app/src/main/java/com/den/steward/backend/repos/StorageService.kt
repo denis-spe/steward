@@ -38,6 +38,7 @@ class StorageService @Inject constructor(
     private val docRef = firestore
         .collection(USER_COLLECTION)
 
+    // ================================== Adding the transaction ==============================
     override suspend fun addTransaction(userId: String, transaction: Transaction): Result<String> {
         return try {
             val transactionRef = docRef.document(userId)
@@ -53,77 +54,6 @@ class StorageService @Inject constructor(
             Result.success(transactionRef.id)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to initiate transaction add for user $userId", e)
-            Result.failure(e)
-        }
-    }
-
-    override suspend fun resetGoalAttain(userId: String, transaction: Transaction.Goal): Result<Unit> {
-        return try {
-            val transactionRef = docRef.document(userId)
-                .collection(TRANSACTION_COLLECTION)
-                .document(transaction.id)
-            
-            val attainRef = transactionRef.collection(ATTAIN_COLLECTION)
-            val snapshots = attainRef.get().await()
-
-            firestore.runBatch { batch ->
-                // 1. Delete all attainment records
-                for (doc in snapshots.documents) {
-                    batch.delete(doc.reference)
-                }
-
-                // 2. If it's a recurring goal, update the dates in the same batch
-                if (transaction.repeatable != com.den.steward.backend.dataStructure.RecurrencePattern.NONE) {
-                    val nextSchedule = transaction.calculateSchedule(System.currentTimeMillis())
-                    batch.update(
-                        transactionRef,
-                        mapOf(
-                            "startedAt" to com.google.firebase.Timestamp(java.util.Date(nextSchedule.startedAt)),
-                            "endAt" to com.google.firebase.Timestamp(java.util.Date(nextSchedule.endAt))
-                        )
-                    )
-                }
-            }.await()
-
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to reset goal for user $userId", e)
-            Result.failure(e)
-        }
-    }
-
-    override suspend fun getTransaction(userId: String, transactionId: String): Result<Transaction?> {
-        return try {
-            val transactionRef = docRef.document(userId)
-                .collection(TRANSACTION_COLLECTION)
-                .document(transactionId)
-
-            val transaction = transactionRef.get().await().toTransaction ?: return Result.success(null)
-
-            val fulfillmentCollection = when (transaction) {
-                is Transaction.Loan -> REPAYMENT_COLLECTION
-                is Transaction.Debt -> REFUND_COLLECTION
-                is Transaction.Goal -> ATTAIN_COLLECTION
-                else -> null
-            }
-
-            if (fulfillmentCollection != null) {
-                val subItems = transactionRef.collection(fulfillmentCollection)
-                    .get().await()
-                    .documents.mapNotNull { it.toTransaction }
-                
-                val updatedTransaction = when (transaction) {
-                    is Transaction.Loan -> transaction.copy(repayment = subItems.filterIsInstance<Transaction.Repayment>())
-                    is Transaction.Debt -> transaction.copy(refund = subItems.filterIsInstance<Transaction.Refund>())
-                    is Transaction.Goal -> transaction.copy(attain = subItems.filterIsInstance<Transaction.Attain>())
-                    else -> transaction
-                }
-                Result.success(updatedTransaction)
-            } else {
-                Result.success(transaction)
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to get transaction $transactionId for user $userId", e)
             Result.failure(e)
         }
     }
@@ -184,9 +114,209 @@ class StorageService @Inject constructor(
         }
     }
 
+    // ============================= Updating the transaction ===================================
+    override suspend fun resetGoalAttain(userId: String, transaction: Transaction.Goal): Result<Unit> {
+        return try {
+            val transactionRef = docRef.document(userId)
+                .collection(TRANSACTION_COLLECTION)
+                .document(transaction.id)
+            
+            val attainRef = transactionRef.collection(ATTAIN_COLLECTION)
+            val snapshots = attainRef.get().await()
+
+            firestore.runBatch { batch ->
+                // 1. Delete all attainment records
+                for (doc in snapshots.documents) {
+                    batch.delete(doc.reference)
+                }
+
+                // 2. If it's a recurring goal, update the dates in the same batch
+                if (transaction.repeatable != com.den.steward.backend.dataStructure.RecurrencePattern.NONE) {
+                    val nextSchedule = transaction.calculateSchedule(System.currentTimeMillis())
+                    batch.update(
+                        transactionRef,
+                        mapOf(
+                            "startedAt" to com.google.firebase.Timestamp(java.util.Date(nextSchedule.startedAt)),
+                            "endAt" to com.google.firebase.Timestamp(java.util.Date(nextSchedule.endAt))
+                        )
+                    )
+                }
+            }.await()
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to reset goal for user $userId", e)
+            Result.failure(e)
+        }
+    }
+    override suspend fun updateTransaction(
+        userId: String,
+        transactionId: String,
+        newTransaction: Transaction
+    ): Result<Unit> {
+        return try {
+            val transactionRef = docRef.document(userId)
+                .collection(TRANSACTION_COLLECTION)
+                .document(transactionId)
+
+            val transactionData = newTransaction.toMap
+            transactionRef.update(transactionData).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to update transaction $transactionId for user $userId", e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun updateTransactionFulfillment(
+        userId: String,
+        transactionId: String,
+        oldFulfillmentId: String,
+        newFulfillment: Transaction
+    ): Result<Unit> {
+        val collection = when (newFulfillment) {
+            is Transaction.Repayment -> REPAYMENT_COLLECTION
+            is Transaction.Refund -> REFUND_COLLECTION
+            is Transaction.Attain -> ATTAIN_COLLECTION
+            is Transaction.Achievement -> ACHIEVEMENT_COLLECTION
+            else -> return Result.failure(
+                IllegalArgumentException("Invalid fulfillment type " +
+                        "${newFulfillment.javaClass.simpleName}"))
+        }
+        return try {
+            val transactionRef = docRef.document(userId)
+                .collection(TRANSACTION_COLLECTION)
+                .document(transactionId)
+
+            val fulfillmentData = newFulfillment.toMap
+            transactionRef.collection(collection)
+                .document(oldFulfillmentId)
+                .set(fulfillmentData)
+                .await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to add fulfillment for transaction $transactionId (user $userId)", e)
+            Result.failure(e)
+        }
+    }
+
+    // ======================== Getting the transaction ========================
+    override suspend fun getTransaction(userId: String, transactionId: String): Result<Transaction?> {
+        return try {
+            val transactionRef = docRef.document(userId)
+                .collection(TRANSACTION_COLLECTION)
+                .document(transactionId)
+
+            val transaction = transactionRef.get().await().toTransaction ?: return Result.success(null)
+
+            val fulfillmentCollection = when (transaction) {
+                is Transaction.Lent -> REPAYMENT_COLLECTION
+                is Transaction.Debt -> REFUND_COLLECTION
+                is Transaction.Goal -> ATTAIN_COLLECTION
+                else -> null
+            }
+
+            if (fulfillmentCollection != null) {
+                val subItems = transactionRef.collection(fulfillmentCollection)
+                    .get().await()
+                    .documents.mapNotNull { it.toTransaction }
+                
+                val updatedTransaction = when (transaction) {
+                    is Transaction.Lent -> transaction.copy(repayment = subItems.filterIsInstance<Transaction.Repayment>())
+                    is Transaction.Debt -> transaction.copy(refund = subItems.filterIsInstance<Transaction.Refund>())
+                    is Transaction.Goal -> transaction.copy(attain = subItems.filterIsInstance<Transaction.Attain>())
+                    else -> transaction
+                }
+                Result.success(updatedTransaction)
+            } else {
+                Result.success(transaction)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to get transaction $transactionId for user $userId", e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getTransactionFulfillment(
+        userId: String,
+        transactionId: String,
+        fulfillment: Transaction
+    ): Result<Transaction?> {
+        val transactionRef = docRef.document(userId)
+            .collection(TRANSACTION_COLLECTION)
+            .document(transactionId)
+
+        val transaction = transactionRef.get().await().toTransaction ?: return Result.success(null)
+
+        val fulfillmentCollection = when (transaction) {
+            is Transaction.Lent -> REPAYMENT_COLLECTION
+            is Transaction.Debt -> REFUND_COLLECTION
+            is Transaction.Goal -> ATTAIN_COLLECTION
+            else -> null
+        }
+
+        if (fulfillmentCollection == null) {
+            return Result.success(null)
+        }
+
+        val fulfillment = transactionRef.collection(fulfillmentCollection)
+            .document(fulfillment.id)
+            .get().await().toTransaction ?: return Result.success(null)
+
+        return Result.success(fulfillment)
+    }
+
+
+    // ====================== Deleting the transaction ==============================
+    override suspend fun deleteTransaction(userId: String, transactionId: String): Result<Unit> {
+        return try {
+            val transactionRef = docRef.document(userId)
+                .collection(TRANSACTION_COLLECTION)
+                .document(transactionId)
+
+            transactionRef.delete().await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to delete transaction $transactionId for user $userId", e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun deleteFulfillment(
+        userId: String,
+        transactionId: String,
+        fulfillmentId: String,
+        fulfillmentType: Class<out Transaction>
+    ): Result<Unit> {
+        val collection = when (fulfillmentType) {
+            Transaction.Repayment::class.java -> REPAYMENT_COLLECTION
+            Transaction.Refund::class.java -> REFUND_COLLECTION
+            Transaction.Attain::class.java -> ATTAIN_COLLECTION
+            Transaction.Achievement::class.java -> ACHIEVEMENT_COLLECTION
+            else -> return Result.failure(
+                IllegalArgumentException("Invalid fulfillment type " +
+                        "${fulfillmentType.simpleName}"))
+        }
+        return try {
+            val fulfillmentRef = docRef.document(userId)
+                .collection(TRANSACTION_COLLECTION)
+                .document(transactionId)
+                .collection(collection)
+                .document(fulfillmentId)
+
+            fulfillmentRef.delete().await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to delete fulfillment $fulfillmentId for transaction $transactionId and user $userId", e)
+            Result.failure(e)
+        }
+    }
+
+
+    // ======================= Fetching all transaction ==================================
     override fun fetchTransactionFulfillment(userId: String, transaction: Transaction): Flow<Result<List<Transaction>>> {
         val collection = when (transaction) {
-            is Transaction.Loan -> docRef.document(userId)
+            is Transaction.Lent -> docRef.document(userId)
                 .collection(TRANSACTION_COLLECTION)
                 .document(transaction.id)
                 .collection(REPAYMENT_COLLECTION)
@@ -271,7 +401,7 @@ class StorageService @Inject constructor(
                 // placeholder via onStart. Without this, combine() below waits for EVERY
                 // sub-collection listener to deliver its first snapshot before emitting
                 // anything at all. If the device is offline and even one sub-collection has
-                // no local cache yet (e.g. a Loan/Debt/Goal created while offline, before
+                // no local cache yet (e.g. a Lent/Debt/Goal created while offline, before
                 // Firestore ever synced that subcollection), that single stalled listener
                 // used to block the entire transaction list from displaying — including
                 // transactions that had nothing to do with it and were already cached.
@@ -303,7 +433,7 @@ class StorageService @Inject constructor(
                     val merged = (topLevelResult.getOrNull() ?: emptyList()).map { transaction ->
                         val subItems = subItemsById[transaction.id] ?: emptyList()
                         when (transaction) {
-                            is Transaction.Loan -> transaction.copy(repayment = subItems.filterIsInstance<Transaction.Repayment>())
+                            is Transaction.Lent -> transaction.copy(repayment = subItems.filterIsInstance<Transaction.Repayment>())
                             is Transaction.Debt -> transaction.copy(refund = subItems.filterIsInstance<Transaction.Refund>())
                             is Transaction.Goal -> transaction.copy(attain = subItems.filterIsInstance<Transaction.Attain>())
                             else -> transaction

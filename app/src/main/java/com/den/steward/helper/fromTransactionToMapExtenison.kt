@@ -8,7 +8,7 @@ import com.den.steward.backend.dataStructure.Transaction.Debt
 import com.den.steward.backend.dataStructure.Transaction.Earnings
 import com.den.steward.backend.dataStructure.Transaction.Expense
 import com.den.steward.backend.dataStructure.Transaction.Goal
-import com.den.steward.backend.dataStructure.Transaction.Loan
+import com.den.steward.backend.dataStructure.Transaction.Lent
 import com.den.steward.backend.dataStructure.Transaction.Refund
 import com.den.steward.backend.dataStructure.Transaction.Repayment
 import com.den.steward.backend.dataStructure.Transaction.Savings
@@ -44,7 +44,7 @@ val Transaction.toMap: MutableMap<String, Any>
                 mapping["affectAmount"] = this.affectAmount
             }
 
-            is Loan -> {
+            is Lent -> {
                 mapping["amount"] = this.amount
                 mapping["label"] = this.label
                 mapping["note"] = this.note

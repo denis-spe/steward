@@ -44,6 +44,14 @@ class HomeViewModel @Inject constructor(
             initialValue = DataState.Loading
         )
 
+    val donutChartCenterAmount: StateFlow<Double> = chartUseCase.donutChartCenterAmount
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = 0.0
+        )
+
+
 
     val todayTransactions: StateFlow<DataState<List<Transaction>>> = dataFilterUseCase.todayTransactions
         .stateIn(

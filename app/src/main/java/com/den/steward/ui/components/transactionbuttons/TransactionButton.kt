@@ -5,19 +5,13 @@ package com.den.steward.ui.components.transactionbuttons
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.LinearGradientShader
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.den.steward.backend.dataStructure.TransactionType
@@ -36,7 +30,7 @@ fun TransactionButtons(
     val desc = when (transactionType) {
         TransactionType.EARNINGS -> "Add your earnings"
         TransactionType.EXPENSE -> "Submit your expense"
-        TransactionType.LOAN -> "Request a loan"
+        TransactionType.LENT -> "Request a lent"
         TransactionType.DEBT -> "Borrow money"
         TransactionType.GOAL -> "Set a goal"
         TransactionType.ATTAIN -> "Attain your goal"
@@ -49,7 +43,7 @@ fun TransactionButtons(
     val label = when(transactionType) {
         TransactionType.EARNINGS -> "Earned"
         TransactionType.EXPENSE -> "Spent"
-        TransactionType.LOAN -> "Lent"
+        TransactionType.LENT -> "Lent"
         TransactionType.DEBT -> "Borrowed"
         TransactionType.GOAL -> "Goal"
         TransactionType.ATTAIN -> "Attain"

@@ -16,9 +16,9 @@ private typealias TransactionFactory = (id: String, label: String, amount: Doubl
 private val amountFactories: Map<String, TransactionFactory> = mapOf(
     TransactionType.EARNINGS.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Earnings(id, label, note, amount, TransactionType.EARNINGS, createdAt, paymentMethod, affect) },
     TransactionType.EXPENSE.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Expense(id, label, note, amount, TransactionType.EXPENSE, createdAt, paymentMethod, affect) },
-    TransactionType.LOAN.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Loan(id, label, note, amount, TransactionType.LOAN, emptyList(), createdAt, paymentMethod, affect) },
+    TransactionType.LENT.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Lent(id, label, note, amount, TransactionType.LENT, emptyList(), createdAt, paymentMethod, affect) },
     TransactionType.DEBT.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Debt(id, label, note, amount, TransactionType.DEBT, emptyList(), createdAt, paymentMethod, affect) },
-    TransactionType.REPAYMENT.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Repayment(id, label, note, amount, TransactionType.REPAYMENT, createdAt, Transaction.Loan(), paymentMethod, affect) },
+    TransactionType.REPAYMENT.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Repayment(id, label, note, amount, TransactionType.REPAYMENT, createdAt, Transaction.Lent(), paymentMethod, affect) },
     TransactionType.REFUND.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Refund(id, label, note, amount, TransactionType.REFUND, createdAt, Transaction.Debt(), paymentMethod, affect) },
     TransactionType.SAVINGS.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Savings(id, label, note, amount, TransactionType.SAVINGS, createdAt, paymentMethod, affect) },
 )

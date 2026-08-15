@@ -2,7 +2,7 @@
 <resources>
     <string name="earning">Earnings</string>
     <string name="expense">Expense</string>
-    <string name="loan">Loan</string>
+    <string name="lent">Lent</string>
     <string name="debt">Debt</string>
     <string name="repayment">Repayment</string>
     <string name="refund">Refund</string>
@@ -14,7 +14,7 @@
 
     <string name="earning_desc">Record money you\'ve received, like a salary or side income</string>
     <string name="expense_desc">Record money you\'ve spent on bills, purchases, or other costs</string>
-    <string name="loan_desc">Track money you\'ve lent to someone and expect to be repaid</string>
+    <string name="lent_desc">Track money you borrowed and need to pay back</string>
     <string name="debt_desc">Track money you owe to someone and need to repay</string>
     <string name="repayment_desc">Log a payment received against a loan you gave out</string>
     <string name="refund_desc">Log a payment you\'ve made toward a debt you owe</string>
@@ -26,7 +26,7 @@
     <!-- Distinct, colorblind-friendlier palette — no two types share a hue -->
     <color name="earnings">#2E7D32</color>
     <color name="expense">#C62828</color>
-    <color name="loan">#8D6E63</color>
+    <color name="lent">#8D6E63</color>
     <color name="debt">#1565C0</color>
     <color name="repayment">#7B1FA2</color>
     <color name="refund">#EC407A</color>
