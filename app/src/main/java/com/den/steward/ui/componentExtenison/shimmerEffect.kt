@@ -1,6 +1,6 @@
 // Love the LORD your GOD with all your soul and with all your mind and with all your might
 // and love your neighbor as your self
-package com.den.steward.ui.screens.componentExtenison
+package com.den.steward.ui.componentExtenison
 
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode

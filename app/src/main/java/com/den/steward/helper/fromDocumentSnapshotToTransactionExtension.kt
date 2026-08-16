@@ -82,7 +82,17 @@ val DocumentSnapshot.toTransaction: Transaction?
             val value = getDouble("value") ?: 0.0
             val startAt = getTimestamp("startAt")?.toDate()?.time ?: createdAt
             val endAt = getTimestamp("endAt")?.toDate()?.time ?: createdAt
-            Transaction.Achievement(id = id, value = value, createdAt = createdAt, startAt = startAt, endAt = endAt)
+            val status = getString("status")?.let { name ->
+                GoalStatus.entries.find { it.name == name }
+            } ?: GoalStatus.NOT_STARTED
+            Transaction.Achievement(
+                id = id,
+                value = value,
+                createdAt = createdAt,
+                startAt = startAt,
+                endAt = endAt,
+                status = status
+            )
         }
 
         else -> {

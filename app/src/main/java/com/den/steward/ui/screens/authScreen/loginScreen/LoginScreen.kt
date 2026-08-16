@@ -47,7 +47,7 @@ import com.den.steward.ui.screens.authScreen.authComponent.AuthForgotPassword
 import com.den.steward.ui.screens.authScreen.authComponent.EmailAuthField
 import com.den.steward.ui.components.Footer
 import com.den.steward.ui.screens.authScreen.authComponent.PasswordAuthField
-import com.den.steward.ui.screens.componentExtenison.BoxNotification
+import com.den.steward.ui.componentExtenison.BoxNotification
 import com.den.steward.ui.components.BackButton
 import com.den.steward.ui.screens.screenManager.ForgotPasswordRouter
 import com.den.steward.ui.screens.screenManager.HomeRouter

@@ -53,6 +53,7 @@ import com.den.steward.backend.dataStructure.RecurrencePattern
 import com.den.steward.helper.formatedDateTime
 import com.den.steward.helper.formattedDate
 import com.den.steward.helper.formattedTime
+import com.den.steward.helper.toLocalDateTime
 import com.den.steward.ui.components.DateRangeDialog
 import com.den.steward.ui.components.TimeDialog
 import java.time.LocalDateTime
@@ -75,8 +76,6 @@ fun TransactionRecurrenceField(
     if (onDialogShow.value) {
         RecurrenceDialog(
             color = color,
-            startedAt = startedAt,
-            endAt = endAt,
             recurrence = recurrence,
             onDismissRequest = {
                 onDialogShow.value = false
@@ -99,8 +98,8 @@ fun TransactionRecurrenceField(
                 containerColor = MaterialTheme.colorScheme.error
             ) else colors,
         onDialogShow = onDialogShow,
-        startedAt = selectedStartAt.value,
-        endAt = selectedEndAt.value,
+        startedAt = selectedStartAt,
+        endAt = selectedEndAt,
         recurrence = recurrence,
         wasDateTimeSet = wasDateTimeSet
     )
@@ -110,8 +109,8 @@ fun TransactionRecurrenceField(
 private fun TransactionRecurrenceFieldItem(
     modifier: Modifier = Modifier,
     onDialogShow: MutableState<Boolean>,
-    startedAt: LocalDateTime?,
-    endAt: LocalDateTime?,
+    startedAt: MutableState<LocalDateTime?>,
+    endAt: MutableState<LocalDateTime?>,
     recurrence: MutableState<RecurrencePattern>,
     colors: ListItemColors,
     wasDateTimeSet: MutableState<TransactionFieldState>,
@@ -139,17 +138,17 @@ private fun TransactionRecurrenceFieldItem(
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.Center
             ) {
-                if (startedAt != null) {
+                if (startedAt.value != null) {
                     Text(
-                        text = "Starts: ${startedAt.formatedDateTime}",
+                        text = "Starts: ${startedAt.value!!.formatedDateTime}",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
-                if (endAt != null && startedAt != null && endAt.isAfter(startedAt)) {
+                if (endAt.value != null && startedAt.value != null && endAt.value!!.isAfter(startedAt.value)) {
                     Text(
-                        text = "Ends: ${endAt.formatedDateTime}",
+                        text = "Ends: ${endAt.value!!.formatedDateTime}",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -183,8 +182,6 @@ private fun TransactionRecurrenceFieldItem(
 @Composable
 private fun RecurrenceDialog(
     color: Color,
-    startedAt: MutableState<LocalDateTime>,
-    endAt: MutableState<LocalDateTime>,
     recurrence: MutableState<RecurrencePattern>,
     onDismissRequest: () -> Unit,
     onSubmit: (finalStartDate: LocalDateTime?, finalEndDate: LocalDateTime?) -> Unit,
@@ -206,8 +203,6 @@ private fun RecurrenceDialog(
                 // Recurrence Content
                 RecurrenceDialogContent(
                     color = color,
-                    startedAt = startedAt,
-                    endAt = endAt,
                     recurrence = recurrence,
                     onDismissRequest = onDismissRequest,
                     onSubmit = onSubmit
@@ -255,17 +250,16 @@ private fun RecurrenceRow(
 @Composable
 private fun RecurrenceDialogContent(
     color: Color,
-    startedAt: MutableState<LocalDateTime>,
-    endAt: MutableState<LocalDateTime>,
     recurrence: MutableState<RecurrencePattern>,
     onDismissRequest: () -> Unit,
     onSubmit: (finalStartDate: LocalDateTime?, finalEndDate: LocalDateTime?) -> Unit,
 ) {
-    val startedAtDate = remember { mutableStateOf(startedAt.value.toLocalDate()) }
-    val startedAtTime = remember { mutableStateOf(startedAt.value.toLocalTime()) }
+    val nowState = remember { LocalDateTime.now() }
+    val startedAtDate = remember { mutableStateOf(nowState.toLocalDate()) }
+    val startedAtTime = remember { mutableStateOf(nowState.toLocalTime()) }
 
-    val endAtDate = remember { mutableStateOf(endAt.value.toLocalDate()) }
-    val endAtTime = remember { mutableStateOf(endAt.value.toLocalTime()) }
+    val endAtDate = remember { mutableStateOf(nowState.toLocalDate()) }
+    val endAtTime = remember { mutableStateOf(nowState.toLocalTime()) }
 
     val showDatePicker = remember { mutableStateOf(false) }
     val showTimePicker = remember { mutableStateOf(false) }
@@ -299,7 +293,13 @@ private fun RecurrenceDialogContent(
     // Select by recurrence
     RecurrenceOptionsContent(
         color = color,
-        recurrence = recurrence
+        recurrence = recurrence,
+        onSelect = { start, end ->
+            startedAtDate.value = start.toLocalDate()
+            startedAtTime.value = start.toLocalTime()
+            endAtDate.value = end.toLocalDate()
+            endAtTime.value = end.toLocalTime()
+        }
     )
 
     if (showDatePicker.value) {
@@ -321,14 +321,20 @@ private fun RecurrenceDialogContent(
 
             when {
                 !newEnd.isAfter(newStart) -> {
-                    transactionFieldState.value = TransactionFieldState.Error("End time must be after start time")
+                    transactionFieldState.value =
+                        TransactionFieldState.Error("End time must be after start time")
                 }
+
                 newEnd.isAfter(LocalDateTime.now().plusYears(1)) -> {
-                    transactionFieldState.value = TransactionFieldState.Error("End date must be within 1 year")
+                    transactionFieldState.value =
+                        TransactionFieldState.Error("End date must be within 1 year")
                 }
+
                 recurrence.value is RecurrencePattern.Custom && (recurrence.value as RecurrencePattern.Custom).days.isEmpty() -> {
-                    transactionFieldState.value = TransactionFieldState.Error("Select at least one day for custom recurrence")
+                    transactionFieldState.value =
+                        TransactionFieldState.Error("Select at least one day for custom recurrence")
                 }
+
                 else -> {
                     transactionFieldState.value = TransactionFieldState.Success
                     onSubmit(newStart, newEnd)
@@ -367,6 +373,7 @@ private fun RecurrenceDialogContent(
 fun RecurrenceOptionsContent(
     color: Color,
     recurrence: MutableState<RecurrencePattern>,
+    onSelect: (start: LocalDateTime, end: LocalDateTime) -> Unit
 ) {
     val selectedDays = remember {
         mutableStateListOf<Int>().apply {
@@ -405,10 +412,24 @@ fun RecurrenceOptionsContent(
                             else -> recurrence.value == pattern
                         },
                         onClick = {
-                            recurrence.value = if (pattern is RecurrencePattern.Custom) {
+                            val newPattern = if (pattern is RecurrencePattern.Custom) {
                                 RecurrencePattern.Custom(selectedDays.toList())
                             } else {
                                 pattern
+                            }
+                            recurrence.value = newPattern
+
+                            val now = LocalDateTime.now()
+                            val end = when (newPattern) {
+                                is RecurrencePattern.DAILY -> now.plusDays(1).withHour(0).withMinute(0)
+                                is RecurrencePattern.WEEKLY -> now.plusWeeks(1).withHour(0).withMinute(0)
+                                is RecurrencePattern.MONTHLY -> now.plusMonths(1).withHour(0).withMinute(0)
+                                is RecurrencePattern.YEARLY -> now.plusYears(1).withHour(0).withMinute(0)
+                                else -> null
+                            }
+
+                            if (end != null) {
+                                onSelect(now, end)
                             }
                         }
                     )

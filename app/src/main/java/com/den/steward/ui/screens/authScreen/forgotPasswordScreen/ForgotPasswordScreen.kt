@@ -42,7 +42,7 @@ import com.den.steward.helper.isEmailValid
 import com.den.steward.helper.pop
 import com.den.steward.ui.screens.authScreen.authComponent.AuthButton
 import com.den.steward.ui.screens.authScreen.authComponent.EmailAuthField
-import com.den.steward.ui.screens.componentExtenison.BoxNotification
+import com.den.steward.ui.componentExtenison.BoxNotification
 import com.den.steward.ui.components.BackButton
 import com.den.steward.ui.components.Footer
 import com.den.steward.ui.screens.screenManager.HomeRouter

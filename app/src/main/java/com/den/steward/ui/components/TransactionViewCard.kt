@@ -22,8 +22,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import coil.compose.AsyncImage
 import com.den.steward.backend.dataStructure.PaymentMethod
+import com.den.steward.backend.dataStructure.RecurrencePattern
 import com.den.steward.backend.dataStructure.Transaction
 import com.den.steward.backend.dataStructure.TransactionType
 import com.den.steward.helper.formatToAmount
@@ -79,6 +79,31 @@ fun TransactionViewCard(
                         )
                     }
 
+                    is Transaction.Savings -> {
+                        TransactionCard(
+                            label = transaction.label,
+                            note = transaction.note,
+                            amount = transaction.amount,
+                            createdAt = transaction.createdAt.toLocalDateTime(),
+                            paymentMethod = transaction.paymentMethod,
+                            affectAmount = transaction.affectAmount,
+                            transactionType = transaction.type
+                        )
+                    }
+
+                    is Transaction.Goal -> {
+                        TransactionGoalCard(
+                            label = transaction.label,
+                            note = transaction.note,
+                            amount = transaction.value,
+                            createdAt = transaction.createdAt.toLocalDateTime(),
+                            startDateTime = transaction.startedAt.toLocalDateTime(),
+                            endDateTime = transaction.endAt.toLocalDateTime(),
+                            recurrencePattern = transaction.repeatable,
+                            achievement = transaction.achievement
+                        )
+                    }
+
                     else -> {}
                 }
             }
@@ -87,7 +112,7 @@ fun TransactionViewCard(
 }
 
 @Composable
-fun TransactionCard(
+private fun TransactionCard(
     label: String,
     note: String,
     amount: Double,
@@ -141,9 +166,22 @@ fun TransactionCard(
     }
 }
 
+@Composable
+private fun TransactionGoalCard(
+    label: String,
+    note: String,
+    amount: Double,
+    createdAt: LocalDateTime,
+    startDateTime: LocalDateTime,
+    endDateTime: LocalDateTime,
+    recurrencePattern: RecurrencePattern,
+    achievement: List<Transaction.Achievement>
+) {
+
+}
 
 @Composable
-fun TransactionRow(
+private fun TransactionRow(
     key: String,
     value: String,
 ) {
@@ -168,7 +206,7 @@ fun TransactionRow(
 }
 
 @Composable
-fun TransactionNoteView(
+private fun TransactionNoteView(
     note: String
 ) {
     Column(
@@ -193,7 +231,7 @@ fun TransactionNoteView(
 }
 
 @Composable
-fun TransactionViewTitle(
+private fun TransactionViewTitle(
     title: String,
     icon: @Composable () -> Unit
 ) {

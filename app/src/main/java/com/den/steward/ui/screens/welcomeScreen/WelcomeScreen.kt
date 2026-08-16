@@ -1,9 +1,5 @@
 package com.den.steward.ui.screens.welcomeScreen
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,13 +12,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import com.den.steward.backend.states.AuthState
 import com.den.steward.backend.viewModels.WelcomeViewModel
-import com.den.steward.ui.screens.componentExtenison.BoxNotification
+import com.den.steward.ui.componentExtenison.BoxNotification
 import com.den.steward.ui.screens.screenManager.HomeRouter
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds

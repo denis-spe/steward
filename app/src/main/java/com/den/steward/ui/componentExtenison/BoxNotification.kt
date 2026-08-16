@@ -1,5 +1,5 @@
 // Bless be the LORD GOD of hosts
-package com.den.steward.ui.screens.componentExtenison
+package com.den.steward.ui.componentExtenison
 
 import android.app.Notification
 import androidx.compose.animation.AnimatedVisibility

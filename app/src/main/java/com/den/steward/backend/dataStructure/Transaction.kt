@@ -125,6 +125,7 @@ sealed class Transaction {
     ) : Transaction() {
         val totalAttain = attain.sumOf { it.value }
         val remainingValue: Double get() = value - totalAttain
+        val totalAchievement = achievement.groupBy { it.status }
 
         fun calculateSchedule(now: Long): Goal {
             val schedule = this.repeatable.onSchedule
@@ -164,7 +165,8 @@ sealed class Transaction {
         override val createdAt: Long = System.currentTimeMillis(),
         val startAt: Long = System.currentTimeMillis(),
         val endAt: Long = System.currentTimeMillis(),
-        val goal: Goal = Goal()
+        val goal: Goal = Goal(),
+        val status: GoalStatus = GoalStatus.NOT_STARTED
     ) : Transaction()
 
     val getLabel: String
