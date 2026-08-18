@@ -1,7 +1,7 @@
 package com.den.steward.backend.repos
 
 import android.util.Log
-import com.den.steward.backend.dataStructure.Transaction
+import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.repoInterfaces.Storage
 import com.den.steward.helper.toMap
 import com.den.steward.helper.toTransaction
@@ -124,7 +124,7 @@ class StorageService @Inject constructor(
     }
 
     // ============================= Updating the transaction ===================================
-    override suspend fun resetGoalAttain(userId: String, transaction: Transaction.Goal): Result<Unit> {
+    override suspend fun resetGoalAttain(userId: String, transaction: Transaction.Goal): Result<Transaction.Goal> {
         return try {
             val transactionRef = docRef.document(userId)
                 .collection(TRANSACTION_COLLECTION)
@@ -135,19 +135,15 @@ class StorageService @Inject constructor(
             val snapshots = attainRef.get().await()
 
             val now = System.currentTimeMillis()
+            val resetGoal = transaction.copy(attain = emptyList())
+                .calculateSchedule(now)
+                .calculateStatus(now)
 
-            val updates: Map<String, Any> =
-                if (transaction.repeatable != com.den.steward.backend.dataStructure.RecurrencePattern.NONE) {
-                    val nextSchedule = transaction.calculateSchedule(now).calculateStatus(now)
-                    mapOf(
-                        "startedAt" to com.google.firebase.Timestamp(java.util.Date(nextSchedule.startedAt)),
-                        "endAt" to com.google.firebase.Timestamp(java.util.Date(nextSchedule.endAt)),
-                        "status" to nextSchedule.status.name
-                    )
-                } else {
-                    val finalGoal = transaction.calculateStatus(now)
-                    mapOf("status" to finalGoal.status.name)
-                }
+            val updates: Map<String, Any> = mapOf(
+                "startedAt" to com.google.firebase.Timestamp(java.util.Date(resetGoal.startedAt)),
+                "endAt" to com.google.firebase.Timestamp(java.util.Date(resetGoal.endAt)),
+                "status" to resetGoal.status.name
+            )
 
             val batch = firestore.batch()
             for (doc in snapshots.documents) {
@@ -172,7 +168,7 @@ class StorageService @Inject constructor(
                 Log.w(TAG, "Goal reset for user $userId applied locally; server ack pending (offline?)")
             }
 
-            Result.success(Unit)
+            Result.success(resetGoal)
         } catch (e: Exception) {
             if (e is CancellationException) throw e
             Log.e(TAG, "Failed to reset goal for user $userId", e)
@@ -254,7 +250,7 @@ class StorageService @Inject constructor(
                 val updatedTransaction = when (transaction) {
                     is Transaction.Lent -> transaction.copy(repayment = subItems.filterIsInstance<Transaction.Repayment>())
                     is Transaction.Debt -> transaction.copy(refund = subItems.filterIsInstance<Transaction.Refund>())
-                    is Transaction.Goal -> transaction.copy(attain = subItems.filterIsInstance<Transaction.Attain>())
+                    is Transaction.Goal -> transaction.copy(attain = subItems.filterIsInstance<Transaction.Attain>()).calculateStatus(System.currentTimeMillis())
                     else -> transaction
                 }
                 Result.success(updatedTransaction)
@@ -465,7 +461,7 @@ class StorageService @Inject constructor(
                         when (transaction) {
                             is Transaction.Lent -> transaction.copy(repayment = subItems.filterIsInstance<Transaction.Repayment>())
                             is Transaction.Debt -> transaction.copy(refund = subItems.filterIsInstance<Transaction.Refund>())
-                            is Transaction.Goal -> transaction.copy(attain = subItems.filterIsInstance<Transaction.Attain>())
+                            is Transaction.Goal -> transaction.copy(attain = subItems.filterIsInstance<Transaction.Attain>()).calculateStatus(System.currentTimeMillis())
                             else -> transaction
                         }
                     }

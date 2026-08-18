@@ -1,7 +1,7 @@
 package com.den.steward.backend.useCase
 
-import com.den.steward.backend.dataStructure.Transaction
-import com.den.steward.backend.dataStructure.TransactionType
+import com.den.steward.backend.entitles.Transaction
+import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.repoInterfaces.Account
 import com.den.steward.backend.repoInterfaces.Storage
 import com.den.steward.backend.viewModels.DataTransferToViewModel

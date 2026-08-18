@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.den.steward.backend.dataStructure.TransactionType
+import com.den.steward.backend.entitles.TransactionType
 
 @Composable
 fun TransactionButtons(

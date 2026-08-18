@@ -1,4 +1,4 @@
-package com.den.steward.backend.dataStructure
+package com.den.steward.backend.entitles
 
 enum class GoalType {
     AMOUNT,

@@ -4,10 +4,8 @@ import android.content.Context
 import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
-import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import androidx.work.workDataOf
-import com.den.steward.backend.dataStructure.Transaction
+import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.useCase.DataFetchUseCase
 import com.den.steward.backend.useCase.GoalToolUseCase
 import dagger.assisted.Assisted
@@ -39,12 +37,12 @@ class GoalWorker @AssistedInject constructor(
             // 1. Add the achievement to the goal
             goalToolUseCase.addGoalAchieved(goal).getOrThrow()
 
-            // 2. Reset the goal by clearing the goal attain list
-            goalToolUseCase.resetGoalAttain(goal).getOrThrow()
+            // 2. Reset the goal by clearing the goal attain list and updating timestamps
+            val updatedGoal = goalToolUseCase.resetGoalAttain(goal).getOrThrow()
 
             // 3. Re-schedule if repeatable
-            if (goal.repeatable != com.den.steward.backend.dataStructure.RecurrencePattern.NONE) {
-                goalToolUseCase.schedule(transactionId)
+            if (goal.repeatable != com.den.steward.backend.entitles.RecurrencePattern.NONE) {
+                goalToolUseCase.schedule(transactionId, updatedGoal)
             }
 
             Log.d(TAG, "Doing work completed successfully for $transactionId")

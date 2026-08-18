@@ -12,7 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import com.den.steward.backend.dataStructure.TransactionType
+import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.ui.components.bottomDrawerSheet.BottomDrawerSheet
 import com.den.steward.ui.components.bottomDrawerSheet.BottomDrawerSheetItem
 

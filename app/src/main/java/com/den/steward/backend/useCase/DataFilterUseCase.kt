@@ -1,6 +1,6 @@
 package com.den.steward.backend.useCase
 
-import com.den.steward.backend.dataStructure.Transaction
+import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.states.DataState
 import com.den.steward.helper.getStartOfDayMillis
 import kotlinx.coroutines.flow.Flow

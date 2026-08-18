@@ -3,7 +3,7 @@ package com.den.steward.backend.useCase
 import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
-import com.den.steward.backend.dataStructure.TransactionType
+import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataState
 import com.den.steward.ui.components.charts.DonutChartData
 import dagger.hilt.android.qualifiers.ApplicationContext

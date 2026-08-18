@@ -1,7 +1,7 @@
 // Glory be to LORD our GOD
 package com.den.steward.backend.useCase
 
-import com.den.steward.backend.dataStructure.Transaction
+import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.repoInterfaces.Account
 import com.den.steward.backend.repoInterfaces.Storage
 import com.den.steward.backend.states.DataState

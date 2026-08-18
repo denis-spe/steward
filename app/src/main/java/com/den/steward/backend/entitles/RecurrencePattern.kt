@@ -1,8 +1,7 @@
-package com.den.steward.backend.dataStructure
+package com.den.steward.backend.entitles
 
 import com.den.steward.helper.toEpochMillis
 import com.den.steward.helper.toLocalDateTime
-import java.time.LocalDate
 
 sealed class RecurrencePattern() {
     data object NONE : RecurrencePattern()

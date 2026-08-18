@@ -2,12 +2,12 @@
 package com.den.steward.helper
 
 import android.util.Log
-import com.den.steward.backend.dataStructure.GoalStatus
-import com.den.steward.backend.dataStructure.GoalType
-import com.den.steward.backend.dataStructure.PaymentMethod
-import com.den.steward.backend.dataStructure.RecurrencePattern
-import com.den.steward.backend.dataStructure.Transaction
-import com.den.steward.backend.dataStructure.TransactionType
+import com.den.steward.backend.entitles.GoalStatus
+import com.den.steward.backend.entitles.GoalType
+import com.den.steward.backend.entitles.PaymentMethod
+import com.den.steward.backend.entitles.RecurrencePattern
+import com.den.steward.backend.entitles.Transaction
+import com.den.steward.backend.entitles.TransactionType
 import com.google.firebase.firestore.DocumentSnapshot
 
 // Updated factory to include affectAmount and other basic flags
@@ -70,7 +70,7 @@ val DocumentSnapshot.toTransaction: Transaction?
                 endAt = endAt,
                 createdAt = createdAt,
                 repeatable = repeatable,
-            )
+            ).calculateStatus(System.currentTimeMillis())
         }
 
         TransactionType.ATTAIN.name -> {

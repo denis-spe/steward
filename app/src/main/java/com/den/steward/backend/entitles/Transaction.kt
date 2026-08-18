@@ -1,4 +1,4 @@
-package com.den.steward.backend.dataStructure
+package com.den.steward.backend.entitles
 
 import androidx.compose.runtime.Stable
 import com.den.steward.helper.formatToAmount
@@ -129,12 +129,15 @@ sealed class Transaction {
 
         fun calculateSchedule(now: Long): Goal {
             val schedule = this.repeatable.onSchedule
-
-            if (schedule == 0L) return this
+            val duration = if (schedule > 0L) {
+                schedule
+            } else {
+                (this.endAt - this.startedAt).coerceAtLeast(0L)
+            }
 
             return this.copy(
                 startedAt = now,
-                endAt = now + schedule
+                endAt = now + duration
             )
         }
 

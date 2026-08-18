@@ -1,4 +1,4 @@
-package com.den.steward.backend.dataStructure
+package com.den.steward.backend.entitles
 
 import com.den.steward.R
 

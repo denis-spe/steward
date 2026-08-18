@@ -49,11 +49,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.den.steward.R
-import com.den.steward.backend.dataStructure.RecurrencePattern
+import com.den.steward.backend.entitles.RecurrencePattern
 import com.den.steward.helper.formatedDateTime
 import com.den.steward.helper.formattedDate
 import com.den.steward.helper.formattedTime
-import com.den.steward.helper.toLocalDateTime
 import com.den.steward.ui.components.DateRangeDialog
 import com.den.steward.ui.components.TimeDialog
 import java.time.LocalDateTime

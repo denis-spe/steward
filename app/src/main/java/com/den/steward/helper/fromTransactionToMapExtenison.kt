@@ -1,17 +1,17 @@
 package com.den.steward.helper
 
-import com.den.steward.backend.dataStructure.RecurrencePattern
-import com.den.steward.backend.dataStructure.Transaction
-import com.den.steward.backend.dataStructure.Transaction.Achievement
-import com.den.steward.backend.dataStructure.Transaction.Attain
-import com.den.steward.backend.dataStructure.Transaction.Debt
-import com.den.steward.backend.dataStructure.Transaction.Earnings
-import com.den.steward.backend.dataStructure.Transaction.Expense
-import com.den.steward.backend.dataStructure.Transaction.Goal
-import com.den.steward.backend.dataStructure.Transaction.Lent
-import com.den.steward.backend.dataStructure.Transaction.Refund
-import com.den.steward.backend.dataStructure.Transaction.Repayment
-import com.den.steward.backend.dataStructure.Transaction.Savings
+import com.den.steward.backend.entitles.RecurrencePattern
+import com.den.steward.backend.entitles.Transaction
+import com.den.steward.backend.entitles.Transaction.Achievement
+import com.den.steward.backend.entitles.Transaction.Attain
+import com.den.steward.backend.entitles.Transaction.Debt
+import com.den.steward.backend.entitles.Transaction.Earnings
+import com.den.steward.backend.entitles.Transaction.Expense
+import com.den.steward.backend.entitles.Transaction.Goal
+import com.den.steward.backend.entitles.Transaction.Lent
+import com.den.steward.backend.entitles.Transaction.Refund
+import com.den.steward.backend.entitles.Transaction.Repayment
+import com.den.steward.backend.entitles.Transaction.Savings
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 
@@ -103,10 +103,10 @@ val Transaction.toMap: MutableMap<String, Any>
             }
 
             is Achievement -> {
-                mapping["value"] = this.goal.attain.sumOf { it.value }
+                mapping["value"] = this.value
                 mapping["status"] = this.status.name
-                mapping["startAt"] = Timestamp(java.util.Date(this.goal.startedAt))
-                mapping["endAt"] = Timestamp(java.util.Date(this.goal.endAt))
+                mapping["startAt"] = Timestamp(java.util.Date(this.startAt))
+                mapping["endAt"] = Timestamp(java.util.Date(this.endAt))
             }
         }
         return mapping

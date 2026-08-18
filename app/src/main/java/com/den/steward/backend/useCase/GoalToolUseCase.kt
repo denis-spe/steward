@@ -6,7 +6,7 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
-import com.den.steward.backend.dataStructure.Transaction
+import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.repoInterfaces.Account
 import com.den.steward.backend.repoInterfaces.Storage
 import com.den.steward.backend.workers.GoalWorker
@@ -28,7 +28,7 @@ class GoalToolUseCase @Inject constructor(
         return storageService.addGoalAchieved(userId, transaction)
     }
 
-    suspend fun resetGoalAttain(transaction: Transaction.Goal): Result<Unit> {
+    suspend fun resetGoalAttain(transaction: Transaction.Goal): Result<Transaction.Goal> {
         return storageService.resetGoalAttain(userId, transaction)
     }
 

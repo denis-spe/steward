@@ -2,8 +2,7 @@ package com.den.steward.backend.viewModels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.den.steward.backend.dataStructure.Transaction
-import com.den.steward.backend.dataStructure.TransactionType
+import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.states.AuthState
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.useCase.AuthorizationUseCase
