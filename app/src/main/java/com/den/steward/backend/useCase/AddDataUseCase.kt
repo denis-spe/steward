@@ -68,8 +68,9 @@ class AddDataUseCase @Inject constructor(
                 createdAt = dataTransferToViewModel.createdAt,
                 startedAt = dataTransferToViewModel.startedAt,
                 endAt = dataTransferToViewModel.endAt,
-                repeatable = dataTransferToViewModel.repeatable
-            )
+                repeatable = dataTransferToViewModel.repeatable,
+            ).calculateStatus(System.currentTimeMillis())
+
             else -> null
         } ?: return
 

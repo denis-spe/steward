@@ -2,13 +2,11 @@
 package com.den.steward.ui.components.transactionFields
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -24,7 +22,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -74,7 +71,7 @@ fun TransactionLabelField(
         "Fill the Label" else placeholder
 
     val onDialogShow = remember { mutableStateOf(false) }
-    val optionsTitle = "Required"
+    val optionsTitle = if (isError) "Required" else "..."
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(state.text) {
@@ -229,7 +226,8 @@ fun TransactionLabelField(
         modifier = modifier,
         onDialogShow = onDialogShow,
         color = color,
-        displayState = displayText
+        displayState = displayText,
+        wasSuccess = wasSuccess
     )
 }
 
@@ -241,7 +239,11 @@ private fun TransactionLabelFieldItem(
     onDialogShow: MutableState<Boolean>,
     displayState: MutableState<String>,
     color: Color,
+    wasSuccess: MutableState<TransactionFieldState>,
 ) {
+    val textColor = if (wasSuccess.value is TransactionFieldState.Error)
+        Color.Red else Color.Unspecified
+
     TransactionFieldCard(
         title = title,
         modifier = modifier,
@@ -260,7 +262,7 @@ private fun TransactionLabelFieldItem(
                 displayState.value.take(MAX_LABEL_LENGTH) + "..." else
                 (displayState.value.ifEmpty { optionsTitle })
 
-            Text(textValue, fontSize = FONT_SIZE)
+            Text(textValue, fontSize = FONT_SIZE, color = textColor)
         }
     ) {
         onDialogShow.value = true

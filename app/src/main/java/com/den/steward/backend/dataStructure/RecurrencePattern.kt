@@ -1,5 +1,9 @@
 package com.den.steward.backend.dataStructure
 
+import com.den.steward.helper.toEpochMillis
+import com.den.steward.helper.toLocalDateTime
+import java.time.LocalDate
+
 sealed class RecurrencePattern() {
     data object NONE : RecurrencePattern()
     data object DAILY : RecurrencePattern()
@@ -29,13 +33,26 @@ sealed class RecurrencePattern() {
     }
 
     val onSchedule: Long
-        get() = when (this) {
-            is NONE -> 0L
-            is DAILY -> 86400000L
-            is WEEKLY -> 604800000L
-            is MONTHLY -> 2592000000L
-            is YEARLY -> 31536000000L
-            is Custom -> this.days.sumOf { it * 86400000L }
-        }
+        get() {
+            val nowMillis = System.currentTimeMillis()
+            val now = nowMillis.toLocalDateTime()
 
+            val nextTime = when (this) {
+                is DAILY -> now.plusDays(1).withHour(0).withMinute(0).withSecond(0).withNano(0)
+                is WEEKLY -> now.plusWeeks(1).withHour(0).withMinute(0).withSecond(0).withNano(0)
+                is MONTHLY -> now.plusMonths(1).withHour(0).withMinute(0).withSecond(0).withNano(0)
+                is YEARLY -> now.plusYears(1).withHour(0).withMinute(0).withSecond(0).withNano(0)
+                is Custom -> {
+                    if (days.isEmpty()) return 0L
+                    val todayIndex = now.dayOfWeek.value % 7
+                    val nextDay = days.sorted().find { it > todayIndex } ?: days.minOrNull() ?: todayIndex
+                    val daysToAdd = if (nextDay > todayIndex) nextDay - todayIndex else 7 - (todayIndex - nextDay)
+                    now.plusDays(daysToAdd.toLong()).withHour(0).withMinute(0).withSecond(0).withNano(0)
+                }
+                else -> return 0L
+            }
+
+            val nextMillis = nextTime.toEpochMillis()
+            return if (nextMillis > nowMillis) nextMillis - nowMillis else 0L
+        }
 }

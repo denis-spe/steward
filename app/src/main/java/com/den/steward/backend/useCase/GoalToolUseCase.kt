@@ -24,12 +24,12 @@ class GoalToolUseCase @Inject constructor(
     }
     val userId = accountService.currentUserId
 
-    suspend fun addGoalAchieved(transaction: Transaction.Goal) {
-        storageService.addGoalAchieved(userId, transaction)
+    suspend fun addGoalAchieved(transaction: Transaction.Goal): Result<Unit> {
+        return storageService.addGoalAchieved(userId, transaction)
     }
 
-    suspend fun resetGoalAttain(transaction: Transaction.Goal) {
-        storageService.resetGoalAttain(userId, transaction)
+    suspend fun resetGoalAttain(transaction: Transaction.Goal): Result<Unit> {
+        return storageService.resetGoalAttain(userId, transaction)
     }
 
     suspend fun schedule(transactionId: String, goal: Transaction.Goal? = null) {

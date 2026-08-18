@@ -13,6 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,6 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.den.steward.backend.dataStructure.GoalStatus
 import com.den.steward.backend.dataStructure.PaymentMethod
 import com.den.steward.backend.dataStructure.RecurrencePattern
 import com.den.steward.backend.dataStructure.Transaction
@@ -100,7 +102,8 @@ fun TransactionViewCard(
                             startDateTime = transaction.startedAt.toLocalDateTime(),
                             endDateTime = transaction.endAt.toLocalDateTime(),
                             recurrencePattern = transaction.repeatable,
-                            achievement = transaction.achievement
+                            achievement = transaction.achievement,
+                            status = transaction.status
                         )
                     }
 
@@ -175,9 +178,62 @@ private fun TransactionGoalCard(
     startDateTime: LocalDateTime,
     endDateTime: LocalDateTime,
     recurrencePattern: RecurrencePattern,
+    status: GoalStatus,
     achievement: List<Transaction.Achievement>
 ) {
+    val transactionTypeLabel = stringResource(id = TransactionType.GOAL.label)
+    val transactionTypeIcon = painterResource(TransactionType.GOAL.icon)
+    val transactionTypeColor = colorResource(TransactionType.GOAL.color)
 
+    Column(
+        modifier = Modifier.padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(5.dp)
+    ) {
+
+        TransactionViewTitle(
+            title = label,
+            icon = {
+                Icon(
+                    painter = transactionTypeIcon,
+                    contentDescription = transactionTypeLabel,
+                    tint = transactionTypeColor
+                )
+            }
+        )
+
+        TransactionRow(
+            key = "Amount",
+            value = amount.formatToAmount()
+        )
+        TransactionRow(
+            key = "Created At",
+            value = createdAt.formatedDateTime
+        )
+        TransactionRow(
+            key = "Started At",
+            value = startDateTime.formatedDateTime
+        )
+        TransactionRow(
+            key = "Deadline time",
+            value = endDateTime.formatedDateTime
+        )
+
+        TransactionRow(
+            key = "Recurrence Pattern",
+            value = recurrencePattern.name
+        )
+
+        TransactionRow(
+            key = "Status",
+            value = status.label
+        )
+
+        if (note.isNotBlank()) {
+            TransactionNoteView(
+                note = note
+            )
+        }
+    }
 }
 
 @Composable

@@ -37,10 +37,10 @@ class GoalWorker @AssistedInject constructor(
             }
 
             // 1. Add the achievement to the goal
-            goalToolUseCase.addGoalAchieved(goal)
+            goalToolUseCase.addGoalAchieved(goal).getOrThrow()
 
             // 2. Reset the goal by clearing the goal attain list
-            goalToolUseCase.resetGoalAttain(goal)
+            goalToolUseCase.resetGoalAttain(goal).getOrThrow()
 
             // 3. Re-schedule if repeatable
             if (goal.repeatable != com.den.steward.backend.dataStructure.RecurrencePattern.NONE) {
@@ -50,7 +50,11 @@ class GoalWorker @AssistedInject constructor(
             Log.d(TAG, "Doing work completed successfully for $transactionId")
             Result.success()
         } catch (e: Exception) {
-            Log.e(TAG, "Error occurred while doing work", e)
+            if (e is kotlinx.coroutines.CancellationException) {
+                Log.i(TAG, "GoalWorker for $transactionId was cancelled")
+                throw e
+            }
+            Log.e(TAG, "Error occurred while doing work for $transactionId", e)
             Result.failure()
         }
     }

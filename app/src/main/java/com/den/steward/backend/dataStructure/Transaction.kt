@@ -139,12 +139,15 @@ sealed class Transaction {
         }
 
         fun calculateStatus(now: Long): Goal {
-            if (this.status != GoalStatus.NOT_STARTED) return this
-            if (now < this.startedAt) return this.copy(status = GoalStatus.NOT_STARTED)
-            if (now > this.endAt && this.totalAttain > this.value ) return this.copy(status = GoalStatus.COMPLETED)
-            if (now > this.endAt) return this.copy(status = GoalStatus.FIELD)
-
-            return this.copy(status = GoalStatus.IN_PROGRESS)
+            val newStatus = when {
+                now < this.startedAt -> GoalStatus.NOT_STARTED
+                now >= this.endAt -> {
+                    if (this.totalAttain >= this.value) GoalStatus.COMPLETED
+                    else GoalStatus.FAILED
+                }
+                else -> GoalStatus.IN_PROGRESS
+            }
+            return this.copy(status = newStatus)
         }
     }
 

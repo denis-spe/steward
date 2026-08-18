@@ -18,8 +18,8 @@ enum class GoalStatus(
         "Completed",
         R.color.completed
     ),
-    FIELD(
-        "Field",
-        R.color.field
+    FAILED(
+        "Failed",
+        R.color.failed
     )
 }

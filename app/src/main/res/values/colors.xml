@@ -12,5 +12,5 @@
     <color name="not_started">#FF7651</color>
     <color name="in_progress">#FFFF00</color>
     <color name="completed">#00FF00</color>
-    <color name="field">#FF0000</color>
+    <color name="failed">#FF0000</color>
 </resources>

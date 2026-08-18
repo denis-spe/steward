@@ -19,7 +19,10 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeoutOrNull
+import java.util.concurrent.CancellationException
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 class StorageService @Inject constructor(
     override val firestore: FirebaseFirestore,
@@ -33,6 +36,7 @@ class StorageService @Inject constructor(
         private const val ATTAIN_COLLECTION = "Attain"
         private const val ACHIEVEMENT_COLLECTION = "Achievement"
         private const val TAG = "StorageService"
+        private const val SERVER_ACK_TIMEOUT_MS = 5_000L
     }
 
     private val docRef = firestore
@@ -48,11 +52,12 @@ class StorageService @Inject constructor(
             val transactionData = transaction.toMap
             transactionData["id"] = transactionRef.id
 
-            // Use set without .await() to ensure we can schedule workers immediately (offline-first)
-            transactionRef.set(transactionData)
+            // await the set operation to ensure data is persistent (locally) before returning
+            transactionRef.set(transactionData).await()
             
             Result.success(transactionRef.id)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.e(TAG, "Failed to initiate transaction add for user $userId", e)
             Result.failure(e)
         }
@@ -66,19 +71,23 @@ class StorageService @Inject constructor(
                 .collection(ACHIEVEMENT_COLLECTION)
                 .document()
 
+            val finalGoal = transaction.calculateStatus(System.currentTimeMillis())
+
             val achievement = Transaction.Achievement(
                 id = achievedRef.id,
                 value = transaction.attain.sumOf { it.value },
                 createdAt = System.currentTimeMillis(),
                 startAt = transaction.startedAt,
                 endAt = transaction.endAt,
-                goal = transaction
+                goal = transaction,
+                status = finalGoal.status
             )
 
             val achievedData = achievement.toMap
             achievedRef.set(achievedData).await()
             Result.success(Unit)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.e(TAG, "Failed to add transaction for user $userId", e)
             Result.failure(e)
         }
@@ -120,31 +129,52 @@ class StorageService @Inject constructor(
             val transactionRef = docRef.document(userId)
                 .collection(TRANSACTION_COLLECTION)
                 .document(transaction.id)
-            
+
             val attainRef = transactionRef.collection(ATTAIN_COLLECTION)
+            // Cache-first read: works offline if previously synced, may be empty if never cached.
             val snapshots = attainRef.get().await()
 
-            firestore.runBatch { batch ->
-                // 1. Delete all attainment records
-                for (doc in snapshots.documents) {
-                    batch.delete(doc.reference)
+            val now = System.currentTimeMillis()
+
+            val updates: Map<String, Any> =
+                if (transaction.repeatable != com.den.steward.backend.dataStructure.RecurrencePattern.NONE) {
+                    val nextSchedule = transaction.calculateSchedule(now).calculateStatus(now)
+                    mapOf(
+                        "startedAt" to com.google.firebase.Timestamp(java.util.Date(nextSchedule.startedAt)),
+                        "endAt" to com.google.firebase.Timestamp(java.util.Date(nextSchedule.endAt)),
+                        "status" to nextSchedule.status.name
+                    )
+                } else {
+                    val finalGoal = transaction.calculateStatus(now)
+                    mapOf("status" to finalGoal.status.name)
                 }
 
-                // 2. If it's a recurring goal, update the dates in the same batch
-                if (transaction.repeatable != com.den.steward.backend.dataStructure.RecurrencePattern.NONE) {
-                    val nextSchedule = transaction.calculateSchedule(System.currentTimeMillis())
-                    batch.update(
-                        transactionRef,
-                        mapOf(
-                            "startedAt" to com.google.firebase.Timestamp(java.util.Date(nextSchedule.startedAt)),
-                            "endAt" to com.google.firebase.Timestamp(java.util.Date(nextSchedule.endAt))
-                        )
-                    )
-                }
-            }.await()
+            val batch = firestore.batch()
+            for (doc in snapshots.documents) {
+                batch.delete(doc.reference)
+            }
+            batch.update(transactionRef, updates)
+
+            // Commit is applied to local cache immediately regardless of connectivity.
+            // The returned Task only completes once the server acknowledges it, so we
+            // bound the wait instead of hanging indefinitely while offline.
+            val committedServerSide = try {
+                withTimeoutOrNull(SERVER_ACK_TIMEOUT_MS.milliseconds) {
+                    batch.commit().await()
+                    true
+                } ?: false
+            } catch (e: Exception) {
+                // A genuine commit failure (not a timeout) — rethrow to outer catch.
+                throw e
+            }
+
+            if (!committedServerSide) {
+                Log.w(TAG, "Goal reset for user $userId applied locally; server ack pending (offline?)")
+            }
 
             Result.success(Unit)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.e(TAG, "Failed to reset goal for user $userId", e)
             Result.failure(e)
         }

@@ -154,9 +154,11 @@ fun TransactionBottomDrawerSheet(
     LaunchedEffect(
         labelState,
         amountState,
+        endAt
     ) {
         wasLabelSuccess.value = TransactionFieldState.Initial
         wasAmountSuccess.value = TransactionFieldState.Initial
+        wasDateTimeSet.value = TransactionFieldState.Initial
     }
 
     val reset = {
@@ -289,15 +291,17 @@ fun TransactionBottomDrawerSheet(
                     wasAmountSuccess.value = TransactionFieldState.Error("Amount cannot be empty")
                 }
 
-                // Goal transactions must have an end date
-                val now = System.currentTimeMillis().toLocalDateTime()
-                val end = endAt.value
+                // Goal transactions must have a valid duration
+                if (type == TransactionType.GOAL) {
+                    val start = startAt.value
+                    val end = endAt.value
+                    val now = System.currentTimeMillis().toLocalDateTime()
 
-                if (
-                    type == TransactionType.GOAL &&
-                    now >= end
-                ) {
-                    wasDateTimeSet.value = TransactionFieldState.Error("End date must be after start date")
+                    if (end <= start) {
+                        wasDateTimeSet.value = TransactionFieldState.Error("End date must be after start date")
+                    } else if (end <= now) {
+                        wasDateTimeSet.value = TransactionFieldState.Error("Goal cannot end in the past")
+                    }
                 }
 
                 // If any field is invalid, return early
