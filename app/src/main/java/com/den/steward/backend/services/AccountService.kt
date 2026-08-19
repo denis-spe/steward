@@ -1,4 +1,4 @@
-package com.den.steward.backend.repos
+package com.den.steward.backend.services
 
 import android.content.ContentValues.TAG
 import android.content.Context
@@ -15,7 +15,7 @@ import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
 import com.den.steward.R
-import com.den.steward.backend.repoInterfaces.Account
+import com.den.steward.backend.services.service.Account
 import com.den.steward.backend.states.AuthState
 import com.den.steward.helper.title
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption

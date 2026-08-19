@@ -2,8 +2,8 @@
 package com.den.steward.backend.useCase
 
 import com.den.steward.backend.entitles.Transaction
-import com.den.steward.backend.repoInterfaces.Account
-import com.den.steward.backend.repoInterfaces.Storage
+import com.den.steward.backend.services.service.Account
+import com.den.steward.backend.services.service.Storage
 import com.den.steward.backend.states.DataState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.catch

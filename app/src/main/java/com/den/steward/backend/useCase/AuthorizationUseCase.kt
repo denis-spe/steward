@@ -4,7 +4,7 @@ package com.den.steward.backend.useCase
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
-import com.den.steward.backend.repoInterfaces.Account
+import com.den.steward.backend.services.service.Account
 import com.den.steward.backend.states.AuthState
 import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject

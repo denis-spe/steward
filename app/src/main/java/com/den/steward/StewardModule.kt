@@ -1,16 +1,15 @@
 // Glory be to the LORD GOD of hosts
 package com.den.steward
 
-import com.den.steward.backend.repoInterfaces.Account
-import com.den.steward.backend.repoInterfaces.Storage
-import com.den.steward.backend.repos.AccountService
-import com.den.steward.backend.repos.StorageService
+import com.den.steward.backend.services.service.Account
+import com.den.steward.backend.services.service.Storage
+import com.den.steward.backend.services.AccountService
+import com.den.steward.backend.services.StorageService
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.LocalCacheSettings
 import com.google.firebase.firestore.PersistentCacheSettings
-import com.google.firebase.firestore.MemoryCacheSettings
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

@@ -1,11 +1,12 @@
-package com.den.steward.backend.repos
+package com.den.steward.backend.services
 
 import android.util.Log
 import com.den.steward.backend.entitles.Transaction
-import com.den.steward.backend.repoInterfaces.Storage
+import com.den.steward.backend.services.service.Storage
 import com.den.steward.helper.toMap
 import com.den.steward.helper.toTransaction
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Source
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
@@ -132,7 +133,12 @@ class StorageService @Inject constructor(
 
             val attainRef = transactionRef.collection(ATTAIN_COLLECTION)
             // Cache-first read: works offline if previously synced, may be empty if never cached.
-            val snapshots = attainRef.get().await()
+            val snapshots = try {
+                attainRef.get().await()
+            } catch (e: Exception) {
+                Log.e(TAG, "Remote fetch failed, trying CACHE", e)
+                attainRef.get(Source.CACHE).await()
+            }
 
             val now = System.currentTimeMillis()
             val resetGoal = transaction.copy(attain = emptyList())
@@ -233,7 +239,12 @@ class StorageService @Inject constructor(
                 .collection(TRANSACTION_COLLECTION)
                 .document(transactionId)
 
-            val transaction = transactionRef.get().await().toTransaction ?: return Result.success(null)
+            val transaction = try {
+                transactionRef.get().await()
+            } catch (e: Exception) {
+                Log.e(TAG, "Remote fetch failed, trying CACHE", e)
+                transactionRef.get(Source.CACHE).await()
+            }.toTransaction ?: return Result.success(null)
 
             val fulfillmentCollection = when (transaction) {
                 is Transaction.Lent -> REPAYMENT_COLLECTION
@@ -243,9 +254,16 @@ class StorageService @Inject constructor(
             }
 
             if (fulfillmentCollection != null) {
-                val subItems = transactionRef.collection(fulfillmentCollection)
-                    .get().await()
-                    .documents.mapNotNull { it.toTransaction }
+                val subItems = try {
+                    transactionRef
+                        .collection(fulfillmentCollection)
+                        .get().await()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Remote fetch failed, trying CACHE", e)
+                    transactionRef
+                        .collection(fulfillmentCollection)
+                        .get(Source.CACHE).await()
+                }.documents.mapNotNull { it.toTransaction }
                 
                 val updatedTransaction = when (transaction) {
                     is Transaction.Lent -> transaction.copy(repayment = subItems.filterIsInstance<Transaction.Repayment>())

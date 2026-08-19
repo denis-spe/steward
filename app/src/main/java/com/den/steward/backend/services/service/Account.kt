@@ -1,4 +1,4 @@
-package com.den.steward.backend.repoInterfaces
+package com.den.steward.backend.services.service
 
 import android.content.Context
 import android.os.Build

@@ -7,8 +7,8 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.den.steward.backend.entitles.Transaction
-import com.den.steward.backend.repoInterfaces.Account
-import com.den.steward.backend.repoInterfaces.Storage
+import com.den.steward.backend.services.service.Account
+import com.den.steward.backend.services.service.Storage
 import com.den.steward.backend.workers.GoalWorker
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.concurrent.TimeUnit

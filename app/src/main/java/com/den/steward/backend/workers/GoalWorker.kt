@@ -49,7 +49,7 @@ class GoalWorker @AssistedInject constructor(
                 goalToolUseCase.schedule(transactionId, updatedGoal)
             }
 
-            // 4. Display the notification
+             // 4. Display the notification
             notificationSource.showNotification(
                 NotificationEntity(
                     title = "Goal Achieved",

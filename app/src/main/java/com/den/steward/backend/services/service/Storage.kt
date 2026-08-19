@@ -1,4 +1,4 @@
-package com.den.steward.backend.repoInterfaces
+package com.den.steward.backend.services.service
 
 import com.den.steward.backend.entitles.Transaction
 import com.google.firebase.firestore.FirebaseFirestore
