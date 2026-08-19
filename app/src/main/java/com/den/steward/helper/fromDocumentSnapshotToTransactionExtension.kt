@@ -14,13 +14,13 @@ import com.google.firebase.firestore.DocumentSnapshot
 private typealias TransactionFactory = (id: String, label: String, amount: Double, note: String, createdAt: Long, paymentMethod: PaymentMethod, affectAmount: Boolean) -> Transaction
 
 private val amountFactories: Map<String, TransactionFactory> = mapOf(
-    TransactionType.EARNINGS.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Earnings(id, label, note, amount, TransactionType.EARNINGS, createdAt, paymentMethod, affect) },
-    TransactionType.EXPENSE.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Expense(id, label, note, amount, TransactionType.EXPENSE, createdAt, paymentMethod, affect) },
-    TransactionType.LENT.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Lent(id, label, note, amount, TransactionType.LENT, emptyList(), createdAt, paymentMethod, affect) },
-    TransactionType.DEBT.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Debt(id, label, note, amount, TransactionType.DEBT, emptyList(), createdAt, paymentMethod, affect) },
-    TransactionType.REPAYMENT.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Repayment(id, label, note, amount, TransactionType.REPAYMENT, createdAt, Transaction.Lent(), paymentMethod, affect) },
-    TransactionType.REFUND.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Refund(id, label, note, amount, TransactionType.REFUND, createdAt, Transaction.Debt(), paymentMethod, affect) },
-    TransactionType.SAVINGS.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Savings(id, label, note, amount, TransactionType.SAVINGS, createdAt, paymentMethod, affect) },
+    TransactionType.EARNINGS.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Earnings(id, label, note, amount, TransactionType.EARNINGS, createdAt, paymentMethod = paymentMethod, affectAmount = affect) },
+    TransactionType.EXPENSE.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Expense(id, label, note, amount, TransactionType.EXPENSE, createdAt, paymentMethod = paymentMethod, affectAmount = affect) },
+    TransactionType.LENT.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Lent(id, label, note, amount, TransactionType.LENT, emptyList(), createdAt, paymentMethod = paymentMethod, affectAmount = affect) },
+    TransactionType.DEBT.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Debt(id, label, note, amount, TransactionType.DEBT, emptyList(), createdAt, paymentMethod = paymentMethod, affectAmount = affect) },
+    TransactionType.REPAYMENT.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Repayment(id, label, note, amount, TransactionType.REPAYMENT, createdAt, lent = Transaction.Lent(), paymentMethod = paymentMethod, affectAmount = affect) },
+    TransactionType.REFUND.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Refund(id, label, note, amount, TransactionType.REFUND, createdAt, debt = Transaction.Debt(), paymentMethod = paymentMethod, affectAmount = affect) },
+    TransactionType.SAVINGS.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Savings(id, label, note, amount, TransactionType.SAVINGS, createdAt, paymentMethod = paymentMethod, affectAmount = affect) },
 )
 
 val DocumentSnapshot.toTransaction: Transaction?

@@ -5,7 +5,10 @@ import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.den.steward.backend.entitles.GoalStatus
 import com.den.steward.backend.entitles.Transaction
+import com.den.steward.backend.notification.NotificationEntity
+import com.den.steward.backend.notification.NotificationSource
 import com.den.steward.backend.useCase.DataFetchUseCase
 import com.den.steward.backend.useCase.GoalToolUseCase
 import dagger.assisted.Assisted
@@ -16,7 +19,8 @@ class GoalWorker @AssistedInject constructor(
     @Assisted appContext: Context,
     @Assisted workerParams: WorkerParameters,
     private val goalToolUseCase: GoalToolUseCase,
-    private val dataFetchUseCase: DataFetchUseCase
+    private val dataFetchUseCase: DataFetchUseCase,
+    private val notificationSource: NotificationSource
 ) : CoroutineWorker(appContext, workerParams) {
     companion object {
         private const val TAG = "GoalWorker"
@@ -44,6 +48,21 @@ class GoalWorker @AssistedInject constructor(
             if (goal.repeatable != com.den.steward.backend.entitles.RecurrencePattern.NONE) {
                 goalToolUseCase.schedule(transactionId, updatedGoal)
             }
+
+            // 4. Display the notification
+            notificationSource.showNotification(
+                NotificationEntity(
+                    title = "Goal Achieved",
+                    message = when(data.status) {
+                        GoalStatus.NOT_STARTED -> "Your goal has not started yet"
+                        GoalStatus.IN_PROGRESS -> "You are still in progress"
+                        GoalStatus.COMPLETED -> "You achieved your goal"
+                        GoalStatus.FAILED -> "You failed to achieve your goal"
+                    },
+                    icon = data.type.icon,
+                    largeIcon = data.selectedIcon
+                )
+            )
 
             Log.d(TAG, "Doing work completed successfully for $transactionId")
             Result.success()

@@ -1,6 +1,7 @@
 package com.den.steward.backend.entitles
 
 import androidx.compose.runtime.Stable
+import com.den.steward.R
 import com.den.steward.helper.formatToAmount
 import com.den.steward.helper.title
 
@@ -8,7 +9,6 @@ import com.den.steward.helper.title
 sealed class Transaction {
     abstract val id: String
     abstract val type: TransactionType
-
     abstract val createdAt: Long
     @Stable
     data class Earnings(
@@ -18,6 +18,7 @@ sealed class Transaction {
         val amount: Double = 0.0,
         override val type: TransactionType = TransactionType.EARNINGS,
         override val createdAt: Long = System.currentTimeMillis(),
+        val selectedIcon: Int = R.drawable.earnings,
         val paymentMethod: PaymentMethod = PaymentMethod.CASH,
         val affectAmount: Boolean = false,
     ) : Transaction() {
@@ -32,6 +33,7 @@ sealed class Transaction {
         val amount: Double = 0.0,
         override val type: TransactionType = TransactionType.EXPENSE,
         override val createdAt: Long = System.currentTimeMillis(),
+        val selectedIcon: Int = R.drawable.expense,
         val paymentMethod: PaymentMethod = PaymentMethod.CASH,
         val affectAmount: Boolean = false,
     ) : Transaction()
@@ -44,6 +46,7 @@ sealed class Transaction {
         val amount: Double = 0.0,
         override val type: TransactionType = TransactionType.SAVINGS,
         override val createdAt: Long = System.currentTimeMillis(),
+        val selectedIcon: Int = R.drawable.savings,
         val paymentMethod: PaymentMethod = PaymentMethod.CASH,
         val affectAmount: Boolean = false,
     ) : Transaction()
@@ -57,6 +60,7 @@ sealed class Transaction {
         override val type: TransactionType = TransactionType.LENT,
         val repayment: List<Repayment> = emptyList(),
         override val createdAt: Long = System.currentTimeMillis(),
+        val selectedIcon: Int = R.drawable.lent,
         val paymentMethod: PaymentMethod = PaymentMethod.CASH,
         val affectAmount: Boolean = false
     ) : Transaction() {
@@ -73,6 +77,7 @@ sealed class Transaction {
         override val type: TransactionType = TransactionType.DEBT,
         val refund: List<Refund> = emptyList(),
         override val createdAt: Long = System.currentTimeMillis(),
+        val selectedIcon: Int = R.drawable.debt,
         val paymentMethod: PaymentMethod = PaymentMethod.CASH,
         val affectAmount: Boolean = false
     ) : Transaction() {
@@ -89,6 +94,7 @@ sealed class Transaction {
         val amount: Double = 0.0,
         override val type: TransactionType = TransactionType.REPAYMENT,
         override val createdAt: Long = System.currentTimeMillis(),
+        val selectedIcon: Int = R.drawable.repayment,
         val lent: Lent = Lent(),
         val paymentMethod: PaymentMethod = PaymentMethod.CASH,
         val affectAmount: Boolean = false
@@ -102,6 +108,7 @@ sealed class Transaction {
         val amount: Double = 0.0,
         override val type: TransactionType = TransactionType.REFUND,
         override val createdAt: Long = System.currentTimeMillis(),
+        val selectedIcon: Int = R.drawable.repay,
         val debt: Debt = Debt(),
         val paymentMethod: PaymentMethod = PaymentMethod.CASH,
         val affectAmount: Boolean = false
@@ -118,6 +125,7 @@ sealed class Transaction {
         val achievement: List<Achievement> = emptyList(),
         val goalType: GoalType = GoalType.AMOUNT,
         override val createdAt: Long = System.currentTimeMillis(),
+        val selectedIcon: Int = R.drawable.tag_goal,
         val startedAt: Long = System.currentTimeMillis(),
         val endAt: Long = System.currentTimeMillis(),
         val status: GoalStatus = GoalStatus.NOT_STARTED,

@@ -9,4 +9,7 @@
 
     <!-- Common -->
     <string name="loading_indicator">loading indicator</string>
+
+    <string name="channel_name">Notification Channel</string>
+    <string name="channel_description">Notification Channel Description</string>
 </resources>
