@@ -27,7 +27,13 @@ class GoalWorker @AssistedInject constructor(
     }
 
     override suspend fun doWork(): Result{
-        val transactionId = inputData.getString("transactionId") ?: return Result.failure()
+        val transactionId = inputData.getString("transactionId")
+        Log.i(TAG, "GoalWorker started for ID: $transactionId")
+        
+        if (transactionId == null) {
+            Log.e(TAG, "GoalWorker failed: transactionId is null")
+            return Result.failure()
+        }
 
         return try {
             val data = dataFetchUseCase.getTransaction(transactionId)

@@ -34,6 +34,7 @@ val Transaction.toMap: MutableMap<String, Any>
                 mapping["note"] = this.note
                 mapping["paymentMethod"] = this.paymentMethod.name
                 mapping["affectAmount"] = this.affectAmount
+                mapping["selectedIcon"] = this.selectedIcon
             }
 
             is Expense -> {
@@ -42,6 +43,7 @@ val Transaction.toMap: MutableMap<String, Any>
                 mapping["note"] = this.note
                 mapping["paymentMethod"] = this.paymentMethod.name
                 mapping["affectAmount"] = this.affectAmount
+                mapping["selectedIcon"] = this.selectedIcon
             }
 
             is Lent -> {
@@ -50,6 +52,7 @@ val Transaction.toMap: MutableMap<String, Any>
                 mapping["note"] = this.note
                 mapping["paymentMethod"] = this.paymentMethod.name
                 mapping["affectAmount"] = this.affectAmount
+                mapping["selectedIcon"] = this.selectedIcon
             }
 
             is Debt -> {
@@ -58,6 +61,7 @@ val Transaction.toMap: MutableMap<String, Any>
                 mapping["note"] = this.note
                 mapping["paymentMethod"] = this.paymentMethod.name
                 mapping["affectAmount"] = this.affectAmount
+                mapping["selectedIcon"] = this.selectedIcon
             }
 
             is Savings -> {
@@ -66,6 +70,7 @@ val Transaction.toMap: MutableMap<String, Any>
                 mapping["note"] = this.note
                 mapping["paymentMethod"] = this.paymentMethod.name
                 mapping["affectAmount"] = this.affectAmount
+                mapping["selectedIcon"] = this.selectedIcon
             }
 
             is Goal -> {
@@ -80,6 +85,7 @@ val Transaction.toMap: MutableMap<String, Any>
                 }
                 mapping["startedAt"] = Timestamp(java.util.Date(this.startedAt))
                 mapping["endAt"] = Timestamp(java.util.Date(this.endAt))
+                mapping["selectedIcon"] = this.selectedIcon
             }
 
             is Attain -> {

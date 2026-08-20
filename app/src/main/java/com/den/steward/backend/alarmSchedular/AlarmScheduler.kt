@@ -7,12 +7,12 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.AlarmManagerCompat
 import android.util.Log
-import dagger.assisted.Assisted
+import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.Calendar
 import javax.inject.Inject
 
 class AlarmScheduler @Inject constructor (
-    @Assisted private val context: Context
+    @ApplicationContext private val context: Context
 ) {
 
     companion object {

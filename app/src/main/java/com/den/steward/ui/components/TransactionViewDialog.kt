@@ -1,6 +1,7 @@
 // Glory be to LORD our GOD
 package com.den.steward.ui.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,7 +37,7 @@ import java.time.LocalDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TransactionViewCard(
+fun TransactionViewDialog(
     transaction: Transaction,
     onShow: Boolean,
     onDismissRequest: () -> Unit
@@ -64,7 +65,8 @@ fun TransactionViewCard(
                             createdAt = transaction.createdAt.toLocalDateTime(),
                             paymentMethod = transaction.paymentMethod,
                             transactionType = transaction.type,
-                            affectAmount = transaction.affectAmount
+                            affectAmount = transaction.affectAmount,
+                            selectedIcon = transaction.selectedIcon
                         )
                     }
 
@@ -76,7 +78,8 @@ fun TransactionViewCard(
                             createdAt = transaction.createdAt.toLocalDateTime(),
                             paymentMethod = transaction.paymentMethod,
                             affectAmount = transaction.affectAmount,
-                            transactionType = transaction.type
+                            transactionType = transaction.type,
+                            selectedIcon = transaction.selectedIcon
                         )
                     }
 
@@ -88,7 +91,8 @@ fun TransactionViewCard(
                             createdAt = transaction.createdAt.toLocalDateTime(),
                             paymentMethod = transaction.paymentMethod,
                             affectAmount = transaction.affectAmount,
-                            transactionType = transaction.type
+                            transactionType = transaction.type,
+                            selectedIcon = transaction.selectedIcon
                         )
                     }
 
@@ -102,7 +106,8 @@ fun TransactionViewCard(
                             endDateTime = transaction.endAt.toLocalDateTime(),
                             recurrencePattern = transaction.repeatable,
                             achievement = transaction.achievement,
-                            status = transaction.status
+                            status = transaction.status,
+                            selectedIcon = transaction.selectedIcon
                         )
                     }
 
@@ -121,11 +126,13 @@ private fun TransactionCard(
     createdAt: LocalDateTime,
     paymentMethod: PaymentMethod,
     affectAmount: Boolean,
+    selectedIcon: Int,
     transactionType: TransactionType
 ) {
     val transactionTypeLabel = stringResource(id = transactionType.label)
     val transactionTypeIcon = painterResource(transactionType.icon)
     val transactionTypeColor = colorResource(transactionType.color)
+    val transactionSelectedIcon = painterResource(selectedIcon)
 
     Column(
         modifier = Modifier.padding(16.dp),
@@ -165,6 +172,11 @@ private fun TransactionCard(
                 note = note
             )
         }
+
+        Image(
+            painter = transactionSelectedIcon,
+            contentDescription = transactionTypeLabel,
+        )
     }
 }
 
@@ -178,7 +190,8 @@ private fun TransactionGoalCard(
     endDateTime: LocalDateTime,
     recurrencePattern: RecurrencePattern,
     status: GoalStatus,
-    achievement: List<Transaction.Achievement>
+    achievement: List<Transaction.Achievement>,
+    selectedIcon: Int
 ) {
     val transactionTypeLabel = stringResource(id = TransactionType.GOAL.label)
     val transactionTypeIcon = painterResource(TransactionType.GOAL.icon)

@@ -1,5 +1,6 @@
 package com.den.steward.backend.useCase
 
+import android.util.Log
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.services.service.Account
@@ -13,6 +14,10 @@ class AddDataUseCase @Inject constructor(
     private val goalToolUseCase: GoalToolUseCase
 ) {
     val userId = accountService.currentUserId
+
+    companion object {
+        private const val TAG = "AddDataUseCase"
+    }
 
     suspend fun addFulfillment(transactionId: String, fulfillment: Transaction) {
         storageService.addFulfillment(userId, transactionId, fulfillment)
@@ -74,16 +79,23 @@ class AddDataUseCase @Inject constructor(
             else -> null
         } ?: return
 
-        val result = storageService.addTransaction(userId, transaction)
+        val result = try {
+            Log.d(TAG, "Starting addTransaction for goal: ${transaction.id}")
+            storageService.addTransaction(userId, transaction)
+        } catch (e: Exception) {
+            Log.e(TAG, "Exception in addTransaction", e)
+            Result.failure(e)
+        }
         
         if (result.isSuccess) {
             val transactionId = result.getOrThrow()
+            Log.i(TAG, "Transaction saved successfully: $transactionId")
             if (transaction is Transaction.Goal) {
-                android.util.Log.i("AddDataUseCase", "Scheduling Goal worker for $transactionId")
+                Log.i(TAG, "Scheduling Goal worker for $transactionId")
                 goalToolUseCase.schedule(transactionId, transaction)
             }
         } else {
-            android.util.Log.e("AddDataUseCase", "Failed to save transaction: ${result.exceptionOrNull()?.message}")
+            Log.e(TAG, "Failed to save transaction: ${result.exceptionOrNull()?.message}")
         }
     }
 }

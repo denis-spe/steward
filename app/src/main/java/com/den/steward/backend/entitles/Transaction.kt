@@ -94,7 +94,6 @@ sealed class Transaction {
         val amount: Double = 0.0,
         override val type: TransactionType = TransactionType.REPAYMENT,
         override val createdAt: Long = System.currentTimeMillis(),
-        val selectedIcon: Int = R.drawable.repayment,
         val lent: Lent = Lent(),
         val paymentMethod: PaymentMethod = PaymentMethod.CASH,
         val affectAmount: Boolean = false
@@ -108,7 +107,6 @@ sealed class Transaction {
         val amount: Double = 0.0,
         override val type: TransactionType = TransactionType.REFUND,
         override val createdAt: Long = System.currentTimeMillis(),
-        val selectedIcon: Int = R.drawable.repay,
         val debt: Debt = Debt(),
         val paymentMethod: PaymentMethod = PaymentMethod.CASH,
         val affectAmount: Boolean = false
@@ -290,5 +288,18 @@ sealed class Transaction {
 
             if (affectAmount == null) return null
             return if (affectAmount) "Yes" else "No"
+        }
+
+    val getIcon: Int?
+        get() {
+            return when(this) {
+                is Earnings -> this.selectedIcon
+                is Expense -> this.selectedIcon
+                is Lent -> this.selectedIcon
+                is Debt -> this.selectedIcon
+                is Goal -> this.selectedIcon
+                is Savings -> this.selectedIcon
+                else -> null
+            }
         }
 }

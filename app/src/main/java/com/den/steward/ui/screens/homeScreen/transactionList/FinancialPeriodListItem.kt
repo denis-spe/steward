@@ -27,7 +27,7 @@ import coil.compose.AsyncImage
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.helper.formattedTime
 import com.den.steward.helper.toLocalDateTime
-import com.den.steward.ui.components.TransactionViewCard
+import com.den.steward.ui.components.TransactionViewDialog
 
 @Composable
 fun FinancialPeriodListItem(transaction: Transaction) {
@@ -135,7 +135,7 @@ fun FinancialPeriodListItem(transaction: Transaction) {
         }
     }
 
-    TransactionViewCard(
+    TransactionViewDialog(
         transaction = transaction,
         onShow = onShow.value
     ) {

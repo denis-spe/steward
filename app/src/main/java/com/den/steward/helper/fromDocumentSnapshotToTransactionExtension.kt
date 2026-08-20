@@ -2,6 +2,7 @@
 package com.den.steward.helper
 
 import android.util.Log
+import com.den.steward.R
 import com.den.steward.backend.entitles.GoalStatus
 import com.den.steward.backend.entitles.GoalType
 import com.den.steward.backend.entitles.PaymentMethod
@@ -10,18 +11,6 @@ import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.google.firebase.firestore.DocumentSnapshot
 
-// Updated factory to include affectAmount and other basic flags
-private typealias TransactionFactory = (id: String, label: String, amount: Double, note: String, createdAt: Long, paymentMethod: PaymentMethod, affectAmount: Boolean) -> Transaction
-
-private val amountFactories: Map<String, TransactionFactory> = mapOf(
-    TransactionType.EARNINGS.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Earnings(id, label, note, amount, TransactionType.EARNINGS, createdAt, paymentMethod = paymentMethod, affectAmount = affect) },
-    TransactionType.EXPENSE.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Expense(id, label, note, amount, TransactionType.EXPENSE, createdAt, paymentMethod = paymentMethod, affectAmount = affect) },
-    TransactionType.LENT.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Lent(id, label, note, amount, TransactionType.LENT, emptyList(), createdAt, paymentMethod = paymentMethod, affectAmount = affect) },
-    TransactionType.DEBT.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Debt(id, label, note, amount, TransactionType.DEBT, emptyList(), createdAt, paymentMethod = paymentMethod, affectAmount = affect) },
-    TransactionType.REPAYMENT.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Repayment(id, label, note, amount, TransactionType.REPAYMENT, createdAt, lent = Transaction.Lent(), paymentMethod = paymentMethod, affectAmount = affect) },
-    TransactionType.REFUND.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Refund(id, label, note, amount, TransactionType.REFUND, createdAt, debt = Transaction.Debt(), paymentMethod = paymentMethod, affectAmount = affect) },
-    TransactionType.SAVINGS.name to { id, label, amount, note, createdAt, paymentMethod, affect -> Transaction.Savings(id, label, note, amount, TransactionType.SAVINGS, createdAt, paymentMethod = paymentMethod, affectAmount = affect) },
-)
 
 val DocumentSnapshot.toTransaction: Transaction?
     get() {
@@ -31,14 +20,11 @@ val DocumentSnapshot.toTransaction: Transaction?
     val note = getString("note") ?: ""
     val createdAt = getTimestamp("createdAt")?.toDate()?.time ?: System.currentTimeMillis()
     val affectAmount = getBoolean("affectAmount") ?: false
-
-    amountFactories[type]?.let { factory ->
-        val amount = getDouble("amount") ?: 0.0
-        val paymentMethod = getString("paymentMethod")?.let { name ->
-            PaymentMethod.entries.find { it.name == name }
-        } ?: PaymentMethod.CASH
-        return factory(id, label, amount, note, createdAt, paymentMethod, affectAmount)
-    }
+    val amount = getDouble("amount") ?: 0.0
+    val paymentMethod = getString("paymentMethod")?.let { name ->
+        PaymentMethod.entries.find { it.name == name }
+    } ?: PaymentMethod.CASH
+    val selectedIcon = getLong("selectedIcon") ?: R.drawable.description.toLong()
 
     return when (type) {
         TransactionType.GOAL.name -> {
@@ -70,6 +56,7 @@ val DocumentSnapshot.toTransaction: Transaction?
                 endAt = endAt,
                 createdAt = createdAt,
                 repeatable = repeatable,
+                selectedIcon = selectedIcon.toInt()
             ).calculateStatus(System.currentTimeMillis())
         }
 
@@ -92,6 +79,95 @@ val DocumentSnapshot.toTransaction: Transaction?
                 startAt = startAt,
                 endAt = endAt,
                 status = status
+            )
+        }
+
+        TransactionType.EARNINGS.name -> {
+            Transaction.Earnings(
+                id = id,
+                label = label,
+                amount = amount,
+                note = note,
+                createdAt = createdAt,
+                paymentMethod = paymentMethod,
+                affectAmount = affectAmount,
+                selectedIcon = selectedIcon.toInt()
+            )
+        }
+
+        TransactionType.EXPENSE.name -> {
+            Transaction.Expense(
+                id = id,
+                label = label,
+                amount = amount,
+                note = note,
+                createdAt = createdAt,
+                paymentMethod = paymentMethod,
+                affectAmount = affectAmount,
+                selectedIcon = selectedIcon.toInt()
+            )
+        }
+
+        TransactionType.SAVINGS.name -> {
+            Transaction.Savings(
+                id = id,
+                label = label,
+                amount = amount,
+                note = note,
+                createdAt = createdAt,
+                paymentMethod = paymentMethod,
+                affectAmount = affectAmount,
+                selectedIcon = selectedIcon.toInt()
+            )
+        }
+
+        TransactionType.LENT.name -> {
+            Transaction.Lent(
+                id = id,
+                label = label,
+                amount = amount,
+                note = note,
+                createdAt = createdAt,
+                paymentMethod = paymentMethod,
+                affectAmount = affectAmount,
+                selectedIcon = selectedIcon.toInt()
+            )
+        }
+
+        TransactionType.DEBT.name -> {
+            Transaction.Debt(
+                id = id,
+                label = label,
+                amount = amount,
+                note = note,
+                createdAt = createdAt,
+                paymentMethod = paymentMethod,
+                affectAmount = affectAmount,
+                selectedIcon = selectedIcon.toInt()
+            )
+        }
+
+        TransactionType.REPAYMENT.name -> {
+            Transaction.Repayment(
+                id = id,
+                label = label,
+                amount = amount,
+                note = note,
+                createdAt = createdAt,
+                paymentMethod = paymentMethod,
+                affectAmount = affectAmount,
+            )
+        }
+
+        TransactionType.REFUND.name -> {
+            Transaction.Refund(
+                id = id,
+                label = label,
+                amount = amount,
+                note = note,
+                createdAt = createdAt,
+                paymentMethod = paymentMethod,
+                affectAmount = affectAmount,
             )
         }
 

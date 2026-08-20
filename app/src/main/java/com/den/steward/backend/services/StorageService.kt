@@ -54,7 +54,10 @@ class StorageService @Inject constructor(
             transactionData["id"] = transactionRef.id
 
             // await the set operation to ensure data is persistent (locally) before returning
-            transactionRef.set(transactionData).await()
+            // We use a timeout to prevent hanging indefinitely when the backend is unreachable.
+            withTimeoutOrNull(SERVER_ACK_TIMEOUT_MS.milliseconds) {
+                transactionRef.set(transactionData).await()
+            }
             
             Result.success(transactionRef.id)
         } catch (e: Exception) {
@@ -85,7 +88,9 @@ class StorageService @Inject constructor(
             )
 
             val achievedData = achievement.toMap
-            achievedRef.set(achievedData).await()
+            withTimeoutOrNull(SERVER_ACK_TIMEOUT_MS.milliseconds) {
+                achievedRef.set(achievedData).await()
+            }
             Result.success(Unit)
         } catch (e: Exception) {
             if (e is CancellationException) throw e
@@ -114,9 +119,11 @@ class StorageService @Inject constructor(
                 .document(transactionId)
 
             val fulfillmentData = fulfillment.toMap
-            transactionRef.collection(collection)
-                .add(fulfillmentData)
-                .await()
+            withTimeoutOrNull(SERVER_ACK_TIMEOUT_MS.milliseconds) {
+                transactionRef.collection(collection)
+                    .add(fulfillmentData)
+                    .await()
+            }
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to add fulfillment for transaction $transactionId (user $userId)", e)
@@ -240,9 +247,14 @@ class StorageService @Inject constructor(
                 .document(transactionId)
 
             val transaction = try {
-                transactionRef.get().await()
+                withTimeoutOrNull(SERVER_ACK_TIMEOUT_MS.milliseconds) {
+                    transactionRef.get().await()
+                } ?: run {
+                    Log.w(TAG, "Remote fetch timed out for transaction $transactionId, trying CACHE")
+                    transactionRef.get(Source.CACHE).await()
+                }
             } catch (e: Exception) {
-                Log.e(TAG, "Remote fetch failed, trying CACHE", e)
+                Log.e(TAG, "Remote fetch failed for transaction $transactionId, trying CACHE", e)
                 transactionRef.get(Source.CACHE).await()
             }.toTransaction ?: return Result.success(null)
 
@@ -255,11 +267,18 @@ class StorageService @Inject constructor(
 
             if (fulfillmentCollection != null) {
                 val subItems = try {
-                    transactionRef
-                        .collection(fulfillmentCollection)
-                        .get().await()
+                    withTimeoutOrNull(SERVER_ACK_TIMEOUT_MS.milliseconds) {
+                        transactionRef
+                            .collection(fulfillmentCollection)
+                            .get().await()
+                    } ?: run {
+                        Log.w(TAG, "Remote fetch timed out for fulfillment of $transactionId, trying CACHE")
+                        transactionRef
+                            .collection(fulfillmentCollection)
+                            .get(Source.CACHE).await()
+                    }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Remote fetch failed, trying CACHE", e)
+                    Log.e(TAG, "Remote fetch failed for fulfillment of $transactionId, trying CACHE", e)
                     transactionRef
                         .collection(fulfillmentCollection)
                         .get(Source.CACHE).await()
