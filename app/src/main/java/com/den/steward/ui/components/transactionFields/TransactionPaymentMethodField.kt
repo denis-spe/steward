@@ -11,7 +11,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
@@ -24,24 +23,17 @@ import com.den.steward.backend.entitles.PaymentMethod
 @Composable
 fun TransactionPaymentMethodField(
     colorResId: Int,
-    selectedPaymentMethod: MutableState<PaymentMethod>,
+    selectedPaymentMethod: PaymentMethod,
+    onPaymentMethodChange: (PaymentMethod) -> Unit,
 ) {
    val color = colorResource(id = colorResId)
 
-    val cashBorder = if (selectedPaymentMethod.value == PaymentMethod.CASH) {
+    val cashBorder = if (selectedPaymentMethod == PaymentMethod.CASH) {
         BorderStroke(1.dp, color)
     } else null
 
-    val cardBorder = if (selectedPaymentMethod.value == PaymentMethod.CARD) {
+    val cardBorder = if (selectedPaymentMethod == PaymentMethod.CARD) {
         BorderStroke(1.dp, color)
-    } else null
-
-    val cashColor = if (selectedPaymentMethod.value == PaymentMethod.CASH) {
-        ColorFilter.tint(color)
-    } else null
-
-    val cardColor = if (selectedPaymentMethod.value == PaymentMethod.CARD) {
-        ColorFilter.tint(color)
     } else null
 
 
@@ -49,14 +41,14 @@ fun TransactionPaymentMethodField(
         title = "Payment",
         headlineContent = {
             Text(
-                text = selectedPaymentMethod.value.label,
+                text = selectedPaymentMethod.label,
                 style = MaterialTheme.typography.labelMedium,
             )
         },
         leadingContent = {
             Image(
                 painter = painterResource(id = R.drawable.payment),
-                contentDescription = selectedPaymentMethod.value.name,
+                contentDescription = selectedPaymentMethod.name,
                 modifier = Modifier.size(24.dp)
             )
         },
@@ -67,7 +59,7 @@ fun TransactionPaymentMethodField(
             ) {
                 OutlinedIconButton(
                     onClick = {
-                        selectedPaymentMethod.value = PaymentMethod.CASH
+                        onPaymentMethodChange(PaymentMethod.CASH)
                     },
                     border = cashBorder
                 ) {
@@ -80,7 +72,7 @@ fun TransactionPaymentMethodField(
 
                 OutlinedIconButton(
                     onClick = {
-                        selectedPaymentMethod.value = PaymentMethod.CARD
+                        onPaymentMethodChange(PaymentMethod.CARD)
                     },
                     border = cardBorder
                 ) {
@@ -93,7 +85,8 @@ fun TransactionPaymentMethodField(
             }
         }
     ) {
-        selectedPaymentMethod.value = if (selectedPaymentMethod.value == PaymentMethod.CASH)
+        onPaymentMethodChange(if (selectedPaymentMethod == PaymentMethod.CASH)
             PaymentMethod.CARD else PaymentMethod.CASH
+        )
     }
 }

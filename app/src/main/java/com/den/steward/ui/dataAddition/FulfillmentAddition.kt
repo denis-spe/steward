@@ -33,7 +33,7 @@ fun FulfillmentAddition() {
     BottomDrawerSheet(
         title = "Fulfillment",
         description = "Choose the type of fulfillment you're adding",
-        show = { onShow.value },
+        show = onShow.value,
         onDismissRequest = { onShow.value = false },
     ) {
         TransactionType.entries.filter {

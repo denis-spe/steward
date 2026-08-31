@@ -43,13 +43,14 @@ fun TimeDialog(
     color: Color,
     headerTitle: String = "Time",
     showTimePicker: MutableState<Boolean>,
-    localTimeState: MutableState<LocalTime>,
+    localTimeState: LocalTime,
+    onTimeChange: (LocalTime) -> Unit
 ) {
     val timePickerMode = remember { mutableStateOf("Clock") }
     val scrollState = rememberScrollState()
     val timePickerState = rememberTimePickerState(
-        initialHour = localTimeState.value.hour,
-        initialMinute = localTimeState.value.minute,
+        initialHour = localTimeState.hour,
+        initialMinute = localTimeState.minute,
         is24Hour = true
     )
 
@@ -120,10 +121,10 @@ fun TimeDialog(
 
             Button(
                 onClick = {
-                    localTimeState.value = LocalTime.of(
+                     onTimeChange(LocalTime.of(
                         timePickerState.hour,
                         timePickerState.minute
-                    )
+                     ))
                     showTimePicker.value = false
                 },
                 colors = ButtonDefaults.buttonColors(

@@ -60,11 +60,15 @@ import java.time.LocalDateTime
 @Composable
 fun TransactionRecurrenceField(
     colorResId: Int,
-    startedAt: MutableState<LocalDateTime>,
-    endAt: MutableState<LocalDateTime>,
-    recurrence: MutableState<RecurrencePattern>,
-    wasDateTimeSet: MutableState<TransactionFieldState>,
-    colors: ListItemColors = ListItemDefaults.colors()
+    startedAt: LocalDateTime,
+    endAt: LocalDateTime,
+    recurrence: RecurrencePattern,
+    isStartNotEqualToEndDateTime: TransactionFieldState,
+    colors: ListItemColors = ListItemDefaults.colors(),
+    onStartTimeChange: (LocalDateTime) -> Unit,
+    onEndTimeChange: (LocalDateTime) -> Unit,
+    onRecurrenceChange: (RecurrencePattern) -> Unit,
+    onIsStartNotEqualToEndDateTimeChange: (TransactionFieldState) -> Unit
 ) {
     val onDialogShow = remember { mutableStateOf(false) }
     val color = colorResource(id = colorResId)
@@ -76,23 +80,24 @@ fun TransactionRecurrenceField(
         RecurrenceDialog(
             color = color,
             recurrence = recurrence,
+            onRecurrenceChange = onRecurrenceChange,
             onDismissRequest = {
                 onDialogShow.value = false
             }
         ) { finalStartDate, finalEndDate ->
             if (finalStartDate != null) {
-                startedAt.value = finalStartDate
+                onStartTimeChange(finalStartDate)
                 selectedStartAt.value = finalStartDate
             }
             if (finalEndDate != null) {
-                endAt.value = finalEndDate
+                onEndTimeChange(finalEndDate)
                 selectedEndAt.value = finalEndDate
             }
         }
     }
 
     TransactionRecurrenceFieldItem(
-        colors = if (wasDateTimeSet.value is TransactionFieldState.Error)
+        colors = if (isStartNotEqualToEndDateTime is TransactionFieldState.Error)
             colors.copy(
                 containerColor = MaterialTheme.colorScheme.error
             ) else colors,
@@ -100,7 +105,8 @@ fun TransactionRecurrenceField(
         startedAt = selectedStartAt,
         endAt = selectedEndAt,
         recurrence = recurrence,
-        wasDateTimeSet = wasDateTimeSet
+        isStartNotEqualToEndDateTime = isStartNotEqualToEndDateTime,
+        onIsStartNotEqualToEndDateTimeChange = onIsStartNotEqualToEndDateTimeChange
     )
 }
 
@@ -110,15 +116,16 @@ private fun TransactionRecurrenceFieldItem(
     onDialogShow: MutableState<Boolean>,
     startedAt: MutableState<LocalDateTime?>,
     endAt: MutableState<LocalDateTime?>,
-    recurrence: MutableState<RecurrencePattern>,
+    recurrence: RecurrencePattern,
     colors: ListItemColors,
-    wasDateTimeSet: MutableState<TransactionFieldState>,
+    isStartNotEqualToEndDateTime: TransactionFieldState,
+    onIsStartNotEqualToEndDateTimeChange: (TransactionFieldState) -> Unit,
 ) {
 
     LaunchedEffect(
-        endAt
+        endAt.value
     ) {
-        wasDateTimeSet.value = TransactionFieldState.Initial
+        onIsStartNotEqualToEndDateTimeChange(TransactionFieldState.Initial)
     }
 
     TransactionFieldCard(
@@ -145,7 +152,7 @@ private fun TransactionRecurrenceFieldItem(
                     )
                 }
 
-                if (endAt.value != null && startedAt.value != null && endAt.value!!.isAfter(startedAt.value)) {
+                if (endAt.value != null && startedAt.value != null && endAt.value!!.isAfter(startedAt.value!!)) {
                     Text(
                         text = "Ends: ${endAt.value!!.formatedDateTime}",
                         style = MaterialTheme.typography.labelSmall,
@@ -155,9 +162,9 @@ private fun TransactionRecurrenceFieldItem(
             }
         },
         trailingContent = {
-            val text = if (wasDateTimeSet.value is TransactionFieldState.Error)
+            val text = if (isStartNotEqualToEndDateTime is TransactionFieldState.Error)
                     "Required"
-                else when (recurrence.value) {
+                else when (recurrence) {
                 is RecurrencePattern.NONE -> "Not Repeatable"
                 is RecurrencePattern.DAILY -> "Daily"
                 is RecurrencePattern.WEEKLY -> "Weekly"
@@ -169,7 +176,7 @@ private fun TransactionRecurrenceFieldItem(
                 text = text,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
-                color = if (wasDateTimeSet.value is TransactionFieldState.Error)
+                color = if (isStartNotEqualToEndDateTime is TransactionFieldState.Error)
                     Color.Red else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -181,9 +188,10 @@ private fun TransactionRecurrenceFieldItem(
 @Composable
 private fun RecurrenceDialog(
     color: Color,
-    recurrence: MutableState<RecurrencePattern>,
+    recurrence: RecurrencePattern,
+    onRecurrenceChange: (RecurrencePattern) -> Unit,
     onDismissRequest: () -> Unit,
-    onSubmit: (finalStartDate: LocalDateTime?, finalEndDate: LocalDateTime?) -> Unit,
+    onSubmit: (LocalDateTime?, LocalDateTime?) -> Unit,
 ) {
     Dialog(
         onDismissRequest =  onDismissRequest
@@ -203,6 +211,7 @@ private fun RecurrenceDialog(
                 RecurrenceDialogContent(
                     color = color,
                     recurrence = recurrence,
+                    onRecurrenceChange = onRecurrenceChange,
                     onDismissRequest = onDismissRequest,
                     onSubmit = onSubmit
                 )
@@ -249,7 +258,8 @@ private fun RecurrenceRow(
 @Composable
 private fun RecurrenceDialogContent(
     color: Color,
-    recurrence: MutableState<RecurrencePattern>,
+    recurrence: RecurrencePattern,
+    onRecurrenceChange: (RecurrencePattern) -> Unit,
     onDismissRequest: () -> Unit,
     onSubmit: (finalStartDate: LocalDateTime?, finalEndDate: LocalDateTime?) -> Unit,
 ) {
@@ -293,6 +303,7 @@ private fun RecurrenceDialogContent(
     RecurrenceOptionsContent(
         color = color,
         recurrence = recurrence,
+        onRecurrenceChange = onRecurrenceChange,
         onSelect = { start, end ->
             startedAtDate.value = start.toLocalDate()
             startedAtTime.value = start.toLocalTime()
@@ -313,7 +324,7 @@ private fun RecurrenceDialogContent(
 
     RecurrenceBottomButton(
         color = color,
-        transactionFieldState = transactionFieldState,
+        transactionFieldState = transactionFieldState.value,
         onConfirm = {
             val newStart = startedAtDate.value.atTime(startedAtTime.value)
             val newEnd = endAtDate.value.atTime(endAtTime.value)
@@ -329,7 +340,7 @@ private fun RecurrenceDialogContent(
                         TransactionFieldState.Error("End date must be within 1 year")
                 }
 
-                recurrence.value is RecurrencePattern.Custom && (recurrence.value as RecurrencePattern.Custom).days.isEmpty() -> {
+                recurrence is RecurrencePattern.Custom && (recurrence as RecurrencePattern.Custom).days.isEmpty() -> {
                     transactionFieldState.value =
                         TransactionFieldState.Error("Select at least one day for custom recurrence")
                 }
@@ -362,7 +373,14 @@ private fun RecurrenceDialogContent(
             color = color,
             headerTitle = showRecurrencePicker.value,
             showTimePicker = showTimePicker,
-            localTimeState = if (showRecurrencePicker.value == "Starting Time") startedAtTime else endAtTime
+            localTimeState = if (showRecurrencePicker.value == "Starting Time") startedAtTime.value else endAtTime.value,
+            onTimeChange = {
+                if (showRecurrencePicker.value == "Starting Time") {
+                    startedAtTime.value = it
+                } else {
+                    endAtTime.value = it
+                }
+            }
         )
     }
 
@@ -371,13 +389,14 @@ private fun RecurrenceDialogContent(
 @Composable
 fun RecurrenceOptionsContent(
     color: Color,
-    recurrence: MutableState<RecurrencePattern>,
+    recurrence: RecurrencePattern,
+    onRecurrenceChange: (RecurrencePattern) -> Unit,
     onSelect: (start: LocalDateTime, end: LocalDateTime) -> Unit
 ) {
     val selectedDays = remember {
         mutableStateListOf<Int>().apply {
-            if (recurrence.value is RecurrencePattern.Custom) {
-                addAll((recurrence.value as RecurrencePattern.Custom).days)
+            if (recurrence is RecurrencePattern.Custom) {
+                addAll((recurrence as RecurrencePattern.Custom).days)
             }
         }
     }
@@ -407,8 +426,8 @@ fun RecurrenceOptionsContent(
                         title = pattern.name,
                         color = color,
                         isSelected = when {
-                            recurrence.value is RecurrencePattern.Custom && pattern is RecurrencePattern.Custom -> true
-                            else -> recurrence.value == pattern
+                            recurrence is RecurrencePattern.Custom && pattern is RecurrencePattern.Custom -> true
+                            else -> recurrence == pattern
                         },
                         onClick = {
                             val newPattern = if (pattern is RecurrencePattern.Custom) {
@@ -416,7 +435,7 @@ fun RecurrenceOptionsContent(
                             } else {
                                 pattern
                             }
-                            recurrence.value = newPattern
+                            onRecurrenceChange(newPattern)
 
                             val now = LocalDateTime.now()
                             val end = when (newPattern) {
@@ -436,12 +455,12 @@ fun RecurrenceOptionsContent(
             }
         }
 
-        if (recurrence.value is RecurrencePattern.Custom) {
+        if (recurrence is RecurrencePattern.Custom) {
             RecurrenceWeekDay(
                 color = color,
                 dayState = selectedDays,
                 onDaysChanged = { updatedDays ->
-                    recurrence.value = RecurrencePattern.Custom(updatedDays)
+                    onRecurrenceChange(RecurrencePattern.Custom(updatedDays))
                 }
             )
         }
@@ -637,7 +656,7 @@ private fun RecurrenceBottomButton(
     color: Color,
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
-    transactionFieldState: MutableState<TransactionFieldState>,
+    transactionFieldState: TransactionFieldState,
 ) {
     Row(
         modifier = Modifier,
@@ -660,7 +679,7 @@ private fun RecurrenceBottomButton(
             onClick = onConfirm,
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             colors = ButtonDefaults.buttonColors().copy(
-                containerColor = if (transactionFieldState.value is TransactionFieldState.Error)
+                containerColor = if (transactionFieldState is TransactionFieldState.Error)
                     MaterialTheme.colorScheme.error else color
             )
         ) {

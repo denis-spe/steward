@@ -6,7 +6,6 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,6 +22,8 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.den.steward.backend.states.AuthState
+import com.den.steward.backend.viewModels.DataAdditionViewModel
+import com.den.steward.backend.viewModels.DataFetchViewModel
 import com.den.steward.backend.viewModels.ForgotPasswordViewModel
 import com.den.steward.backend.viewModels.HomeViewModel
 import com.den.steward.backend.viewModels.LoginViewModel
@@ -89,10 +90,15 @@ fun EntryProviderScope<NavKey>.featureAEntryBuilder(
 
     // ===== Home Screen =====
     entry<HomeRouter> {
+        val dataAdditionViewModel: DataAdditionViewModel = hiltViewModel()
+        val dataFetchViewModel: DataFetchViewModel = hiltViewModel()
         val homeViewModel: HomeViewModel = hiltViewModel()
+
         HomeScreen(
             backStack = backStack,
-            homeViewModel = homeViewModel
+            homeViewModel = homeViewModel,
+            dataAdditionViewModel = dataAdditionViewModel,
+            dataFetchViewModel = dataFetchViewModel
         )
     }
 

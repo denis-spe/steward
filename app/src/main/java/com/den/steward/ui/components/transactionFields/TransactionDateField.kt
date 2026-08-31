@@ -3,34 +3,18 @@ package com.den.steward.ui.components.transactionFields
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDefaults
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,14 +26,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.den.steward.R
 import com.den.steward.helper.formattedDate
-import com.den.steward.helper.toEpochMillis
 import com.den.steward.helper.yesterday
 import com.den.steward.ui.components.DateDialog
-import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.ZoneOffset
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,7 +37,8 @@ fun TransactionDateField(
     title: String,
     colorResId: Int,
     modifier: Modifier = Modifier,
-    localDateState: MutableState<LocalDate>,
+    localDateState: LocalDate,
+    onLocalDateChange: (LocalDate) -> Unit,
 ) {
     val showDatePicker = remember { mutableStateOf(false) }
     val color = colorResource(id = colorResId)
@@ -67,7 +48,8 @@ fun TransactionDateField(
             title = title,
             color = color,
             showDatePicker = showDatePicker,
-            localDateState = localDateState
+            localDateState = localDateState,
+            onDateChange = onLocalDateChange
         )
     }
 
@@ -76,6 +58,7 @@ fun TransactionDateField(
         modifier = modifier,
         showDatePicker = showDatePicker,
         displayState = localDateState,
+        updateDisplayState = onLocalDateChange
     )
 }
 
@@ -84,13 +67,14 @@ private fun TransactionDateFieldItem(
     color: Color,
     modifier: Modifier = Modifier,
     showDatePicker: MutableState<Boolean>,
-    displayState: MutableState<LocalDate>,
+    displayState: LocalDate,
+    updateDisplayState: (LocalDate) -> Unit,
 ) {
     val yesterday = remember { LocalDateTime.now().yesterday().toLocalDate() }
 
-    val clickedType = remember(displayState.value) {
+    val clickedType = remember(displayState) {
         val today = LocalDate.now()
-        when (displayState.value) {
+        when (displayState) {
             today -> "Today"
             yesterday -> "Yesterday"
             else -> "Initial"
@@ -111,7 +95,7 @@ private fun TransactionDateFieldItem(
             )
         },
         trailingContent = {
-            val textValue = displayState.value.formattedDate
+            val textValue = displayState.formattedDate
             Column(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.Center
@@ -124,7 +108,7 @@ private fun TransactionDateFieldItem(
                 ) {
                     TextButton(
                         onClick = {
-                            displayState.value = LocalDate.now()
+                            updateDisplayState(LocalDate.now())
                         },
                         contentPadding = PaddingValues(0.dp),
                         border = if (clickedType == "Today")
@@ -143,7 +127,7 @@ private fun TransactionDateFieldItem(
 
                     TextButton(
                         onClick = {
-                            displayState.value = yesterday
+                            updateDisplayState(yesterday)
                         },
                         contentPadding = PaddingValues(0.dp),
                         border = if (clickedType == "Yesterday")

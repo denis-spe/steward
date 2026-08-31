@@ -2,13 +2,10 @@
 package com.den.steward.ui.components.transactionFields
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -20,7 +17,6 @@ import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -63,11 +59,13 @@ fun TransactionAmountField(
     state: TextFieldState,
     placeholder: String,
     shape: Shape = CircleShape,
-    wasSuccess: MutableState<TransactionFieldState>,
-    displayState: MutableState<String>,
+    isAmountCorrect: TransactionFieldState,
+    updateIsAmountCorrect: (TransactionFieldState) -> Unit = {},
+    displayState: String,
+    updateDisplayState: (String) -> Unit = {},
     clearOnCancel: Boolean = false,
 ) {
-    val isError = wasSuccess.value is TransactionFieldState.Error
+    val isError = isAmountCorrect is TransactionFieldState.Error
     val color = if (isError)
         MaterialTheme.colorScheme.error.copy(0.7f) else
         Color.Unspecified
@@ -79,7 +77,7 @@ fun TransactionAmountField(
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(state.text) {
-        wasSuccess.value = TransactionFieldState.Initial
+        updateIsAmountCorrect(TransactionFieldState.Initial)
     }
 
     if (onDialogShow.value) {
@@ -165,9 +163,10 @@ fun TransactionAmountField(
                             onKeyboardAction = KeyboardActionHandler {
                                 if (state.text.isNotEmpty()) {
                                     onDialogShow.value = false
-                                    displayState.value = if (state.text.isNotEmpty())
+                                    updateDisplayState(if (state.text.isNotEmpty())
                                         state.text.toString() else
                                         "0.0"
+                                    )
                                 }
                             },
                             leadingIcon = {
@@ -192,7 +191,7 @@ fun TransactionAmountField(
                             onDone = {
                                 if (state.text.isNotEmpty()) {
                                     state.setTextAndPlaceCursorAtEnd(state.text.toString())
-                                    displayState.value = state.text.toString()
+                                    updateDisplayState(state.text.toString())
                                     onDialogShow.value = false
                                     showCustomKeyboard.value = false
                                 }
@@ -202,7 +201,7 @@ fun TransactionAmountField(
                                 if (clearOnCancel)
                                     state.setTextAndPlaceCursorAtEnd("")
                                 else
-                                    state.setTextAndPlaceCursorAtEnd(displayState.value)
+                                    state.setTextAndPlaceCursorAtEnd(displayState)
                             }
                         )
                     }
@@ -229,7 +228,7 @@ private fun TransactionAmountFieldItem(
     modifier: Modifier = Modifier,
     showCustomKeyboard: MutableState<Boolean>,
     onDialogShow: MutableState<Boolean>,
-    displayState: MutableState<String>,
+    displayState: String,
     symbol: String,
     color: Color
 ) {
@@ -249,8 +248,8 @@ private fun TransactionAmountFieldItem(
         ),
         trailingContent = {
             val amountText = try {
-                if (displayState.value.isEmpty()) "$symbol 0.0" else
-                    displayState.value.toDouble().formatToAmount()
+                if (displayState.isEmpty()) "$symbol 0.0" else
+                    displayState.toDouble().formatToAmount()
             } catch (e: Exception) {
                 "$symbol 0.0"
             }

@@ -29,10 +29,11 @@ fun DateDialog(
     color: Color,
     headerTitle: String = "Date",
     showDatePicker: MutableState<Boolean>,
-    localDateState: MutableState<LocalDate>,
+    localDateState: LocalDate,
+    onDateChange: (LocalDate) -> Unit
 ) {
     val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = localDateState.value
+        initialSelectedDateMillis = localDateState
             .atStartOfDay(ZoneOffset.UTC)
             .toInstant()
             .toEpochMilli()
@@ -66,9 +67,9 @@ fun DateDialog(
                     onClick = {
                         val selectedDateMillis = datePickerState.selectedDateMillis
                         if (selectedDateMillis != null) {
-                            localDateState.value = Instant.ofEpochMilli(selectedDateMillis)
+                            onDateChange(Instant.ofEpochMilli(selectedDateMillis)
                                 .atZone(ZoneOffset.UTC)
-                                .toLocalDate()
+                                .toLocalDate())
                         }
                         showDatePicker.value = false
                     },

@@ -1,20 +1,17 @@
 package com.den.steward.ui.components.transactionFields
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.KeyboardActionHandler
-import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.maxLength
 import androidx.compose.material.icons.Icons
@@ -23,7 +20,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -57,10 +53,11 @@ fun TransactionNoteField(
     title: String = "",
     description: String = "",
     state: TextFieldState,
-    displayText: MutableState<String>,
+    displayText: String,
     placeholder: String,
     colorResId: Int,
     textLength: Int = 500,
+    onDisplayTextChange: (String) -> Unit,
 ) {
     val color = colorResource(id = colorResId)
 
@@ -74,7 +71,7 @@ fun TransactionNoteField(
 
         Dialog(
             onDismissRequest = {
-                state.setTextAndPlaceCursorAtEnd(displayText.value)
+                state.setTextAndPlaceCursorAtEnd(displayText)
                 onDialogShow.value = false
             },
         ) {
@@ -136,7 +133,7 @@ fun TransactionNoteField(
                         onKeyboardAction = KeyboardActionHandler {
                             if (state.text.isNotEmpty()) {
                                 onDialogShow.value = false
-                                displayText.value = state.text.toString()
+                                onDisplayTextChange(state.text.toString())
                             }
                         },
                         trailingIcon = {
@@ -167,7 +164,7 @@ fun TransactionNoteField(
                     ) {
                         TextButton(
                             onClick = {
-                                state.setTextAndPlaceCursorAtEnd(displayText.value)
+                                state.setTextAndPlaceCursorAtEnd(displayText)
                                 onDialogShow.value = false
                             }
                         ) {
@@ -188,7 +185,7 @@ fun TransactionNoteField(
                             onClick = {
                                 if (state.text.isNotEmpty()) {
                                     onDialogShow.value = false
-                                    displayText.value = state.text.toString()
+                                    onDisplayTextChange(state.text.toString())
                                 }
                             }
                         ) {
@@ -219,7 +216,7 @@ private fun TransactionNoteFieldItem(
     title: String,
     modifier: Modifier = Modifier,
     onDialogShow: MutableState<Boolean>,
-    displayState: MutableState<String>,
+    displayState: String,
 ) {
 
     TransactionFieldCard(
@@ -233,9 +230,9 @@ private fun TransactionNoteFieldItem(
             )
         },
         trailingContent = {
-            val textValue = if (displayState.value.length > MAX_LABEL_LENGTH)
-                displayState.value.take(MAX_LABEL_LENGTH) + "..." else
-                (displayState.value.ifEmpty { "..." })
+            val textValue = if (displayState.length > MAX_LABEL_LENGTH)
+                displayState.take(MAX_LABEL_LENGTH) + "..." else
+                (displayState.ifEmpty { "..." })
 
             Text(textValue, fontSize = FONT_SIZE)
         }

@@ -28,14 +28,6 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel(){
     val userState: StateFlow<AuthState> = authorizationUseCase.userState
 
-
-    val fetchAllTransactions: StateFlow<DataState<List<Transaction>>> = dataFetchUseCase.fetchAllTransactions
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = DataState.Loading
-        )
-
     val donutChart: StateFlow<DataState<List<DonutChartData>>> = chartUseCase.donutChart
         .stateIn(
             scope = viewModelScope,
@@ -52,19 +44,7 @@ class HomeViewModel @Inject constructor(
 
 
 
-    val todayTransactions: StateFlow<DataState<List<Transaction>>> = dataFilterUseCase.todayTransactions
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = DataState.Loading
-        )
 
-    val yesterdayTransactions: StateFlow<DataState<List<Transaction>>> = dataFilterUseCase.yesterdayTransactions
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = DataState.Loading
-        )
 
 
     fun addFulfillment(transactionId: String, fulfillment: Transaction) {

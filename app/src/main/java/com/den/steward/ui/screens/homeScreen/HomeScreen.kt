@@ -11,38 +11,36 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.BottomAppBar
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
-import com.den.steward.R
+import com.den.steward.backend.viewModels.DataAdditionViewModel
+import com.den.steward.backend.viewModels.DataFetchViewModel
 import com.den.steward.backend.viewModels.HomeViewModel
-import com.den.steward.ui.dataAddition.TransactionAddition
+import com.den.steward.ui.dataAddition.AddTransactionFloatingActionButton
 import com.den.steward.ui.screens.homeScreen.transactionCharts.TransactionDonutChart
 import com.den.steward.ui.screens.homeScreen.transactionList.FinancialPeriodList
-import com.den.steward.ui.screens.screenManager.SettingsRouter
 
 @Composable
-fun HomeScreen(backStack: NavBackStack<NavKey>, homeViewModel: HomeViewModel) {
+fun HomeScreen(
+    backStack: NavBackStack<NavKey>,
+    homeViewModel: HomeViewModel,
+    dataAdditionViewModel: DataAdditionViewModel,
+    dataFetchViewModel: DataFetchViewModel
+) {
 
-    val todayTransactions by homeViewModel.todayTransactions.collectAsStateWithLifecycle()
+    val todayTransactions by dataFetchViewModel.todayTransactions.collectAsStateWithLifecycle()
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -78,7 +76,10 @@ fun HomeScreen(backStack: NavBackStack<NavKey>, homeViewModel: HomeViewModel) {
                                     contentDescription = "Today"
                                 )
                             }
-                            TransactionAddition(homeViewModel::transactionDataSubmission)
+                            AddTransactionFloatingActionButton(
+                                dataAdditionViewModel = dataAdditionViewModel
+                            )
+
                             IconButton(
                                 onClick = {}
                             ) {

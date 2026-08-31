@@ -2,13 +2,11 @@
 package com.den.steward.ui.components.transactionFields
 
 import androidx.compose.foundation.Image
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -19,7 +17,8 @@ import com.den.steward.R
 fun TransactionAffectAmount(
     colorResId: Int,
     modifier: Modifier = Modifier,
-    isAffectingAmount: MutableState<Boolean>,
+    isAffectingAmount: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
 ) {
     val color = colorResource(id = colorResId)
 
@@ -34,7 +33,7 @@ fun TransactionAffectAmount(
         },
         headlineContent = {
             Text(
-                text = if (isAffectingAmount.value) "This will affects the amount" else
+                text = if (isAffectingAmount) "This will affects the amount" else
                     "This will does not affect the amount",
                 color = color,
                 style = MaterialTheme.typography.labelMedium
@@ -42,8 +41,8 @@ fun TransactionAffectAmount(
         },
         trailingContent = {
             Switch(
-                checked = isAffectingAmount.value,
-                onCheckedChange = { isAffectingAmount.value = it },
+                checked = isAffectingAmount,
+                onCheckedChange = onCheckedChange,
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = color,
                     checkedTrackColor = color.copy(0.4f)
@@ -51,6 +50,6 @@ fun TransactionAffectAmount(
             )
         }
     ){
-        isAffectingAmount.value = !isAffectingAmount.value
+        onCheckedChange(!isAffectingAmount)
     }
 }

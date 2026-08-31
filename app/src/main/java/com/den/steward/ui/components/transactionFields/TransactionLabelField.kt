@@ -56,14 +56,16 @@ fun TransactionLabelField(
     title: String = "",
     description: String = "",
     state: TextFieldState,
-    displayText: MutableState<String>,
+    displayText: String,
+    onDisplayTextChange: (String) -> Unit = {},
     placeholder: String,
     textLength: Int = 16,
-    wasSuccess: MutableState<TransactionFieldState>,
+    wasSuccess: TransactionFieldState,
+    updateWasSuccess: (TransactionFieldState) -> Unit = {},
     lineLimits: TextFieldLineLimits = TextFieldLineLimits.SingleLine,
     colorResId: Int,
 ) {
-    val isError = state.text.isEmpty() && wasSuccess.value is TransactionFieldState.Error
+    val isError = state.text.isEmpty() && wasSuccess is TransactionFieldState.Error
     val color = if (isError)
         MaterialTheme.colorScheme.error.copy(0.7f) else
         Color.Unspecified
@@ -75,7 +77,7 @@ fun TransactionLabelField(
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(state.text) {
-        wasSuccess.value = TransactionFieldState.Initial
+        updateWasSuccess(TransactionFieldState.Initial)
     }
 
     if (onDialogShow.value) {
@@ -85,7 +87,7 @@ fun TransactionLabelField(
 
         Dialog(
             onDismissRequest = {
-                state.setTextAndPlaceCursorAtEnd(displayText.value)
+                state.setTextAndPlaceCursorAtEnd(displayText)
                 onDialogShow.value = false
             },
         ) {
@@ -148,7 +150,7 @@ fun TransactionLabelField(
                         onKeyboardAction = KeyboardActionHandler {
                             if (state.text.isNotEmpty()) {
                                 onDialogShow.value = false
-                                displayText.value = state.text.toString()
+                                onDisplayTextChange(state.text.toString())
                             }
                         },
                         trailingIcon = {
@@ -179,7 +181,7 @@ fun TransactionLabelField(
                     ) {
                         TextButton(
                             onClick = {
-                                state.setTextAndPlaceCursorAtEnd(displayText.value)
+                                state.setTextAndPlaceCursorAtEnd(displayText)
                                 onDialogShow.value = false
                             }
                         ) {
@@ -201,7 +203,7 @@ fun TransactionLabelField(
                             onClick = {
                                 if (state.text.isNotEmpty()) {
                                     onDialogShow.value = false
-                                    displayText.value = state.text.toString()
+                                    onDisplayTextChange(state.text.toString())
                                 }
                             }
                         ) {
@@ -237,11 +239,11 @@ private fun TransactionLabelFieldItem(
     optionsTitle: String,
     modifier: Modifier = Modifier,
     onDialogShow: MutableState<Boolean>,
-    displayState: MutableState<String>,
+    displayState: String,
     color: Color,
-    wasSuccess: MutableState<TransactionFieldState>,
+    wasSuccess: TransactionFieldState,
 ) {
-    val textColor = if (wasSuccess.value is TransactionFieldState.Error)
+    val textColor = if (wasSuccess is TransactionFieldState.Error)
         Color.Red else Color.Unspecified
 
     TransactionFieldCard(
@@ -258,9 +260,9 @@ private fun TransactionLabelFieldItem(
             containerColor = color
         ),
         trailingContent = {
-            val textValue = if (displayState.value.length > MAX_LABEL_LENGTH)
-                displayState.value.take(MAX_LABEL_LENGTH) + "..." else
-                (displayState.value.ifEmpty { optionsTitle })
+            val textValue = if (displayState.length > MAX_LABEL_LENGTH)
+                displayState.take(MAX_LABEL_LENGTH) + "..." else
+                (displayState.ifEmpty { optionsTitle })
 
             Text(textValue, fontSize = FONT_SIZE, color = textColor)
         }

@@ -35,12 +35,12 @@ import com.den.steward.backend.entitles.TransactionType
 fun BottomDrawerSheet(
     title: String,
     description: String,
-    show: () -> Boolean,
+    show: Boolean,
     transactionType: TransactionType? = null,
     onDismissRequest: () -> Unit,
     content: @Composable (ColumnScope.() -> Unit),
 ) {
-    if (show()) {
+    if (show) {
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         val scrollState = rememberScrollState()
 
