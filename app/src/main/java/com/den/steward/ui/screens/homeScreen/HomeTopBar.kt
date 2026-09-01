@@ -59,9 +59,7 @@ fun HomeTabRow(currentTab: HomeTab, onTabChange: (HomeTab) -> Unit) {
                 indicator = {}
             ) {
                 tabs.forEach { tab ->
-                    val isSelected = remember(currentTab) {
-                        currentTab == tab
-                    }
+                    val isSelected = currentTab == tab
 
                     val color = if (isSelected) {
                         MaterialTheme.colorScheme.onPrimary

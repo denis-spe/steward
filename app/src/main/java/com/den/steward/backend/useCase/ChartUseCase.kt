@@ -7,7 +7,9 @@ import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataState
 import com.den.steward.ui.components.charts.DonutChartData
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
@@ -46,7 +48,7 @@ class ChartUseCase @Inject constructor (
                 is DataState.Loading -> DataState.Loading
                 is DataState.Error -> DataState.Error(state.message)
             }
-        }
+        }.flowOn(Dispatchers.Default)
 
     val donutChartCenterAmount: Flow<Double> = dataFilterUseCase.todayTransactions
         .map { state ->
@@ -75,7 +77,7 @@ class ChartUseCase @Inject constructor (
                 }
             }
             incoming - outgoing
-        }
+        }.flowOn(Dispatchers.Default)
 
     val yesterdayTransactions = dataFilterUseCase.yesterdayTransactions
 }

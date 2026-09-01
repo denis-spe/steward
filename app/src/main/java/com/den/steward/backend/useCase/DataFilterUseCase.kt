@@ -3,7 +3,9 @@ package com.den.steward.backend.useCase
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.states.DataState
 import com.den.steward.helper.getStartOfDayMillis
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
@@ -27,7 +29,7 @@ class DataFilterUseCase @Inject constructor(
             }
             else -> state // Pass along Loading or Error states
         }
-    }
+    }.flowOn(Dispatchers.Default)
 
     // 3. Fetch yesterday's transactions (Midnight yesterday -> Midnight today)
     val yesterdayTransactions: Flow<DataState<List<Transaction>>> = fetchAllTransactions.map { state ->
@@ -44,5 +46,5 @@ class DataFilterUseCase @Inject constructor(
             }
             else -> state
         }
-    }
+    }.flowOn(Dispatchers.Default)
 }
