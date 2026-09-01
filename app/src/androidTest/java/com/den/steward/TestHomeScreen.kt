@@ -22,9 +22,10 @@ class TestHomeScreen : BaseTest() {
             val backStack = rememberNavBackStack()
             HomeScreen(
                 backStack = backStack,
-                homeViewModel = hiltViewModel(),
+                chartViewModel = hiltViewModel(),
                 dataAdditionViewModel = hiltViewModel(),
-                dataFetchViewModel = hiltViewModel()
+                dataFetchViewModel = hiltViewModel(),
+                homeViewModel = hiltViewModel()
             )
         }
     }

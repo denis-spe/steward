@@ -11,19 +11,21 @@ import com.den.steward.backend.useCase.DataFilterUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 @HiltViewModel
 class DataFetchViewModel @Inject constructor(
-    private val dataFetchUseCase: DataFetchUseCase,
-    private val dataFilterUseCase: DataFilterUseCase,
+    dataFetchUseCase: DataFetchUseCase,
+    dataFilterUseCase: DataFilterUseCase,
 ) : ViewModel() {
 
     /**
      * Fetch all transactions from the database
      */
     val fetchAllTransactions: StateFlow<DataState<List<Transaction>>> = dataFetchUseCase.fetchAllTransactions
+        .distinctUntilChanged()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -34,6 +36,7 @@ class DataFetchViewModel @Inject constructor(
      * Fetch all transactions from the database that are today
      */
     val todayTransactions: StateFlow<DataState<List<Transaction>>> = dataFilterUseCase.todayTransactions
+        .distinctUntilChanged()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -44,6 +47,7 @@ class DataFetchViewModel @Inject constructor(
      * Fetch all transactions from the database that are yesterday
      */
     val yesterdayTransactions: StateFlow<DataState<List<Transaction>>> = dataFilterUseCase.yesterdayTransactions
+        .distinctUntilChanged()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),

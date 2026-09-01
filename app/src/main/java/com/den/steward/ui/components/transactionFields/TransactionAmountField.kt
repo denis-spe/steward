@@ -67,7 +67,7 @@ fun TransactionAmountField(
 ) {
     val isError = isAmountCorrect is TransactionFieldState.Error
     val color = if (isError)
-        MaterialTheme.colorScheme.error.copy(0.7f) else
+        MaterialTheme.colorScheme.error else
         Color.Unspecified
 
     val symbol = getCurrencySymbol()
@@ -217,6 +217,7 @@ fun TransactionAmountField(
         onDialogShow = onDialogShow,
         displayState = displayState,
         color = color,
+        isError = isError,
         symbol = symbol
     )
 
@@ -230,7 +231,8 @@ private fun TransactionAmountFieldItem(
     onDialogShow: MutableState<Boolean>,
     displayState: String,
     symbol: String,
-    color: Color
+    color: Color,
+    isError: Boolean
 ) {
 
     TransactionFieldCard(
@@ -253,7 +255,11 @@ private fun TransactionAmountFieldItem(
             } catch (e: Exception) {
                 "$symbol 0.0"
             }
-            Text(amountText, fontSize = FONT_SIZE)
+            Text(
+                if (isError) "Required" else amountText,
+                fontSize = FONT_SIZE,
+                color = if (isError) Color.Red else MaterialTheme.colorScheme.onBackground
+            )
         }
     ) {
         showCustomKeyboard.value = true

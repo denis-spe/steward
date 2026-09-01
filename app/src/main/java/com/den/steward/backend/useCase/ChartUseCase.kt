@@ -25,7 +25,9 @@ class ChartUseCase @Inject constructor (
                         it.type != TransactionType.GOAL &&
                         it.type != TransactionType.ATTAIN
                     }
-                    val group = filterNoneAmount.groupBy { it.type }
+                    val group = filterNoneAmount
+                        .filter { (it.getAffectAmount?.lowercase() ?: "no") == "yes" }
+                        .groupBy { it.type }
 
                     val data = group.map { (type, groupedTransactions) ->
                         val color = Color(ContextCompat.getColor(context, type.color))

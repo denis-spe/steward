@@ -24,6 +24,9 @@ data class DataAdditionState(
     // Show transaction type bottom sheet
     val showTransactionTypeBottomSheet: Boolean = false,
 
+    // Is saving transaction
+    val isSaving: Boolean = false,
+
     // Core transaction types
     val coreEntries: List<TransactionType> = listOf(TransactionType.EARNINGS,
             TransactionType.EXPENSE,

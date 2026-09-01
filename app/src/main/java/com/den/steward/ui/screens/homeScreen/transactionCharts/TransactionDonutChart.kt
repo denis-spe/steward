@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.backend.states.DataState
+import com.den.steward.backend.viewModels.ChartViewModel
 import com.den.steward.backend.viewModels.HomeViewModel
 import com.den.steward.helper.formatToAmount
 import com.den.steward.ui.components.charts.DonutChart
@@ -18,7 +19,7 @@ import com.den.steward.ui.components.charts.collections.DonutChartDataCollection
 
 @Composable
 fun TransactionDonutChart(
-    viewModel: HomeViewModel
+    viewModel: ChartViewModel
 ) {
     val donutChartState by viewModel.donutChart.collectAsStateWithLifecycle()
     val donutChartCenterAmount by viewModel.donutChartCenterAmount.collectAsStateWithLifecycle()

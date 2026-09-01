@@ -67,7 +67,7 @@ fun TransactionLabelField(
 ) {
     val isError = state.text.isEmpty() && wasSuccess is TransactionFieldState.Error
     val color = if (isError)
-        MaterialTheme.colorScheme.error.copy(0.7f) else
+        MaterialTheme.colorScheme.error else
         Color.Unspecified
     val modifiedPlaceholder = if (isError)
         "Fill the Label" else placeholder

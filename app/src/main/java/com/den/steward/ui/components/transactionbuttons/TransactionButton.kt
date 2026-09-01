@@ -22,6 +22,7 @@ fun TransactionButtons(
     modifier: Modifier = Modifier,
     transactionType: TransactionType,
     isErrors: Boolean = false,
+    isLoading: Boolean = false,
     onClick: () -> Unit
 ) {
 
@@ -56,6 +57,7 @@ fun TransactionButtons(
     OutlinedButton(
         modifier = modifier,
         onClick = onClick,
+        enabled = !isLoading,
         border = BorderStroke(2.dp, if (isErrors)
             MaterialTheme.colorScheme.error else color)
     ) {
@@ -63,15 +65,23 @@ fun TransactionButtons(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                label,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                desc,
-                style = MaterialTheme.typography.labelMedium,
-            )
+            if (isLoading) {
+                Text(
+                    "Submitting...",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            } else {
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    desc,
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
         }
     }
 }

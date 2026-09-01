@@ -61,7 +61,7 @@ fun AddTransactionFloatingActionButton(
         title = "Transactions",
         description = "Select the type of transaction you're adding",
         show = dataAdditionState.showTransactionTypeBottomSheet,
-        onDismissRequest = dataAdditionViewModel::onBottomDrawerSheetDismiss,
+        onDismissRequest = dataAdditionViewModel::reset,
     ) {
         dataAdditionState.coreEntries.forEach { type ->
             BottomDrawerSheetItem(
@@ -101,7 +101,7 @@ fun TransactionBottomDrawerSheet(
         description = stringResource(id = type.description),
         show = dataAdditionState.showTransactionAdditionBottomSheet,
         transactionType = type,
-        onDismissRequest = dataAdditionViewModel::onTransactionBottomDrawerSheetDismiss
+        onDismissRequest = dataAdditionViewModel::reset
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -200,6 +200,7 @@ fun TransactionBottomDrawerSheet(
                         (if (type == TransactionType.GOAL) 
                             dataAdditionState.isStartNotEqualToEndDateTime is TransactionFieldState.Error 
                         else false),
+                isLoading = dataAdditionState.isSaving,
                 onClick = dataAdditionViewModel::addCoreEntriesTransaction
             )
         }
