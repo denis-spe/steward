@@ -8,18 +8,29 @@ import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.useCase.DataFetchUseCase
 import com.den.steward.backend.useCase.DataFilterUseCase
+import com.den.steward.backend.useCase.PeriodDataHandleUseCase
+import com.den.steward.backend.useCase.Filter
+import com.den.steward.backend.useCase.Sort
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
+import java.time.DayOfWeek
+import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
 class DataFetchViewModel @Inject constructor(
     dataFetchUseCase: DataFetchUseCase,
-    dataFilterUseCase: DataFilterUseCase,
+    private val dataFilterUseCase: DataFilterUseCase,
+    private val periodDataHandleUseCase: PeriodDataHandleUseCase
 ) : ViewModel() {
+
 
     /**
      * Fetch all transactions from the database

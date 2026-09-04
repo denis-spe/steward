@@ -24,9 +24,10 @@ fun TransactionDonutChart(
     val donutChartState by viewModel.donutChart.collectAsStateWithLifecycle()
     val donutChartCenterAmount by viewModel.donutChartCenterAmount.collectAsStateWithLifecycle()
 
-    when(donutChartState) {
+    val currentState = donutChartState
+    when(currentState) {
         is DataState.Success -> {
-            val donutChartData = (donutChartState as DataState.Success).data
+            val donutChartData = currentState.data
             if (donutChartData.isEmpty()) {
                 TransactionDonutChartEmptyView()
             } else {
@@ -38,8 +39,7 @@ fun TransactionDonutChart(
         }
 
         is DataState.Error -> {
-            val message = (donutChartState as DataState.Error).message
-            TransactionDonutChartErrorView(message = message)
+            TransactionDonutChartErrorView(message = currentState.message)
         }
 
         is DataState.Loading -> {
