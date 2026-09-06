@@ -1,6 +1,9 @@
 // Bless be to LORD of hosts
 package com.den.steward.backend.states
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 sealed interface DataState<out T> {
     data object Loading : DataState<Nothing>
     data class Success<T>(val data: T) : DataState<T> {

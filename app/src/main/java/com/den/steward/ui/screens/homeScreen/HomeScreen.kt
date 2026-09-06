@@ -14,12 +14,13 @@ import com.den.steward.backend.viewModels.ChartViewModel
 import com.den.steward.backend.viewModels.DataAdditionViewModel
 import com.den.steward.backend.viewModels.DataFetchViewModel
 import com.den.steward.backend.viewModels.HomeViewModel
+import com.den.steward.backend.viewModels.TodayViewModel
 import com.den.steward.ui.dataAddition.AddTransactionFloatingActionButton
-import com.den.steward.ui.screens.homeScreen.tabs.AllTab
-import com.den.steward.ui.screens.homeScreen.tabs.OverviewTab
-import com.den.steward.ui.screens.homeScreen.tabs.PlanTab
-import com.den.steward.ui.screens.homeScreen.tabs.TodayTab
-import com.den.steward.ui.screens.homeScreen.tabs.YesterdayTab
+import com.den.steward.ui.screens.homeScreen.tabs.allTab.AllTab
+import com.den.steward.ui.screens.homeScreen.tabs.overviewTab.OverviewTab
+import com.den.steward.ui.screens.homeScreen.tabs.planTab.PlanTab
+import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTab
+import com.den.steward.ui.screens.homeScreen.tabs.yesterdayTab.YesterdayTab
 
 @Composable
 fun HomeScreen(
@@ -27,7 +28,8 @@ fun HomeScreen(
     dataAdditionViewModel: DataAdditionViewModel,
     dataFetchViewModel: DataFetchViewModel,
     chartViewModel: ChartViewModel,
-    homeViewModel: HomeViewModel
+    homeViewModel: HomeViewModel,
+    todayViewModel: TodayViewModel
 ) {
 
     val homeUiState by homeViewModel.homeUiState.collectAsStateWithLifecycle()
@@ -53,7 +55,8 @@ fun HomeScreen(
             HomeTab.TODAY -> TodayTab(
                 padding = padding,
                 dataFetchViewModel = dataFetchViewModel,
-                chartViewModel = chartViewModel
+                chartViewModel = chartViewModel,
+                todayViewModel = todayViewModel
             )
             HomeTab.YESTERDAY -> YesterdayTab(
                 padding = padding,

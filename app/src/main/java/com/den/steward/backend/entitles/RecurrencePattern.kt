@@ -21,14 +21,15 @@ sealed class RecurrencePattern() {
             is Custom -> "Custom"
         }
     companion object {
-        val entries = listOf(
-            NONE,
-            DAILY,
-            WEEKLY,
-            MONTHLY,
-            YEARLY,
-            Custom()
-        )
+        val entries: List<RecurrencePattern>
+            get() = listOfNotNull(
+                NONE,
+                DAILY,
+                WEEKLY,
+                MONTHLY,
+                YEARLY,
+                Custom()
+            )
     }
 
     val onSchedule: Long

@@ -32,6 +32,7 @@ import com.den.steward.backend.viewModels.RegisterViewModel
 import com.den.steward.backend.viewModels.ScreenManagerViewModel
 import com.den.steward.backend.viewModels.SettingsViewModel
 import com.den.steward.backend.viewModels.WelcomeViewModel
+import com.den.steward.backend.viewModels.TodayViewModel
 import com.den.steward.helper.pop
 import com.den.steward.ui.screens.authScreen.forgotPasswordScreen.ForgotPasswordScreen
 import com.den.steward.ui.screens.authScreen.loginScreen.LoginScreen
@@ -95,13 +96,15 @@ fun EntryProviderScope<NavKey>.featureAEntryBuilder(
         val dataFetchViewModel: DataFetchViewModel = hiltViewModel()
         val chartViewModel: ChartViewModel = hiltViewModel()
         val homeViewModel: HomeViewModel = hiltViewModel()
+        val todayViewModel: TodayViewModel = hiltViewModel()
 
         HomeScreen(
             backStack = backStack,
             chartViewModel = chartViewModel,
             dataAdditionViewModel = dataAdditionViewModel,
             dataFetchViewModel = dataFetchViewModel,
-            homeViewModel = homeViewModel
+            homeViewModel = homeViewModel,
+            todayViewModel = todayViewModel
         )
     }
 

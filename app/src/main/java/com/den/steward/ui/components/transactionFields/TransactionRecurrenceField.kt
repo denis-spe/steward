@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -396,7 +397,7 @@ fun RecurrenceOptionsContent(
     val selectedDays = remember {
         mutableStateListOf<Int>().apply {
             if (recurrence is RecurrencePattern.Custom) {
-                addAll((recurrence as RecurrencePattern.Custom).days)
+                addAll(recurrence.days)
             }
         }
     }
@@ -420,8 +421,8 @@ fun RecurrenceOptionsContent(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            RecurrencePattern.entries.forEach { pattern ->
-                item(key = pattern.name) {
+            items(RecurrencePattern.entries) { pattern ->
+                if (pattern != null) {
                     RecurrenceItemButton(
                         title = pattern.name,
                         color = color,

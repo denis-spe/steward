@@ -1,5 +1,5 @@
 // Grace and truth came through JESUS CHRIST
-package com.den.steward.ui.screens.homeScreen.tabs
+package com.den.steward.ui.screens.homeScreen.tabs.yesterdayTab
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.Text

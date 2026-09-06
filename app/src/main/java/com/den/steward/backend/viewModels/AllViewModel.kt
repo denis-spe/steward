@@ -8,6 +8,7 @@ import com.den.steward.backend.states.PeriodType
 import com.den.steward.backend.useCase.Filter
 import com.den.steward.backend.useCase.PeriodDataHandleUseCase
 import com.den.steward.backend.useCase.Sort
+import com.den.steward.backend.useCase.SortType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +18,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.IsoFields
 import javax.inject.Inject
@@ -79,12 +79,21 @@ class AllViewModel @Inject constructor(
         }
     }
 
+    fun updateSortType(sortType: SortType) {
+        _allUiState.update {
+            it.copy(
+                sortType = sortType
+            )
+        }
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val transactions = allUiState.flatMapLatest { state ->
         periodDataHandleUseCase.getTransactionsForPeriod(
             date = state.selectedDate,
             periodType = state.periodType,
             sort = state.sort,
+            sortType = state.sortType,
             filter = state.filter
         ).distinctUntilChanged()
     }.stateIn(

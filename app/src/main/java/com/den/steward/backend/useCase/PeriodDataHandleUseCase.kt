@@ -6,8 +6,6 @@ import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.PeriodType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import java.time.DayOfWeek
@@ -48,7 +46,8 @@ class PeriodDataHandleUseCase @Inject constructor(
         startDate: LocalDate,
         endDate: LocalDate, // Exclusive
         sort: Sort = Sort.ASCENDING,
-        filter: Filter = Filter.ALL
+        filter: Filter = Filter.ALL,
+        sortType: SortType
     ): Flow<DataState<List<Transaction>>> {
         val startMillis = startDate.atStartOfDay(zoneId).toInstant().toEpochMilli()
         val endMillis = endDate.atStartOfDay(zoneId).toInstant().toEpochMilli()
@@ -61,16 +60,32 @@ class PeriodDataHandleUseCase @Inject constructor(
 
                     // 2. Filter by transaction type
                     if (filter != Filter.ALL) {
-                        val targetType = mapFilterToTransactionType(filter)
+                         val targetType = mapFilterToTransactionType(filter)
                         filtered = filtered.filter { it.type == targetType }
                     }
 
-                    // 3. Apply sorting
-                    filtered = if (sort == Sort.DESCENDING) {
-                        filtered.sortedByDescending { it.createdAt }
-                    } else {
-                        filtered.sortedBy { it.createdAt }
+                    val comparator = when (sortType) {
+                        SortType.DATE -> compareBy<Transaction> { it.createdAt }
+                        SortType.AMOUNT -> compareBy { it.getAmountOrValue ?: 0.0 }
+                        SortType.NAME -> compareBy { it.getLabel.lowercase() }
+                        SortType.FULFILLED -> compareBy { transaction ->
+                            when (transaction) {
+                                is Transaction.Lent -> transaction.remainingAmount
+                                is Transaction.Debt -> transaction.remainingAmount
+                                is Transaction.Goal -> transaction.remainingValue
+                                else -> 0.0
+                            }
+                        }
                     }
+
+                    // 3. Apply sorting
+                    val finalComparator = if (sort == Sort.DESCENDING) {
+                        comparator.reversed()
+                    } else {
+                        comparator
+                    }
+
+                    filtered = filtered.sortedWith(finalComparator)
 
                     DataState.Success(filtered)
                 }
@@ -86,15 +101,23 @@ class PeriodDataHandleUseCase @Inject constructor(
         now: LocalDate,
         sort: Sort = Sort.ASCENDING,
         filterForDayOfWeek: DayOfWeek? = null,
-        filter: Filter = Filter.ALL
+        filter: Filter = Filter.ALL,
+        sortType: SortType
     ): Flow<DataState<List<Transaction>>> {
         val startOfWeek = now.with(TemporalAdjusters.previousOrSame(firstDayOfWeek))
         
         return if (filterForDayOfWeek != null) {
             val selectedDate = startOfWeek.with(TemporalAdjusters.nextOrSame(filterForDayOfWeek))
-            getTransactionsInRange(selectedDate, selectedDate.plusDays(1), sort, filter)
+            getTransactionsInRange(
+                selectedDate, selectedDate.plusDays(1),
+                sort, filter, sortType = sortType)
         } else {
-            getTransactionsInRange(startOfWeek, startOfWeek.plusDays(7), sort, filter)
+            getTransactionsInRange(
+                startOfWeek,
+                startOfWeek.plusDays(7),
+                sort, filter,
+                sortType = sortType
+                )
         }
     }
 
@@ -105,25 +128,28 @@ class PeriodDataHandleUseCase @Inject constructor(
         date: LocalDate,
         periodType: PeriodType,
         sort: Sort = Sort.ASCENDING,
-        filter: Filter = Filter.ALL
+        filter: Filter = Filter.ALL,
+        sortType: SortType
     ): Flow<DataState<List<Transaction>>> {
         return when (periodType) {
-            PeriodType.DAY -> getTransactionsInRange(date, date.plusDays(1), sort, filter)
-            PeriodType.WEEK -> weeklyTransactions(date, sort, null, filter)
+            PeriodType.DAY -> getTransactionsInRange(
+                date, date.plusDays(1), sort, filter, sortType = sortType
+            )
+            PeriodType.WEEK -> weeklyTransactions(date, sort, null, filter, sortType = sortType)
             PeriodType.MONTH -> {
                 val start = date.with(TemporalAdjusters.firstDayOfMonth())
                 val end = start.plusMonths(1)
-                getTransactionsInRange(start, end, sort, filter)
+                getTransactionsInRange(start, end, sort, filter, sortType = sortType)
             }
             PeriodType.YEAR -> {
                 val start = date.with(TemporalAdjusters.firstDayOfYear())
                 val end = start.plusYears(1)
-                getTransactionsInRange(start, end, sort, filter)
+                getTransactionsInRange(start, end, sort, filter, sortType = sortType)
             }
         }
     }
 
-    private fun mapFilterToTransactionType(filter: Filter): TransactionType {
+    private fun mapFilterToTransactionType(filter: Filter): TransactionType? {
         return when (filter) {
             Filter.EARNINGS -> TransactionType.EARNINGS
             Filter.EXPENSE -> TransactionType.EXPENSE
@@ -134,7 +160,7 @@ class PeriodDataHandleUseCase @Inject constructor(
             Filter.ATTAIN -> TransactionType.ATTAIN
             Filter.LENT -> TransactionType.LENT
             Filter.DEBT -> TransactionType.DEBT
-            Filter.ALL -> throw IllegalArgumentException("Filter.ALL has no direct mapping")
+            Filter.ALL -> null
         }
     }
 
