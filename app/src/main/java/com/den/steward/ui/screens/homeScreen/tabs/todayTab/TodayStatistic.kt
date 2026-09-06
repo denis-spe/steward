@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -90,38 +91,77 @@ fun TodayDonutChart(
 ) {
     val donutChartState by viewModel.donutChart.collectAsStateWithLifecycle()
     val donutChartCenterAmount by viewModel.donutChartCenterAmount.collectAsStateWithLifecycle()
+    val donutStatusSummary by viewModel.donutStatusSummary.collectAsStateWithLifecycle()
 
     TodayStatisticLayout {
-        when (val currentState = donutChartState) {
-            is DataState.Success -> {
-                val donutChartData = currentState.data
-                if (donutChartData.isEmpty()) {
-                    TransactionDonutChartEmptyView(
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                when (val state = donutStatusSummary) {
+                    is DataState.Success -> {
+                        Text(
+                            text = state.data,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Start
+                        )
+                    }
+                    is DataState.Error -> {
+                        Text(
+                            text = state.message,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                    is DataState.Loading -> {
+                        Text(
+                            text = "Loading...",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+                }
+            }
+
+            when (val currentState = donutChartState) {
+                is DataState.Success -> {
+                    val donutChartData = currentState.data
+                    if (donutChartData.isEmpty()) {
+                        TransactionDonutChartEmptyView(
+                            chartSize = chartSize,
+                            strokeWidth = strokeWidth
+                        )
+                    } else {
+                        TransactionDonutChartView(
+                            donutChartData = donutChartData,
+                            donutChartCenterAmount = donutChartCenterAmount,
+                            chartSize = chartSize,
+                            strokeWidth = strokeWidth,
+                            strokeWidthSelected = strokeWidth * 2,
+                            strokeCap = strokeCap
+                        )
+                    }
+                }
+
+                is DataState.Error -> {
+                    TransactionDonutChartErrorView(message = currentState.message)
+                }
+
+                is DataState.Loading -> {
+                    TransactionDonutChartShimmerView(
                         chartSize = chartSize,
                         strokeWidth = strokeWidth
-                    )
-                } else {
-                    TransactionDonutChartView(
-                        donutChartData = donutChartData,
-                        donutChartCenterAmount = donutChartCenterAmount,
-                        chartSize = chartSize,
-                        strokeWidth = strokeWidth,
-                        strokeWidthSelected = strokeWidth * 2,
-                        strokeCap = strokeCap
                     )
                 }
             }
 
-            is DataState.Error -> {
-                TransactionDonutChartErrorView(message = currentState.message)
-            }
-
-            is DataState.Loading -> {
-                TransactionDonutChartShimmerView(
-                    chartSize = chartSize,
-                    strokeWidth = strokeWidth
-                )
-            }
         }
     }
 }
