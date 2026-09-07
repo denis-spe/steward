@@ -1,16 +1,16 @@
 // Glory be to the LORD of hosts
-package com.den.steward.ui.screens.homeScreen.transactionCharts
+package com.den.steward.ui.screens.homeScreen.tabs.todayTab
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,17 +19,16 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.den.steward.backend.states.DataState
-import com.den.steward.backend.viewModels.ChartViewModel
 import com.den.steward.helper.formatToAmount
 import com.den.steward.ui.componentExtenison.shimmerEffect
 import com.den.steward.ui.components.charts.DonutChart
 import com.den.steward.ui.components.charts.DonutChartData
 import com.den.steward.ui.components.charts.collections.DonutChartDataCollection
+import java.text.NumberFormat
+import java.util.Locale
 
 @Composable
-fun TransactionDonutChartView(
+fun TodayDonutChartView(
     donutChartData: List<DonutChartData>,
     donutChartCenterAmount: Double,
     chartSize: Dp = 350.dp,
@@ -46,23 +45,36 @@ fun TransactionDonutChartView(
         data = DonutChartDataCollection(donutChartData)
     ) { selectedItem ->
         if (selectedItem == null) {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+            Text(
+                text = "Flow",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = MaterialTheme.typography.titleMedium.fontWeight,
+            )
             Text(
                 text = donutChartCenterAmount.formatToAmount(),
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = MaterialTheme.typography.labelMedium.fontWeight,
             )
+                }
         } else {
             Column(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = selectedItem.title
+                    text = selectedItem.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = MaterialTheme.typography.titleMedium.fontWeight,
                 )
 
                 Text(
-                    text = selectedItem.amount.formatToAmount()
+                    text = selectedItem.amount.formatToAmount(),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = MaterialTheme.typography.labelMedium.fontWeight,
                 )
             }
         }
@@ -70,47 +82,7 @@ fun TransactionDonutChartView(
 }
 
 @Composable
-fun TransactionDonutChartPercentView(
-    donutChartData: List<DonutChartData>,
-    donutChartCenterAmount: Double,
-    chartSize: Dp = 350.dp,
-    strokeWidth: Dp = 20.dp,
-    strokeWidthSelected: Dp = 40.dp,
-) {
-    DonutChart(
-        modifier = Modifier,
-        chartSize = chartSize,
-        strokeWidth = strokeWidth,
-        strokeCap = StrokeCap.Round,
-        strokeWidthSelected = strokeWidthSelected,
-        data = DonutChartDataCollection(donutChartData)
-    ) { selectedItem ->
-        if (selectedItem == null) {
-            Text(
-                text = "${donutChartCenterAmount.toInt()}%",
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Ellipsis,
-            )
-        } else {
-            Column(
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = selectedItem.title
-                )
-
-                Text(
-                    text = selectedItem.amount.formatToAmount()
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun TransactionDonutChartErrorView(
+fun TodayDonutChartErrorView(
     message: String
 ) {
     Text(
@@ -121,7 +93,7 @@ fun TransactionDonutChartErrorView(
 }
 
 @Composable
-fun TransactionDonutChartShimmerView(
+fun TodayDonutChartShimmerView(
     chartSize: Dp = 350.dp,
     strokeWidth: Dp = 20.dp,
     backgroundColor: Color = MaterialTheme.colorScheme.background
@@ -143,16 +115,22 @@ fun TransactionDonutChartShimmerView(
 }
 
 @Composable
-fun TransactionDonutChartEmptyView(
+fun TodayDonutChartEmptyView(
     chartSize: Dp = 350.dp,
     strokeWidth: Dp = 20.dp,
     backgroundColor: Color = MaterialTheme.colorScheme.background
 ) {
+    val symbol = try {
+        NumberFormat.getCurrencyInstance(Locale.getDefault()).currency?.symbol ?: "$"
+    } catch (_: Exception) {
+        "$"
+    }
+
     Box(
         modifier = Modifier
             .size(chartSize)
             .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.onSurfaceVariant),
+            .background(Color.LightGray),
         contentAlignment = Alignment.Center
     ) {
         Box(
@@ -161,11 +139,22 @@ fun TransactionDonutChartEmptyView(
                 .clip(CircleShape)
                 .background(backgroundColor)
         ) {
-            Text(
-                text = "No data",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Flow",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.LightGray
+                )
+                Text(
+                    text = "$symbol 0.0",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.LightGray
+                )
+            }
         }
     }
 }

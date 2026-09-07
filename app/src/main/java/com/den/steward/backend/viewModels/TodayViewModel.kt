@@ -115,6 +115,7 @@ class TodayViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = DataState.Loading
         )
+    
 
     fun calculateFlow(transactions: List<Transaction>): Double {
         var incoming = 0.0

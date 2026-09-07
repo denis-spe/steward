@@ -1,14 +1,16 @@
 // Glory be to LORD our GOD
-package com.den.steward.ui.screens.homeScreen.transactionList
+package com.den.steward.ui.screens.homeScreen.tabs.todayTab
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -17,8 +19,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.buildAnnotatedString
@@ -27,10 +32,15 @@ import coil.compose.AsyncImage
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.helper.formattedTime
 import com.den.steward.helper.toLocalDateTime
+import com.den.steward.ui.componentExtenison.shimmerEffect
 import com.den.steward.ui.components.TransactionViewDialog
 
 @Composable
-fun FinancialPeriodListItem(transaction: Transaction) {
+fun TodayTabLazyListItem(
+    transaction: Transaction,
+    shape: Shape = RectangleShape,
+    color: Color = MaterialTheme.colorScheme.surface
+) {
     val localDateTime = remember(transaction) { transaction.createdAt.toLocalDateTime() }
     val time = localDateTime.formattedTime
     val onShow = remember { mutableStateOf(false) }
@@ -40,10 +50,12 @@ fun FinancialPeriodListItem(transaction: Transaction) {
     Surface(
         onClick = {
             onShow.value = true
-        }
+        },
+        shape = shape,
+        color = color
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp, horizontal = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -140,5 +152,79 @@ fun FinancialPeriodListItem(transaction: Transaction) {
         onShow = onShow.value
     ) {
         onShow.value = false
+    }
+}
+
+
+
+@Composable
+fun TodayTabLazyListItemShimmer() {
+    Surface {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.Center
+            ) {
+
+                // Label shimmer
+                Box(
+                    modifier = Modifier
+                        .size(60.dp, 16.dp)
+                        .clip(MaterialTheme.shapes.small)
+                        .shimmerEffect()
+                )
+
+                Spacer(modifier = Modifier.size(8.dp))
+
+                // Description shimmer
+                Box(
+                    modifier = Modifier
+                        .size(100.dp, 16.dp)
+                        .clip(MaterialTheme.shapes.small)
+                        .shimmerEffect()
+                )
+            }
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.Center
+            ) {
+                // Amount shimmer
+                Box(
+                    modifier = Modifier
+                        .size(100.dp, 16.dp)
+                        .clip(MaterialTheme.shapes.small)
+                        .shimmerEffect()
+                )
+
+                Row(
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(top = 4.dp)
+                ) {
+                    // Payment Method shimmer
+                    Box(
+                        modifier = Modifier
+                            .size(16.dp, 16.dp)
+                            .clip(CircleShape)
+                            .shimmerEffect()
+                    )
+
+                    Spacer(modifier = Modifier.size(4.dp))
+
+                    // Transaction Type shimmer
+                    Box(
+                        modifier = Modifier
+                            .size(16.dp, 16.dp)
+                            .clip(CircleShape)
+                            .shimmerEffect()
+                    )
+                }
+            }
+        }
     }
 }

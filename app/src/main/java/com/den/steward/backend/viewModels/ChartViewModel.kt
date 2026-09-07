@@ -1,6 +1,7 @@
 // Grace and truth came through JESUS CHRIST
 package com.den.steward.backend.viewModels
 
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.den.steward.backend.states.DataState
@@ -39,7 +40,7 @@ class ChartViewModel @Inject constructor(
                 is DataState.Success -> {
                     val data = state.data
                     if (data.isEmpty()) {
-                        DataState.Success("No transaction data available.")
+                        DataState.Success("No transaction data \navailable.")
                     } else if (data.size == 1) {
                         val item = data.first()
                         DataState.Success("Today all your transactions are in the \"${item.title}\" category, totaling ${item.amount.formatToAmount()}.")
@@ -50,9 +51,9 @@ class ChartViewModel @Inject constructor(
 
                         val str = """
                             Today you have a total volume of ${total.formatToAmount()} across ${data.size} categories.
-                            Your largest category is "${max.title}" at ${max.amount.formatToAmount()},
-                             and your smallest is "${min.title}" at ${min.amount.formatToAmount()}.
-                        """.trimIndent()
+                            Your largest category is `${max.title}` at ${max.amount.formatToAmount()},
+                             and your smallest is `${min.title}` at ${min.amount.formatToAmount()}.
+                            """.trimIndent()
 
                         DataState.Success(str)
                     }

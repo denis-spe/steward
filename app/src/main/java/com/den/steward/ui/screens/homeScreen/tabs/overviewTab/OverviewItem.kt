@@ -35,8 +35,7 @@ import com.den.steward.helper.formatedDateTime
 import com.den.steward.helper.toLocalDateTime
 import com.den.steward.ui.componentExtenison.shimmerEffect
 import com.den.steward.ui.components.charts.DonutChartData
-import com.den.steward.ui.screens.homeScreen.transactionCharts.TransactionDonutChartPercentView
-import com.den.steward.ui.screens.homeScreen.transactionCharts.TransactionDonutChartShimmerView
+import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayDonutChartShimmerView
 
 // ============== Transactions ==============
 @Composable
@@ -288,7 +287,7 @@ fun OverviewGoalItem(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.Center
             ) {
-                TransactionDonutChartPercentView(
+                OverviewDonutChart(
                     donutChartData = listOf(
                         DonutChartData(
                             title = "Attained",
@@ -390,7 +389,7 @@ fun OverviewGoalItemShimmer() {
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.Center
             ) {
-                TransactionDonutChartShimmerView(chartSize = 60.dp, strokeWidth = 5.dp)
+                TodayDonutChartShimmerView(chartSize = 60.dp, strokeWidth = 5.dp)
 
                 Spacer(
                     modifier = Modifier.size(4.dp)
@@ -431,7 +430,7 @@ fun OverviewLoanItem(
                 .padding(4.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            TransactionDonutChartPercentView(
+            OverviewDonutChart(
                 donutChartData = listOf(
                     DonutChartData(
                         title = "Attained",
@@ -508,7 +507,7 @@ fun OverviewLoanItemShimmer() {
                 .padding(4.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            TransactionDonutChartShimmerView(
+            TodayDonutChartShimmerView(
                 chartSize = 60.dp,
                 strokeWidth = 5.dp,
             )
@@ -606,7 +605,7 @@ fun OverviewDebtItem(
                 fontWeight = MaterialTheme.typography.titleLarge.fontWeight
             )
 
-            TransactionDonutChartPercentView(
+            OverviewDonutChart(
                 donutChartData = listOf(
                     DonutChartData(
                         title = "Refund",
@@ -688,7 +687,7 @@ fun OverviewDebtItemShimmer() {
                 modifier = Modifier.size(4.dp)
             )
 
-            TransactionDonutChartShimmerView(
+            TodayDonutChartShimmerView(
                 chartSize = 60.dp,
                 strokeWidth = 5.dp,
             )

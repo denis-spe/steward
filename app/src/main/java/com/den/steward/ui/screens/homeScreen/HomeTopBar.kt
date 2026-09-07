@@ -81,7 +81,7 @@ fun HomeTabRow(currentTab: HomeTab, onTabChange: (HomeTab) -> Unit) {
                         text = {
                             Text(
                                 tab.label,
-                                style = MaterialTheme.typography.titleMedium,
+                                style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = color
                             )

@@ -1,14 +1,14 @@
 // I Worship the LORD GOD of hosts
 package com.den.steward.ui.screens.homeScreen.tabs.todayTab
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.MaterialTheme
@@ -28,15 +28,11 @@ import com.den.steward.backend.states.DataState
 import com.den.steward.backend.viewModels.ChartViewModel
 import com.den.steward.backend.viewModels.TodayViewModel
 import com.den.steward.helper.formatToAmount
-import com.den.steward.ui.screens.homeScreen.transactionCharts.TransactionDonutChartEmptyView
-import com.den.steward.ui.screens.homeScreen.transactionCharts.TransactionDonutChartErrorView
-import com.den.steward.ui.screens.homeScreen.transactionCharts.TransactionDonutChartShimmerView
-import com.den.steward.ui.screens.homeScreen.transactionCharts.TransactionDonutChartView
 import kotlin.collections.component1
 import kotlin.collections.component2
 
 @Composable
-fun TodayStatisticView(
+fun TodayTabStatisticView(
     chartViewModel: ChartViewModel,
     todayViewModel: TodayViewModel
 ) {
@@ -55,14 +51,16 @@ fun TodayStatisticView(
         pageSpacing = 16.dp
     ) {
         when (it) {
-            0 -> TodayDonutChart(
+            0 -> TodayTabDonutChart(
                 viewModel = chartViewModel,
-                chartSize = 200.dp,
+                chartSize = 170.dp,
                 strokeWidth = 20.dp,
                 strokeCap = StrokeCap.Round
             )
 
             1 -> TodaySummaryView(todayViewModel = todayViewModel)
+
+            2 -> TodayTabUnpaidLiabilitiesView(todayViewModel = todayViewModel)
         }
     }
 }
@@ -83,10 +81,10 @@ fun TodayStatisticLayout(
 }
 
 @Composable
-fun TodayDonutChart(
+fun TodayTabDonutChart(
     viewModel: ChartViewModel,
     chartSize: Dp = 350.dp,
-    strokeWidth: Dp = 20.dp,
+    strokeWidth: Dp = 16.dp,
     strokeCap: StrokeCap = StrokeCap.Round
 ) {
     val donutChartState by viewModel.donutChart.collectAsStateWithLifecycle()
@@ -97,9 +95,45 @@ fun TodayDonutChart(
         Row(
             modifier = Modifier
                 .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            when (val currentState = donutChartState) {
+                is DataState.Success -> {
+                    val donutChartData = currentState.data
+                    if (donutChartData.isEmpty()) {
+                        TodayDonutChartEmptyView(
+                            chartSize = chartSize,
+                            strokeWidth = strokeWidth
+                        )
+                    } else {
+                        TodayDonutChartView(
+                            donutChartData = donutChartData,
+                            donutChartCenterAmount = donutChartCenterAmount,
+                            chartSize = chartSize,
+                            strokeWidth = strokeWidth,
+                            strokeWidthSelected = 30.dp,
+                            strokeCap = strokeCap
+                        )
+                    }
+                }
+
+                is DataState.Error -> {
+                    TodayDonutChartErrorView(message = currentState.message)
+                }
+
+                is DataState.Loading -> {
+                    TodayDonutChartShimmerView(
+                        chartSize = chartSize,
+                        strokeWidth = strokeWidth
+                    )
+                }
+            }
+
+            Spacer(
+                modifier = Modifier.width(2.dp)
+            )
+
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.Center,
@@ -110,7 +144,7 @@ fun TodayDonutChart(
                         Text(
                             text = state.data,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = Color.LightGray,
                             textAlign = TextAlign.Start
                         )
                     }
@@ -129,39 +163,6 @@ fun TodayDonutChart(
                     }
                 }
             }
-
-            when (val currentState = donutChartState) {
-                is DataState.Success -> {
-                    val donutChartData = currentState.data
-                    if (donutChartData.isEmpty()) {
-                        TransactionDonutChartEmptyView(
-                            chartSize = chartSize,
-                            strokeWidth = strokeWidth
-                        )
-                    } else {
-                        TransactionDonutChartView(
-                            donutChartData = donutChartData,
-                            donutChartCenterAmount = donutChartCenterAmount,
-                            chartSize = chartSize,
-                            strokeWidth = strokeWidth,
-                            strokeWidthSelected = strokeWidth * 2,
-                            strokeCap = strokeCap
-                        )
-                    }
-                }
-
-                is DataState.Error -> {
-                    TransactionDonutChartErrorView(message = currentState.message)
-                }
-
-                is DataState.Loading -> {
-                    TransactionDonutChartShimmerView(
-                        chartSize = chartSize,
-                        strokeWidth = strokeWidth
-                    )
-                }
-            }
-
         }
     }
 }
@@ -239,6 +240,8 @@ fun TodaySummaryView(
 
 
 @Composable
-fun TodayUnpaidLiabilitiesView() {
+fun TodayTabUnpaidLiabilitiesView(todayViewModel: TodayViewModel) {
+    TodayStatisticLayout {
 
+    }
 }

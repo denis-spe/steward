@@ -54,7 +54,6 @@ fun HomeScreen(
         when(homeUiState.currentTab) {
             HomeTab.TODAY -> TodayTab(
                 padding = padding,
-                dataFetchViewModel = dataFetchViewModel,
                 chartViewModel = chartViewModel,
                 todayViewModel = todayViewModel
             )
@@ -65,14 +64,10 @@ fun HomeScreen(
             )
             HomeTab.ALL -> AllTab(
                 padding = padding,
-                dataFetchViewModel = dataFetchViewModel,
-                chartViewModel = chartViewModel
             )
 
             HomeTab.OVERVIEW -> OverviewTab(
                 padding = padding,
-                dataFetchViewModel = dataFetchViewModel,
-                chartViewModel = chartViewModel
             )
 
             HomeTab.PLAN -> PlanTab(

@@ -1,5 +1,6 @@
 ## Steward
 **Todo for steward app**
 
-[x] Fix format amount
-[x] Created shimmer extension
+* ~~Fix format amount~~
+* ~~Created shimmer extension~~
+* Fix the empty donut ui view

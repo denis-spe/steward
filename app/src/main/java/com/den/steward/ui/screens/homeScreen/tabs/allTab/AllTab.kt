@@ -56,8 +56,6 @@ import java.time.LocalDate
 @Composable
 fun AllTab(
     padding: PaddingValues,
-    dataFetchViewModel: DataFetchViewModel,
-    chartViewModel: ChartViewModel
 ) {
     val allViewModel: AllViewModel = hiltViewModel()
 

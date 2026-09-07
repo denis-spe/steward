@@ -21,8 +21,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.states.DataState
-import com.den.steward.ui.screens.homeScreen.transactionList.FinancialPeriodListItem
-import com.den.steward.ui.screens.homeScreen.transactionList.FinancialPeriodListShimmer
 import kotlin.collections.component1
 import kotlin.collections.component2
 
