@@ -21,7 +21,6 @@ fun TodayTab(
     chartViewModel: ChartViewModel,
     todayViewModel: TodayViewModel
 ) {
-    val todayTransactions by todayViewModel.todayTransactions.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -30,14 +29,10 @@ fun TodayTab(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
-        TodayTabStatisticView(
+        TodayTabList(
+            modifier = Modifier.fillMaxSize(),
             chartViewModel = chartViewModel,
             todayViewModel = todayViewModel
-        )
-
-        TodayTabList(
-            modifier = Modifier.weight(1f),
-            transactions = todayTransactions
         )
     }
 }

@@ -10,15 +10,30 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material.icons.filled.Balance
+import androidx.compose.material.icons.filled.DonutSmall
+import androidx.compose.material.icons.filled.PieChart
+import androidx.compose.material.icons.filled.Summarize
+import androidx.compose.material.icons.filled.Wallet
+import androidx.compose.material.icons.outlined.Balance
+import androidx.compose.material.icons.outlined.DonutSmall
+import androidx.compose.material.icons.outlined.PieChart
+import androidx.compose.material.icons.outlined.Summarize
+import androidx.compose.material.icons.outlined.Wallet
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -28,6 +43,7 @@ import com.den.steward.backend.states.DataState
 import com.den.steward.backend.viewModels.ChartViewModel
 import com.den.steward.backend.viewModels.TodayViewModel
 import com.den.steward.helper.formatToAmount
+import kotlinx.coroutines.launch
 import kotlin.collections.component1
 import kotlin.collections.component2
 
@@ -46,22 +62,101 @@ fun TodayTabStatisticView(
         tabs.size
     }
 
-    HorizontalPager(
-        state = pager,
-        pageSpacing = 16.dp
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        when (it) {
-            0 -> TodayTabDonutChart(
-                viewModel = chartViewModel,
-                chartSize = 170.dp,
-                strokeWidth = 20.dp,
-                strokeCap = StrokeCap.Round
-            )
+        TodayTabStatisticPanel(
+            tabs = tabs,
+            pager = pager
+        )
 
-            1 -> TodaySummaryView(todayViewModel = todayViewModel)
+        HorizontalPager(
+            state = pager,
+            pageSpacing = 16.dp
+        ) {
+            when (it) {
+                0 -> TodayTabDonutChart(
+                    viewModel = chartViewModel,
+                    chartSize = 170.dp,
+                    strokeWidth = 20.dp,
+                    strokeCap = StrokeCap.Round
+                )
 
-            2 -> TodayTabUnpaidLiabilitiesView(todayViewModel = todayViewModel)
+                1 -> TodaySummaryView(todayViewModel = todayViewModel)
+
+                2 -> TodayTabUnpaidLiabilitiesView(todayViewModel = todayViewModel)
+            }
         }
+    }
+}
+
+@Composable
+fun TodayTabStatisticPanel(tabs: List<String>, pager: PagerState) {
+    val scope = rememberCoroutineScope()
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        tabs.forEachIndexed { index, title ->
+            TodayTabStatisticPanelButton(
+                icon = when(title) {
+                    "Chart" -> {
+                        if (pager.currentPage == index) {
+                            androidx.compose.material.icons.Icons.Filled.DonutSmall
+                        } else {
+                            androidx.compose.material.icons.Icons.Outlined.DonutSmall
+                        }
+                    }
+                    "Summary" -> {
+                        if (pager.currentPage == index) {
+                            androidx.compose.material.icons.Icons.Filled.Wallet
+                        } else {
+                            androidx.compose.material.icons.Icons.Outlined.Wallet
+                        }
+                    }
+                    "Unpaid Liabilities" -> {
+                        if (pager.currentPage == index) {
+                            androidx.compose.material.icons.Icons.Filled.Balance
+                        } else {
+                            androidx.compose.material.icons.Icons.Outlined.Balance
+                        }
+                    }
+                    else -> {
+                        if (pager.currentPage == index) {
+                            androidx.compose.material.icons.Icons.Filled.PieChart
+                        } else {
+                            androidx.compose.material.icons.Icons.Outlined.PieChart
+                        }
+                    }
+                } ,
+                selected = pager.currentPage == index
+            ) {
+                scope.launch {
+                    pager.animateScrollToPage(index)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TodayTabStatisticPanelButton(
+    icon: ImageVector,
+    selected: Boolean,
+    onClick: () -> Unit
+){
+    IconButton(
+        onClick = onClick
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = if (selected) MaterialTheme.colorScheme.primary else Color.LightGray
+        )
     }
 }
 
