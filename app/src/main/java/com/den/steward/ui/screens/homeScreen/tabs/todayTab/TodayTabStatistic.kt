@@ -2,6 +2,7 @@
 package com.den.steward.ui.screens.homeScreen.tabs.todayTab
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.outlined.DonutSmall
 import androidx.compose.material.icons.outlined.PieChart
 import androidx.compose.material.icons.outlined.Summarize
 import androidx.compose.material.icons.outlined.Wallet
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -31,6 +33,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -43,6 +46,7 @@ import com.den.steward.backend.states.DataState
 import com.den.steward.backend.viewModels.ChartViewModel
 import com.den.steward.backend.viewModels.TodayViewModel
 import com.den.steward.helper.formatToAmount
+import com.den.steward.ui.componentExtenison.shimmerEffect
 import kotlinx.coroutines.launch
 import kotlin.collections.component1
 import kotlin.collections.component2
@@ -53,7 +57,7 @@ fun TodayTabStatisticView(
     todayViewModel: TodayViewModel
 ) {
     val tabs = listOf(
-        "Chart",
+        "Donut Chart",
         "Summary",
         "Unpaid Liabilities"
     )
@@ -96,50 +100,66 @@ fun TodayTabStatisticView(
 fun TodayTabStatisticPanel(tabs: List<String>, pager: PagerState) {
     val scope = rememberCoroutineScope()
 
-    Row(
+
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        tabs.forEachIndexed { index, title ->
-            TodayTabStatisticPanelButton(
-                icon = when(title) {
-                    "Chart" -> {
-                        if (pager.currentPage == index) {
-                            androidx.compose.material.icons.Icons.Filled.DonutSmall
-                        } else {
-                            androidx.compose.material.icons.Icons.Outlined.DonutSmall
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            tabs.forEachIndexed { index, title ->
+                TodayTabStatisticPanelButton(
+                    icon = when (title) {
+                        "Donut Chart" -> {
+                            if (pager.currentPage == index) {
+                                androidx.compose.material.icons.Icons.Filled.DonutSmall
+                            } else {
+                                androidx.compose.material.icons.Icons.Outlined.DonutSmall
+                            }
                         }
-                    }
-                    "Summary" -> {
-                        if (pager.currentPage == index) {
-                            androidx.compose.material.icons.Icons.Filled.Wallet
-                        } else {
-                            androidx.compose.material.icons.Icons.Outlined.Wallet
+
+                        "Summary" -> {
+                            if (pager.currentPage == index) {
+                                androidx.compose.material.icons.Icons.Filled.Wallet
+                            } else {
+                                androidx.compose.material.icons.Icons.Outlined.Wallet
+                            }
                         }
-                    }
-                    "Unpaid Liabilities" -> {
-                        if (pager.currentPage == index) {
-                            androidx.compose.material.icons.Icons.Filled.Balance
-                        } else {
-                            androidx.compose.material.icons.Icons.Outlined.Balance
+
+                        "Unpaid Liabilities" -> {
+                            if (pager.currentPage == index) {
+                                androidx.compose.material.icons.Icons.Filled.Balance
+                            } else {
+                                androidx.compose.material.icons.Icons.Outlined.Balance
+                            }
                         }
-                    }
-                    else -> {
-                        if (pager.currentPage == index) {
-                            androidx.compose.material.icons.Icons.Filled.PieChart
-                        } else {
-                            androidx.compose.material.icons.Icons.Outlined.PieChart
+
+                        else -> {
+                            if (pager.currentPage == index) {
+                                androidx.compose.material.icons.Icons.Filled.PieChart
+                            } else {
+                                androidx.compose.material.icons.Icons.Outlined.PieChart
+                            }
                         }
+                    },
+                    selected = pager.currentPage == index
+                ) {
+                    scope.launch {
+                        pager.animateScrollToPage(index)
                     }
-                } ,
-                selected = pager.currentPage == index
-            ) {
-                scope.launch {
-                    pager.animateScrollToPage(index)
                 }
             }
         }
+
+        Text(
+            text = tabs[pager.currentPage],
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
 
@@ -289,7 +309,29 @@ fun TodaySummaryView(
                     }
                 }
 
-                else -> {}
+                is DataState.Loading -> {
+                    Column {
+                        Box(
+                            modifier = Modifier
+                                .width(100.dp)
+                                .height(25.dp)
+                                .clip(MaterialTheme.shapes.medium)
+                                .shimmerEffect()
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .width(80.dp)
+                                .height(25.dp)
+                                .clip(MaterialTheme.shapes.medium)
+                                .shimmerEffect()
+                        )
+                    }
+                }
+
+                is DataState.Error -> {
+                    Text(text = state.message, color = MaterialTheme.colorScheme.error)
+                }
             }
 
             // --- Account Balances ---
@@ -321,6 +363,59 @@ fun TodaySummaryView(
 
                 is DataState.Loading -> {
                     // Shimmer or loading indicator
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(100.dp)
+                                .height(25.dp)
+                                .clip(MaterialTheme.shapes.medium)
+                                .shimmerEffect()
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(100.dp)
+                                    .height(25.dp)
+                                    .clip(MaterialTheme.shapes.medium)
+                                    .shimmerEffect()
+                            )
+
+                            Box(
+                                modifier = Modifier
+                                    .width(80.dp)
+                                    .height(25.dp)
+                                    .clip(MaterialTheme.shapes.medium)
+                                    .shimmerEffect()
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(100.dp)
+                                    .height(25.dp)
+                                    .clip(MaterialTheme.shapes.medium)
+                                    .shimmerEffect()
+                            )
+
+                            Box(
+                                modifier = Modifier
+                                    .width(80.dp)
+                                    .height(25.dp)
+                                    .clip(MaterialTheme.shapes.medium)
+                                    .shimmerEffect()
+                            )
+                        }
+                    }
                 }
 
                 is DataState.Error -> {
@@ -336,7 +431,92 @@ fun TodaySummaryView(
 
 @Composable
 fun TodayTabUnpaidLiabilitiesView(todayViewModel: TodayViewModel) {
-    TodayStatisticLayout {
+    val statsState by todayViewModel.liabilitiesPaymentStats.collectAsStateWithLifecycle()
 
+    TodayStatisticLayout {
+        when (val state = statsState) {
+            is DataState.Success -> {
+                val stats = state.data
+                val loans = stats["Loans"] ?: 0.0
+                val debts = stats["Debts"] ?: 0.0
+                val paid = stats["Paid"] ?: 0.0
+                val unpaid = stats["Unpaid"] ?: 0.0
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text(text = "What people owe you", style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                text = loans.formatToAmount(),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(text = "What you owe", style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                text = debts.formatToAmount(),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+
+                    HorizontalDivider()
+
+                    Text(
+                        text = "Status Summary: ${paid.toInt()} paid items, ${unpaid.toInt()} unpaid items.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray
+                    )
+                }
+            }
+
+            is DataState.Loading -> {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(120.dp)
+                                .height(50.dp)
+                                .clip(MaterialTheme.shapes.medium)
+                                .shimmerEffect()
+                        )
+                        Box(
+                            modifier = Modifier
+                                .width(120.dp)
+                                .height(50.dp)
+                                .clip(MaterialTheme.shapes.medium)
+                                .shimmerEffect()
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(20.dp)
+                            .clip(MaterialTheme.shapes.medium)
+                            .shimmerEffect()
+                    )
+                }
+            }
+
+            is DataState.Error -> {
+                Text(text = state.message, color = MaterialTheme.colorScheme.error)
+            }
+        }
     }
 }

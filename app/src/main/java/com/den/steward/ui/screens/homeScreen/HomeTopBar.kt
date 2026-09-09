@@ -4,6 +4,7 @@ package com.den.steward.ui.screens.homeScreen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CardDefaults
@@ -43,7 +44,7 @@ fun HomeTabRow(currentTab: HomeTab, onTabChange: (HomeTab) -> Unit) {
     val tabs = remember {
         HomeTab.entries.toTypedArray()
     }
-    Surface (
+    Surface(
         shadowElevation = 3.dp,
         tonalElevation = 1.dp,
         shape = CircleShape,

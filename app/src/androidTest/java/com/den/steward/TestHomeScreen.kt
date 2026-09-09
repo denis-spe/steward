@@ -25,7 +25,10 @@ class TestHomeScreen : BaseTest() {
                 chartViewModel = hiltViewModel(),
                 dataAdditionViewModel = hiltViewModel(),
                 dataFetchViewModel = hiltViewModel(),
-                homeViewModel = hiltViewModel()
+                homeViewModel = hiltViewModel(),
+                todayViewModel = hiltViewModel(),
+                overviewViewModel = hiltViewModel(),
+                allViewModel = hiltViewModel()
             )
         }
     }

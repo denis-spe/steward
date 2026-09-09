@@ -2,22 +2,24 @@
 package com.den.steward.ui.screens.homeScreen.tabs.todayTab
 
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Sort
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -36,6 +38,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.R
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.states.DataState
+import com.den.steward.backend.useCase.Filter
+import com.den.steward.backend.useCase.Sort
 import com.den.steward.backend.viewModels.ChartViewModel
 import com.den.steward.backend.viewModels.TodayViewModel
 import com.den.steward.ui.componentExtenison.shimmerEffect
@@ -72,8 +76,10 @@ fun TodayTabList(
             }
 
             is DataState.Success -> {
-                val transactions = ((state as DataState.Success<*>).data as List<*>)
-                    .filterIsInstance<Transaction>()
+                val transactions = remember(state) {
+                    ((state as DataState.Success<*>).data as List<*>)
+                        .filterIsInstance<Transaction>()
+                }
                 if (state.isEmpty) {
                     TodayTabListEmpty(
                         modifier = modifier
@@ -96,12 +102,114 @@ fun TodayTabList(
 }
 
 @Composable
+fun TodayTabListHeader() {
+    Surface(
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 10.dp)
+        ) {
+            Text(
+                "Today's Transactions",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+    }
+}
+
+@Composable
+fun TodayTabListPanelButtons(
+    filterSelected: Boolean,
+    sortSelected: Boolean,
+    onFilterClick: () -> Unit,
+    onSortClick: () -> Unit
+){
+    val iconSize = 20.dp
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        TodayTabListPanelButton(
+            text = "Type",
+            selected = sortSelected,
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.AccessTime,
+                    contentDescription = "Sort",
+                    modifier = Modifier.size(iconSize)
+                )
+            },
+            onClick = onSortClick
+        )
+
+        TodayTabListPanelButton(
+            text = "Filter",
+            selected = filterSelected,
+            icon = {
+                Icon(
+                    painter = painterResource(R.drawable.filter),
+                    contentDescription = "filter",
+                    modifier = Modifier.size(iconSize)
+                )
+            },
+            onClick = onFilterClick
+        )
+        TodayTabListPanelButton(
+            text = "Sort",
+            selected = sortSelected,
+            icon = {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.Sort,
+                    contentDescription = "Sort",
+                    modifier = Modifier.size(iconSize)
+                )
+            },
+            onClick = onSortClick
+        )
+    }
+}
+
+@Composable
+fun TodayTabListPanelButton(
+    text: String,
+    selected: Boolean,
+    icon: @Composable () -> Unit,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (selected) MaterialTheme.colorScheme.primary
+            else Color.Gray.copy(alpha = 0.1f),
+            contentColor = if (selected) Color.White else MaterialTheme.colorScheme.onBackground
+        )
+    ) {
+        Text(
+            text,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+        icon()
+    }
+}
+
+@Composable
 fun TodayTabLazyList(
     modifier: Modifier = Modifier,
     chartViewModel: ChartViewModel,
     todayViewModel: TodayViewModel,
     transactions: List<Transaction>
 ) {
+    val todayUiState by todayViewModel.todayUiState.collectAsStateWithLifecycle()
+
     LazyColumn(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -116,17 +224,13 @@ fun TodayTabLazyList(
         }
 
         stickyHeader {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 10.dp)
-            ) {
-                Text(
-                    "Today's Transactions",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
+            TodayTabListHeader()
+            TodayTabListPanelButtons(
+                filterSelected = todayUiState.filter != Filter.ALL,
+                sortSelected = todayUiState.sort != Sort.DESCENDING,
+                onFilterClick = {},
+                onSortClick = {}
+            )
         }
 
         items(
@@ -137,7 +241,11 @@ fun TodayTabLazyList(
 
             TodayTabLazyListItem(
                 transaction = transaction,
+                index = index,
                 color = MaterialTheme.colorScheme.surface,
+                modifier = Modifier.animateItem(
+                    fadeInSpec = tween(1000),
+                )
             )
         }
     }
@@ -165,17 +273,7 @@ fun TodayTabLazyListShimmer(
         }
 
         stickyHeader {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 10.dp)
-            ) {
-                Text(
-                    "Today's Transactions",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
+            TodayTabListHeader()
         }
 
         items(numberOfShimmerItems) {

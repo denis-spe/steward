@@ -56,9 +56,8 @@ import java.time.LocalDate
 @Composable
 fun AllTab(
     padding: PaddingValues,
+    allViewModel: AllViewModel = hiltViewModel()
 ) {
-    val allViewModel: AllViewModel = hiltViewModel()
-
     val pagerState = rememberPagerState(
         initialPage = PeriodDataHandleUseCase.INITIAL_PAGE,
         pageCount = { Int.MAX_VALUE }

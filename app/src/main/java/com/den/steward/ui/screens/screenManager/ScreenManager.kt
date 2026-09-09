@@ -22,9 +22,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.den.steward.backend.states.AuthState
-import com.den.steward.backend.viewModels.ChartViewModel
 import com.den.steward.backend.viewModels.DataAdditionViewModel
-import com.den.steward.backend.viewModels.DataFetchViewModel
 import com.den.steward.backend.viewModels.ForgotPasswordViewModel
 import com.den.steward.backend.viewModels.HomeViewModel
 import com.den.steward.backend.viewModels.LoginViewModel
@@ -32,7 +30,6 @@ import com.den.steward.backend.viewModels.RegisterViewModel
 import com.den.steward.backend.viewModels.ScreenManagerViewModel
 import com.den.steward.backend.viewModels.SettingsViewModel
 import com.den.steward.backend.viewModels.WelcomeViewModel
-import com.den.steward.backend.viewModels.TodayViewModel
 import com.den.steward.helper.pop
 import com.den.steward.ui.screens.authScreen.forgotPasswordScreen.ForgotPasswordScreen
 import com.den.steward.ui.screens.authScreen.loginScreen.LoginScreen
@@ -92,19 +89,13 @@ fun EntryProviderScope<NavKey>.featureAEntryBuilder(
 
     // ===== Home Screen =====
     entry<HomeRouter> {
-        val dataAdditionViewModel: DataAdditionViewModel = hiltViewModel()
-        val dataFetchViewModel: DataFetchViewModel = hiltViewModel()
-        val chartViewModel: ChartViewModel = hiltViewModel()
         val homeViewModel: HomeViewModel = hiltViewModel()
-        val todayViewModel: TodayViewModel = hiltViewModel()
+        val dataAdditionViewModel: DataAdditionViewModel = hiltViewModel()
 
         HomeScreen(
             backStack = backStack,
-            chartViewModel = chartViewModel,
-            dataAdditionViewModel = dataAdditionViewModel,
-            dataFetchViewModel = dataFetchViewModel,
             homeViewModel = homeViewModel,
-            todayViewModel = todayViewModel
+            dataAdditionViewModel = dataAdditionViewModel
         )
     }
 

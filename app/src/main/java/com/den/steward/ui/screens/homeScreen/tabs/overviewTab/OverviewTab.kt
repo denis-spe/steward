@@ -17,8 +17,8 @@ import com.den.steward.backend.viewModels.OverviewViewModel
 @Composable
 fun OverviewTab(
     padding: PaddingValues,
+    overviewViewModel: OverviewViewModel = hiltViewModel()
 ) {
-    val overviewViewModel = hiltViewModel<OverviewViewModel>()
     val overviewUiState by overviewViewModel.overviewUiState.collectAsStateWithLifecycle()
     val groupedTransactions by overviewViewModel.groupedTransactions.collectAsStateWithLifecycle()
 

@@ -115,6 +115,57 @@ class TodayViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = DataState.Loading
         )
+
+    val liabilitiesPaymentStats: StateFlow<DataState<Map<String, Double>>> = dataFetchUseCase.fetchAllTransactions
+        .map { state ->
+            when (state) {
+                is DataState.Success -> {
+                    val liabilitiesPayAmount = mutableMapOf<String, Double>()
+                    var unPaidLoan = 0.0
+                    var unPaidDebt = 0.0
+                    var paidCount = 0.0
+                    var unPaidCount = 0.0
+
+                    state.data.forEach { transaction ->
+                        unPaidLoan += when (transaction) {
+                            is Transaction.Lent -> transaction.remainingAmount
+                            else -> 0.0
+                        }
+                        unPaidDebt += when (transaction) {
+                            is Transaction.Debt -> transaction.remainingAmount
+                            else -> 0.0
+                        }
+
+                        paidCount += when (transaction) {
+                            is Transaction.Debt -> if (transaction.remainingAmount == 0.0) 1.0 else 0.0
+                            is Transaction.Lent -> if (transaction.remainingAmount == 0.0) 1.0 else 0.0
+                            else -> 0.0
+                        }
+
+                        unPaidCount += when (transaction) {
+                            is Transaction.Debt -> if (transaction.remainingAmount != 0.0) 1.0 else 0.0
+                            is Transaction.Lent -> if (transaction.remainingAmount != 0.0) 1.0 else 0.0
+                            else -> 0.0
+                        }
+                    }
+
+                    liabilitiesPayAmount["Loans"] = unPaidLoan
+                    liabilitiesPayAmount["Debts"] = unPaidDebt
+                    liabilitiesPayAmount["Paid"] = paidCount
+                    liabilitiesPayAmount["Unpaid"] = unPaidCount
+
+                    DataState.Success(liabilitiesPayAmount)
+                }
+                is DataState.Error -> DataState.Error(state.message)
+                is DataState.Loading -> DataState.Loading
+            }
+        }
+        .distinctUntilChanged()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = DataState.Loading
+        )
     
 
     fun calculateFlow(transactions: List<Transaction>): Double {

@@ -10,11 +10,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import com.den.steward.backend.states.HomeTab
-import com.den.steward.backend.viewModels.ChartViewModel
 import com.den.steward.backend.viewModels.DataAdditionViewModel
-import com.den.steward.backend.viewModels.DataFetchViewModel
 import com.den.steward.backend.viewModels.HomeViewModel
-import com.den.steward.backend.viewModels.TodayViewModel
 import com.den.steward.ui.dataAddition.AddTransactionFloatingActionButton
 import com.den.steward.ui.screens.homeScreen.tabs.allTab.AllTab
 import com.den.steward.ui.screens.homeScreen.tabs.overviewTab.OverviewTab
@@ -25,11 +22,8 @@ import com.den.steward.ui.screens.homeScreen.tabs.yesterdayTab.YesterdayTab
 @Composable
 fun HomeScreen(
     backStack: NavBackStack<NavKey>,
-    dataAdditionViewModel: DataAdditionViewModel,
-    dataFetchViewModel: DataFetchViewModel,
-    chartViewModel: ChartViewModel,
     homeViewModel: HomeViewModel,
-    todayViewModel: TodayViewModel
+    dataAdditionViewModel: DataAdditionViewModel
 ) {
 
     val homeUiState by homeViewModel.homeUiState.collectAsStateWithLifecycle()
@@ -52,29 +46,33 @@ fun HomeScreen(
         }
     ) { padding ->
         when(homeUiState.currentTab) {
-            HomeTab.TODAY -> TodayTab(
-                padding = padding,
-                chartViewModel = chartViewModel,
-                todayViewModel = todayViewModel
-            )
-            HomeTab.YESTERDAY -> YesterdayTab(
-                padding = padding,
-                dataFetchViewModel = dataFetchViewModel,
-                chartViewModel = chartViewModel
-            )
-            HomeTab.ALL -> AllTab(
-                padding = padding,
-            )
+            HomeTab.TODAY -> {
+                TodayTab(
+                    padding = padding
+                )
+            }
+            HomeTab.YESTERDAY -> {
+                YesterdayTab(
+                    padding = padding
+                )
+            }
+            HomeTab.ALL -> {
+                AllTab(
+                    padding = padding
+                )
+            }
 
-            HomeTab.OVERVIEW -> OverviewTab(
-                padding = padding,
-            )
+            HomeTab.OVERVIEW -> {
+                OverviewTab(
+                    padding = padding
+                )
+            }
 
-            HomeTab.PLAN -> PlanTab(
-                padding = padding,
-                dataFetchViewModel = dataFetchViewModel,
-                chartViewModel = chartViewModel
-            )
+            HomeTab.PLAN -> {
+                PlanTab(
+                    padding = padding
+                )
+            }
         }
     }
 }

@@ -11,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.backend.viewModels.ChartViewModel
 import com.den.steward.backend.viewModels.TodayViewModel
@@ -18,8 +19,8 @@ import com.den.steward.backend.viewModels.TodayViewModel
 @Composable
 fun TodayTab(
     padding: PaddingValues,
-    chartViewModel: ChartViewModel,
-    todayViewModel: TodayViewModel
+    chartViewModel: ChartViewModel = hiltViewModel(),
+    todayViewModel: TodayViewModel = hiltViewModel()
 ) {
 
     Column(
