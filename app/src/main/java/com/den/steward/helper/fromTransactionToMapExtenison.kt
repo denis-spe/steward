@@ -53,6 +53,7 @@ val Transaction.toMap: MutableMap<String, Any>
                 mapping["paymentMethod"] = this.paymentMethod.name
                 mapping["affectAmount"] = this.affectAmount
                 mapping["selectedIcon"] = this.selectedIcon
+                mapping["liabilitiesStatus"] = this.liabilitiesStatus.name
             }
 
             is Debt -> {
@@ -62,6 +63,7 @@ val Transaction.toMap: MutableMap<String, Any>
                 mapping["paymentMethod"] = this.paymentMethod.name
                 mapping["affectAmount"] = this.affectAmount
                 mapping["selectedIcon"] = this.selectedIcon
+                mapping["liabilitiesStatus"] = this.liabilitiesStatus.name
             }
 
             is Savings -> {

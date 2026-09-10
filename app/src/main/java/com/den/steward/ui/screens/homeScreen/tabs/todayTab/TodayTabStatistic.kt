@@ -59,7 +59,7 @@ fun TodayTabStatisticView(
     val tabs = listOf(
         "Donut Chart",
         "Summary",
-        "Unpaid Liabilities"
+        "Liabilities Stats"
     )
 
     val pager = rememberPagerState {
@@ -130,7 +130,7 @@ fun TodayTabStatisticPanel(tabs: List<String>, pager: PagerState) {
                             }
                         }
 
-                        "Unpaid Liabilities" -> {
+                        "Liabilities Stats" -> {
                             if (pager.currentPage == index) {
                                 androidx.compose.material.icons.Icons.Filled.Balance
                             } else {

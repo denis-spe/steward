@@ -5,12 +5,18 @@ import android.util.Log
 import com.den.steward.R
 import com.den.steward.backend.entitles.GoalStatus
 import com.den.steward.backend.entitles.GoalType
+import com.den.steward.backend.entitles.LiabilitiesStatus
 import com.den.steward.backend.entitles.PaymentMethod
 import com.den.steward.backend.entitles.RecurrencePattern
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.google.firebase.firestore.DocumentSnapshot
 
+private val paymentMethodMap = PaymentMethod.entries.associateBy { it.name }
+private val goalTypeMap = GoalType.entries.associateBy { it.name }
+private val goalStatusMap = GoalStatus.entries.associateBy { it.name }
+private val recurrencePatternMap = RecurrencePattern.entries.associateBy { it.name }
+private val liabilitiesStatusMap = LiabilitiesStatus.entries.associateBy { it.name }
 
 val DocumentSnapshot.toTransaction: Transaction?
     get() {
@@ -22,7 +28,7 @@ val DocumentSnapshot.toTransaction: Transaction?
     val affectAmount = getBoolean("affectAmount") ?: false
     val amount = getDouble("amount") ?: 0.0
     val paymentMethod = getString("paymentMethod")?.let { name ->
-        PaymentMethod.entries.find { it.name == name }
+        paymentMethodMap[name]
     } ?: PaymentMethod.CASH
     val selectedIcon = getLong("selectedIcon") ?: R.drawable.description.toLong()
 
@@ -30,10 +36,10 @@ val DocumentSnapshot.toTransaction: Transaction?
         TransactionType.GOAL.name -> {
             val value = getDouble("value") ?: 0.0
             val goalType = getString("goalType")?.let { name ->
-                GoalType.entries.find { it.name == name }
+                goalTypeMap[name]
             } ?: GoalType.AMOUNT
             val status = getString("status")?.let { name ->
-                GoalStatus.entries.find { it.name == name }
+                goalStatusMap[name]
             } ?: GoalStatus.NOT_STARTED
             val startedAt = getTimestamp("startedAt")?.toDate()?.time ?: createdAt
             val endAt = getTimestamp("endAt")?.toDate()?.time ?: createdAt
@@ -42,7 +48,7 @@ val DocumentSnapshot.toTransaction: Transaction?
                     val days = (get("repeatableDays") as? List<*>)?.filterIsInstance<Long>() ?: emptyList()
                     RecurrencePattern.Custom(days.map { it.toInt() })
                 }
-                else -> RecurrencePattern.entries.find { it.name == repeatableName } ?: RecurrencePattern.NONE
+                else -> recurrencePatternMap[repeatableName] ?: RecurrencePattern.NONE
             }
 
             Transaction.Goal(
@@ -70,7 +76,7 @@ val DocumentSnapshot.toTransaction: Transaction?
             val startAt = getTimestamp("startAt")?.toDate()?.time ?: createdAt
             val endAt = getTimestamp("endAt")?.toDate()?.time ?: createdAt
             val status = getString("status")?.let { name ->
-                GoalStatus.entries.find { it.name == name }
+                goalStatusMap[name]
             } ?: GoalStatus.NOT_STARTED
             Transaction.Achievement(
                 id = id,
@@ -122,6 +128,10 @@ val DocumentSnapshot.toTransaction: Transaction?
         }
 
         TransactionType.LENT.name -> {
+            val liabilitiesStatus = getString("liabilitiesStatus")?.let { name ->
+                liabilitiesStatusMap[name]
+            } ?: LiabilitiesStatus.UNPAID
+
             Transaction.Lent(
                 id = id,
                 label = label,
@@ -130,11 +140,16 @@ val DocumentSnapshot.toTransaction: Transaction?
                 createdAt = createdAt,
                 paymentMethod = paymentMethod,
                 affectAmount = affectAmount,
-                selectedIcon = selectedIcon.toInt()
+                selectedIcon = selectedIcon.toInt(),
+                liabilitiesStatus = liabilitiesStatus
             )
         }
 
         TransactionType.DEBT.name -> {
+            val liabilitiesStatus = getString("liabilitiesStatus")?.let { name ->
+                liabilitiesStatusMap[name]
+            } ?: LiabilitiesStatus.UNPAID
+
             Transaction.Debt(
                 id = id,
                 label = label,
@@ -143,7 +158,8 @@ val DocumentSnapshot.toTransaction: Transaction?
                 createdAt = createdAt,
                 paymentMethod = paymentMethod,
                 affectAmount = affectAmount,
-                selectedIcon = selectedIcon.toInt()
+                selectedIcon = selectedIcon.toInt(),
+                liabilitiesStatus = liabilitiesStatus
             )
         }
 

@@ -84,8 +84,8 @@ fun DonutChart(
         }
     }
 
-    val animationTargetState = data.items.indices.map {
-        remember {
+    val animationTargetState = remember(data.items.size) {
+        data.items.indices.map {
             mutableStateOf(
                 DonutChartState(
                     donutStroke = DonutStroke(strokeWidth, strokeWidthSelected)
@@ -93,10 +93,11 @@ fun DonutChart(
             )
         }
     }
-    val animValues = data.items.indices.map {
+    val animValues = animationTargetState.map { state ->
         animateDpAsState(
-            targetValue = animationTargetState[it].value.stroke,
-            animationSpec = TweenSpec(700)
+            targetValue = state.value.stroke,
+            animationSpec = TweenSpec(700),
+            label = "DonutStrokeAnimation"
         )
     }
     val anglesList: MutableList<DrawingAngles> = remember { mutableListOf() }

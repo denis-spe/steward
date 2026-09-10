@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
@@ -29,7 +28,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -43,12 +41,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.PeriodType
 import com.den.steward.backend.useCase.PeriodDataHandleUseCase
 import com.den.steward.backend.viewModels.AllViewModel
-import com.den.steward.backend.viewModels.ChartViewModel
-import com.den.steward.backend.viewModels.DataFetchViewModel
 import com.den.steward.helper.formattedDate
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -180,29 +175,10 @@ fun AllTab(
         HorizontalDivider(
             modifier = Modifier.padding(vertical = 3.dp)
         )
-        Surface {
-            when (val transactionsState = transactions) {
-                is DataState.Success -> {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        items(transactionsState.data.size) { index ->
-                            Text(transactionsState.data[index].toString())
-                        }
-                    }
-                }
 
-                is DataState.Loading -> {
-                    Text("Loading")
-                }
-
-                is DataState.Error -> {
-                    Text("Error")
-                }
-            }
-        }
+        AllTabLazyList(
+            transactions = transactions
+        )
     }
 }
 

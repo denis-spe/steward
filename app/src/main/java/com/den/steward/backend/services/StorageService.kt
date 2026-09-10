@@ -6,19 +6,16 @@ import com.den.steward.backend.services.service.Storage
 import com.den.steward.helper.toMap
 import com.den.steward.helper.toTransaction
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Source
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChangedBy
-import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.CancellationException
@@ -420,91 +417,74 @@ class StorageService @Inject constructor(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun fetchAllTransactions(userId: String): Flow<Result<List<Transaction>>> {
-        // Raw top-level listener, fires on ANY change to ANY transaction doc (add, remove, or a
-        // field edit like label/amount). Shared (not re-collected) so its two consumers below
-        // don't each open a separate Firestore listener on the same query.
-        val topLevelFlow: Flow<Result<List<Transaction>>> = callbackFlow {
-            val listener = docRef.document(userId)
-                .collection(TRANSACTION_COLLECTION)
-                .addSnapshotListener { snapshot, error ->
-                    if (error != null) {
-                        Log.e(TAG, "Top-level transaction listener failed for user $userId", error)
-                        trySend(Result.failure(error))
-                        return@addSnapshotListener
-                    }
+        return callbackFlow {
+            val transactionsCollection = docRef.document(userId).collection(TRANSACTION_COLLECTION)
+            val subListeners = mutableMapOf<String, ListenerRegistration>()
+            val fulfillmentMap = mutableMapOf<String, List<Transaction>>()
+            var latestTransactions = emptyList<Transaction>()
 
-                    val transactions = snapshot?.documents?.mapNotNull { it.toTransaction } ?: emptyList()
-                    trySend(Result.success(transactions))
-                }
-
-            awaitClose {
-                listener.remove()
-            }
-        }
-
-        // Only rebuilds the sub-collection listeners when the *set* of transaction ids changes.
-        // distinctUntilChangedBy filters out emissions that only touch a transaction's own
-        // top-level fields, so those no longer tear down and race the sub-listeners below before
-        // they get a chance to emit.
-        val subItemsFlow: Flow<Result<Map<String, List<Transaction>>>> = topLevelFlow
-            .distinctUntilChangedBy { result -> result.getOrNull()?.map { it.id }?.sorted() ?: emptyList() }
-            .flatMapLatest { result ->
-                if (result.isFailure) {
-                    return@flatMapLatest flowOf(Result.failure<Map<String, List<Transaction>>>(result.exceptionOrNull()!!))
-                }
-
-                val transactions = result.getOrNull() ?: emptyList()
-                if (transactions.isEmpty()) return@flatMapLatest flowOf(Result.success(emptyMap()))
-
-                // Each flow now carries Result<Transaction> instead of a bare Transaction, so a
-                // failure in any single subcollection listener is no longer silently downgraded
-                // to "no items" — it propagates out of fetchAllTransactions instead.
-                //
-                // Each per-transaction flow also starts with an immediate "no sub-items yet"
-                // placeholder via onStart. Without this, combine() below waits for EVERY
-                // sub-collection listener to deliver its first snapshot before emitting
-                // anything at all. If the device is offline and even one sub-collection has
-                // no local cache yet (e.g. a Lent/Debt/Goal created while offline, before
-                // Firestore ever synced that subcollection), that single stalled listener
-                // used to block the entire transaction list from displaying — including
-                // transactions that had nothing to do with it and were already cached.
-                val perTransactionFlows: List<Flow<Pair<String, Result<List<Transaction>>>>> = transactions.map { transaction ->
-                    fetchTransactionFulfillment(userId, transaction)
-                        .map { subResult -> transaction.id to subResult }
-                        .onStart { emit(transaction.id to Result.success(emptyList())) }
-                }
-
-                combine(perTransactionFlows) { pairs ->
-                    val failure = pairs.map { it.second }.firstOrNull { it.isFailure }
-                    if (failure != null) {
-                        Result.failure(failure.exceptionOrNull() ?: IllegalStateException("Unknown fulfillment error"))
-                    } else {
-                        Result.success(pairs.associate { (id, subResult) -> id to (subResult.getOrNull() ?: emptyList()) })
+            fun emitMerged() {
+                val merged = latestTransactions.map { transaction ->
+                    val subItems = fulfillmentMap[transaction.id] ?: emptyList()
+                    when (transaction) {
+                        is Transaction.Lent -> transaction.copy(repayment = subItems.filterIsInstance<Transaction.Repayment>())
+                        is Transaction.Debt -> transaction.copy(refund = subItems.filterIsInstance<Transaction.Refund>())
+                        is Transaction.Goal -> transaction.copy(attain = subItems.filterIsInstance<Transaction.Attain>())
+                            .calculateStatus(System.currentTimeMillis())
+                        else -> transaction
                     }
                 }
+                trySend(Result.success(merged))
             }
 
-        // Merge: latest top-level fields (fresh on every edit) with latest known sub-items per id
-        // (fresh only when the id set actually changes, or when that specific transaction's own
-        // sub-listener fires).
-        return combine(topLevelFlow, subItemsFlow) { topLevelResult, subItemsResult ->
-            when {
-                topLevelResult.isFailure -> topLevelResult
-                subItemsResult.isFailure -> Result.failure(subItemsResult.exceptionOrNull()!!)
-                else -> {
-                    val subItemsById = subItemsResult.getOrNull() ?: emptyMap()
-                    val merged = (topLevelResult.getOrNull() ?: emptyList()).map { transaction ->
-                        val subItems = subItemsById[transaction.id] ?: emptyList()
-                        when (transaction) {
-                            is Transaction.Lent -> transaction.copy(repayment = subItems.filterIsInstance<Transaction.Repayment>())
-                            is Transaction.Debt -> transaction.copy(refund = subItems.filterIsInstance<Transaction.Refund>())
-                            is Transaction.Goal -> transaction.copy(attain = subItems.filterIsInstance<Transaction.Attain>()).calculateStatus(System.currentTimeMillis())
-                            else -> transaction
+            val topListener = transactionsCollection.addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    trySend(Result.failure(error))
+                    return@addSnapshotListener
+                }
+
+                val newTransactions = snapshot?.documents?.mapNotNull { it.toTransaction } ?: emptyList()
+                val newIds = newTransactions.map { it.id }.toSet()
+
+                // Clean up stale listeners
+                val removedIds = subListeners.keys - newIds
+                removedIds.forEach { id ->
+                    subListeners.remove(id)?.remove()
+                    fulfillmentMap.remove(id)
+                }
+
+                // Add new listeners for added transactions
+                newTransactions.forEach { transaction ->
+                    if (!subListeners.containsKey(transaction.id)) {
+                        val subCollection = when (transaction) {
+                            is Transaction.Lent -> transactionsCollection.document(transaction.id).collection(REPAYMENT_COLLECTION)
+                            is Transaction.Debt -> transactionsCollection.document(transaction.id).collection(REFUND_COLLECTION)
+                            is Transaction.Goal -> transactionsCollection.document(transaction.id).collection(ATTAIN_COLLECTION)
+                            is Transaction.Achievement -> transactionsCollection.document(transaction.id).collection(ACHIEVEMENT_COLLECTION)
+                            else -> null
+                        }
+
+                        if (subCollection != null) {
+                            subListeners[transaction.id] = subCollection.addSnapshotListener { subSnapshot, subError ->
+                                if (subError == null) {
+                                    fulfillmentMap[transaction.id] = subSnapshot?.documents?.mapNotNull { it.toTransaction } ?: emptyList()
+                                    emitMerged()
+                                }
+                            }
+                        } else {
+                            fulfillmentMap[transaction.id] = emptyList()
                         }
                     }
-                    Result.success(merged)
                 }
+
+                latestTransactions = newTransactions
+                emitMerged()
             }
-        }.flowOn(Dispatchers.IO)
+
+            awaitClose {
+                topListener.remove()
+                subListeners.values.forEach { it.remove() }
+            }
+        }.flowOn(Dispatchers.IO).distinctUntilChanged()
     }
 }

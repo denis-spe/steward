@@ -27,20 +27,24 @@ class DataFetchUseCase @Inject constructor(
         // not error — and is left on its initial loading state indefinitely.
         .distinctUntilChanged()
         .map { result ->
-            // 1. Rename lambda parameter to 'result' to avoid shadowing
             val originalTransactions = result.getOrThrow()
 
-            val dataList = originalTransactions.flatMap { transaction ->
-                // 2. Capture the sub-items from the 'when' statement
-                val subItems = when (transaction) {
-                    is Transaction.Lent -> transaction.repayment.map { it.copy(lent = transaction) }
-                    is Transaction.Debt -> transaction.refund.map { it.copy(debt = transaction) }
-                    is Transaction.Goal -> transaction.attain.map { it.copy(goal = transaction) }
-                    else -> emptyList()
+            val dataList = buildList {
+                originalTransactions.forEach { transaction ->
+                    add(transaction)
+                    when (transaction) {
+                        is Transaction.Lent -> {
+                            transaction.repayment.forEach { add(it.copy(lent = transaction)) }
+                        }
+                        is Transaction.Debt -> {
+                            transaction.refund.forEach { add(it.copy(debt = transaction)) }
+                        }
+                        is Transaction.Goal -> {
+                            transaction.attain.forEach { add(it.copy(goal = transaction)) }
+                        }
+                        else -> {}
+                    }
                 }
-
-                // 3. Return a combined list of the parent transaction + its sub-items
-                listOf(transaction) + subItems
             }
 
             DataState.Success(dataList) as DataState<List<Transaction>>

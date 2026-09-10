@@ -33,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.R
@@ -80,18 +81,13 @@ fun TodayTabList(
                     ((state as DataState.Success<*>).data as List<*>)
                         .filterIsInstance<Transaction>()
                 }
-                if (state.isEmpty) {
-                    TodayTabListEmpty(
-                        modifier = modifier
-                    )
-                } else {
-                    TodayTabLazyList(
-                        modifier = modifier,
-                        chartViewModel = chartViewModel,
-                        todayViewModel = todayViewModel,
-                        transactions = transactions
-                    )
-                }
+
+                TodayTabLazyList(
+                    modifier = modifier,
+                    chartViewModel = chartViewModel,
+                    todayViewModel = todayViewModel,
+                    transactions = transactions
+                )
             }
 
             is DataState.Error -> {
@@ -129,50 +125,54 @@ fun TodayTabListPanelButtons(
 ){
     val iconSize = 20.dp
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically
+    Surface(
+        color = MaterialTheme.colorScheme.background
     ) {
-        TodayTabListPanelButton(
-            text = "Type",
-            selected = sortSelected,
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.AccessTime,
-                    contentDescription = "Sort",
-                    modifier = Modifier.size(iconSize)
-                )
-            },
-            onClick = onSortClick
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TodayTabListPanelButton(
+                text = "Type",
+                selected = sortSelected,
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.AccessTime,
+                        contentDescription = "Sort",
+                        modifier = Modifier.size(iconSize)
+                    )
+                },
+                onClick = onSortClick
+            )
 
-        TodayTabListPanelButton(
-            text = "Filter",
-            selected = filterSelected,
-            icon = {
-                Icon(
-                    painter = painterResource(R.drawable.filter),
-                    contentDescription = "filter",
-                    modifier = Modifier.size(iconSize)
-                )
-            },
-            onClick = onFilterClick
-        )
-        TodayTabListPanelButton(
-            text = "Sort",
-            selected = sortSelected,
-            icon = {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Outlined.Sort,
-                    contentDescription = "Sort",
-                    modifier = Modifier.size(iconSize)
-                )
-            },
-            onClick = onSortClick
-        )
+            TodayTabListPanelButton(
+                text = "Filter",
+                selected = filterSelected,
+                icon = {
+                    Icon(
+                        painter = painterResource(R.drawable.filter),
+                        contentDescription = "filter",
+                        modifier = Modifier.size(iconSize)
+                    )
+                },
+                onClick = onFilterClick
+            )
+            TodayTabListPanelButton(
+                text = "Sort",
+                selected = sortSelected,
+                icon = {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.Sort,
+                        contentDescription = "Sort",
+                        modifier = Modifier.size(iconSize)
+                    )
+                },
+                onClick = onSortClick
+            )
+        }
     }
 }
 
@@ -233,20 +233,25 @@ fun TodayTabLazyList(
             )
         }
 
-        items(
-            transactions.size,
-            key = { index -> transactions[index].id }
-        ) { index ->
-            val transaction = transactions[index]
+        if (transactions.isNotEmpty()) {
+            items(
+                transactions.size,
+                key = { index -> transactions[index].id }
+            ) { index ->
+                val transaction = transactions[index]
 
-            TodayTabLazyListItem(
-                transaction = transaction,
-                index = index,
-                color = MaterialTheme.colorScheme.surface,
-                modifier = Modifier.animateItem(
-                    fadeInSpec = tween(1000),
+                TodayTabLazyListItem(
+                    transaction = transaction,
+                    color = MaterialTheme.colorScheme.surface,
+                    modifier = Modifier.animateItem(
+                        fadeInSpec = tween(1000),
+                    )
                 )
-            )
+            }
+        } else {
+            item {
+                TodayTabListEmpty()
+            }
         }
     }
 }
@@ -288,22 +293,31 @@ fun TodayTabListEmpty(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 40.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Image(
-            painter = painterResource(R.drawable.empty_list),
+            painter = painterResource(R.drawable.ic_empty_transactions),
             contentDescription = "No Transactions",
-            modifier = Modifier.size(icon_size)
+            modifier = Modifier.size(120.dp)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            "No Transactions Yet",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = FontWeight.Bold
         )
         Text(
-            "No Transactions",
+            "Add your first transaction to get started",
             style = MaterialTheme.typography.bodyMedium,
-            fontWeight = MaterialTheme.typography.bodyMedium.fontWeight
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            textAlign = TextAlign.Center
         )
     }
-
 }
 
 @Composable

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+
+    <!-- Background Circle -->
+    <path
+        android:pathData="M60,60 m-50,0 a50,50 0 1,0 100,0 a50,50 0 1,0 -100,0"
+        android:fillColor="#F5F7FA" />
+
+    <!-- Receipt / Document -->
+    <path
+        android:pathData="M40,30 L80,30 L80,85 L75,82 L70,85 L65,82 L60,85 L55,82 L50,85 L45,82 L40,85 Z"
+        android:fillColor="#FFFFFF"
+        android:strokeColor="@color/steward_icon"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+
+    <!-- Content Lines -->
+    <path
+        android:pathData="M50,45 L70,45 M50,55 L65,55 M50,65 L70,65"
+        android:strokeColor="#CFD8DC"
+        android:strokeWidth="2"
+        android:strokeLineCap="round" />
+
+    <!-- Magnifying Glass -->
+    <group
+        android:translateX="15"
+        android:translateY="15">
+        <path
+            android:pathData="M70,70 m-12,0 a12,12 0 1,0 24,0 a12,12 0 1,0 -24,0"
+            android:fillColor="#E3F2FD"
+            android:strokeColor="#2196F3"
+            android:strokeWidth="2.5"/>
+        <path
+            android:pathData="M78,78 L85,85"
+            android:strokeColor="#2196F3"
+            android:strokeWidth="3"
+            android:strokeLineCap="round"/>
+    </group>
+
+</vector>

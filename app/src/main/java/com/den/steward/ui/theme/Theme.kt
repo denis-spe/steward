@@ -55,6 +55,7 @@ fun StewardTheme(
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
+
     val extendedColors = if (darkTheme) {
         ExtendedColors(
             text = Color.White,

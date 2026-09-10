@@ -62,7 +62,8 @@ sealed class Transaction {
         override val createdAt: Long = System.currentTimeMillis(),
         val selectedIcon: Int = R.drawable.lent,
         val paymentMethod: PaymentMethod = PaymentMethod.CASH,
-        val affectAmount: Boolean = false
+        val affectAmount: Boolean = false,
+        val liabilitiesStatus: LiabilitiesStatus = LiabilitiesStatus.UNPAID
     ) : Transaction() {
         val totalRepayment: Double get() = repayment.sumOf { it.amount }
         val remainingAmount: Double get() = amount - totalRepayment
@@ -79,7 +80,8 @@ sealed class Transaction {
         override val createdAt: Long = System.currentTimeMillis(),
         val selectedIcon: Int = R.drawable.debt,
         val paymentMethod: PaymentMethod = PaymentMethod.CASH,
-        val affectAmount: Boolean = false
+        val affectAmount: Boolean = false,
+        val liabilitiesStatus: LiabilitiesStatus = LiabilitiesStatus.UNPAID
     ) : Transaction() {
         val totalRefund: Double get() = refund.sumOf { it.amount }
         val remainingAmount: Double get() = amount - totalRefund
@@ -302,4 +304,11 @@ sealed class Transaction {
                 else -> null
             }
         }
+
+    val getStatus = when(this) {
+        is Lent -> this.liabilitiesStatus.label
+        is Debt -> this.liabilitiesStatus.label
+        is Goal -> this.status.label
+        else -> null
+    }
 }

@@ -63,6 +63,11 @@ fun RotatedBarChart(
         color = if (isSystemInDarkTheme) DrafterColors.LabelDark else DrafterColors.LabelLight,
     )
 
+    // Pre-measure labels only when data or style changes
+    val maxLabelSize = remember(labels, labelStyle) {
+        measureMaxLabelSize(textMeasurer, labels, labelStyle)
+    }
+
     Canvas(
         modifier = modifier
             .fillMaxSize()
@@ -70,24 +75,20 @@ fun RotatedBarChart(
     ) {
         if (size.width < 1f || size.height < 1f) return@Canvas
 
-        // Measure real label sizes up front so the layout can reserve the
-        // exact vertical space rotated text needs at this specific angle.
-        val labelSize = measureMaxLabelSize(textMeasurer, labels, labelStyle)
+        // Calculate dimensions only when size or labels change
+        val dimensions = calculateChartDimensions(
+            width = size.width,
+            height = size.height,
+            labelRotation = labelRotation,
+            maxLabelWidth = maxLabelSize.width,
+            maxLabelHeight = maxLabelSize.height,
+        )
 
-        val (_, chartHeight, chartWidth, chartTop, chartBottom, chartLeft) =
-            calculateChartDimensions(
-                width = size.width,
-                height = size.height,
-                labelRotation = labelRotation,
-                maxLabelWidth = labelSize.width,
-                maxLabelHeight = labelSize.height,
-            )
-
-        drawAxes(chartLeft, chartTop, chartBottom, chartWidth, isSystemInDarkTheme)
+        drawAxes(dimensions.chartLeft, dimensions.chartTop, dimensions.chartBottom, dimensions.chartWidth, isSystemInDarkTheme)
 
         val maxValue = renderer.calculateMaxValue()
         val (barWidth, groupSpacing) = renderer.calculateBarAndSpacing(
-            chartWidth = chartWidth,
+            chartWidth = dimensions.chartWidth,
             dataSize = labels.size,
             barsPerGroup = barsPerGroup,
         )
@@ -95,18 +96,18 @@ fun RotatedBarChart(
         drawYAxisLabels(
             textMeasurer = textMeasurer,
             maxValue = maxValue,
-            left = chartLeft,
-            top = chartTop,
-            bottom = chartBottom,
+            left = dimensions.chartLeft,
+            top = dimensions.chartTop,
+            bottom = dimensions.chartBottom,
             isSystemInDarkTheme = isSystemInDarkTheme,
         )
 
         drawBars(
             renderer = renderer,
             labels = labels,
-            chartLeft = chartLeft,
-            chartBottom = chartBottom,
-            chartHeight = chartHeight,
+            chartLeft = dimensions.chartLeft,
+            chartBottom = dimensions.chartBottom,
+            chartHeight = dimensions.chartHeight,
             barWidth = barWidth,
             groupSpacing = groupSpacing,
             barsPerGroup = barsPerGroup,
@@ -117,8 +118,8 @@ fun RotatedBarChart(
         drawXAxisLabels(
             textMeasurer = textMeasurer,
             labels = labels,
-            chartLeft = chartLeft,
-            chartBottom = chartBottom,
+            chartLeft = dimensions.chartLeft,
+            chartBottom = dimensions.chartBottom,
             barWidth = barWidth,
             barsPerGroup = barsPerGroup,
             groupSpacing = groupSpacing,
