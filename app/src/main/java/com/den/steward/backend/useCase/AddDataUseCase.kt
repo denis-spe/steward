@@ -9,11 +9,11 @@ import com.den.steward.backend.viewModels.DataTransferToViewModel
 import javax.inject.Inject
 
 class AddDataUseCase @Inject constructor(
-    accountService: Account,
+    private val accountService: Account,
     private val storageService: Storage,
     private val goalToolUseCase: GoalToolUseCase
 ) {
-    val userId = accountService.currentUserId
+    private val userId get() = accountService.currentUserId
 
     companion object {
         private const val TAG = "AddDataUseCase"
@@ -25,65 +25,76 @@ class AddDataUseCase @Inject constructor(
 
     suspend fun addTransaction(dataTransferToViewModel: DataTransferToViewModel) {
         val amount = dataTransferToViewModel.amount.toDoubleOrNull() ?: 0.0
-        val transaction = when (dataTransferToViewModel.transactionType) {
-            TransactionType.EARNINGS -> Transaction.Earnings(
-                label = dataTransferToViewModel.label,
-                amount = amount,
-                note = dataTransferToViewModel.note,
-                createdAt = dataTransferToViewModel.createdAt,
-                paymentMethod = dataTransferToViewModel.paymentMethod,
-                affectAmount = dataTransferToViewModel.isAffectingAmount ?: false
-            )
-            TransactionType.EXPENSE -> Transaction.Expense(
-                label = dataTransferToViewModel.label,
-                amount = amount,
-                note = dataTransferToViewModel.note,
-                createdAt = dataTransferToViewModel.createdAt,
-                paymentMethod = dataTransferToViewModel.paymentMethod,
-                affectAmount = dataTransferToViewModel.isAffectingAmount ?: false
-            )
-            TransactionType.LENT -> Transaction.Lent(
-                label = dataTransferToViewModel.label,
-                amount = amount,
-                note = dataTransferToViewModel.note,
-                createdAt = dataTransferToViewModel.createdAt,
-                paymentMethod = dataTransferToViewModel.paymentMethod,
-                affectAmount = dataTransferToViewModel.isAffectingAmount ?: false
-            )
-            TransactionType.DEBT -> Transaction.Debt(
-                label = dataTransferToViewModel.label,
-                amount = amount,
-                note = dataTransferToViewModel.note,
-                createdAt = dataTransferToViewModel.createdAt,
-                paymentMethod = dataTransferToViewModel.paymentMethod,
-                affectAmount = dataTransferToViewModel.isAffectingAmount ?: false
-            )
-            TransactionType.SAVINGS -> Transaction.Savings(
-                label = dataTransferToViewModel.label,
-                amount = amount,
-                note = dataTransferToViewModel.note,
-                createdAt = dataTransferToViewModel.createdAt,
-                paymentMethod = dataTransferToViewModel.paymentMethod,
-                affectAmount = dataTransferToViewModel.isAffectingAmount ?: false
-            )
-            TransactionType.GOAL -> Transaction.Goal(
-                label = dataTransferToViewModel.label,
-                value = amount,
-                note = dataTransferToViewModel.note,
-                createdAt = dataTransferToViewModel.createdAt,
-                startedAt = dataTransferToViewModel.startedAt,
-                endAt = dataTransferToViewModel.endAt,
-                repeatable = dataTransferToViewModel.repeatable,
-            ).calculateStatus(System.currentTimeMillis())
 
-            else -> null
+        Log.d(TAG, "addTransaction: type=${dataTransferToViewModel.transactionType.name}, amount=$amount")
+
+        val transaction = try {
+            when (dataTransferToViewModel.transactionType) {
+                TransactionType.EARNINGS -> Transaction.Earnings(
+                    label = dataTransferToViewModel.label,
+                    amount = amount,
+                    note = dataTransferToViewModel.note,
+                    createdAt = dataTransferToViewModel.createdAt,
+                    paymentMethod = dataTransferToViewModel.paymentMethod,
+                    affectAmount = dataTransferToViewModel.isAffectingAmount ?: false
+                )
+                TransactionType.EXPENSE -> Transaction.Expense(
+                    label = dataTransferToViewModel.label,
+                    amount = amount,
+                    note = dataTransferToViewModel.note,
+                    createdAt = dataTransferToViewModel.createdAt,
+                    paymentMethod = dataTransferToViewModel.paymentMethod,
+                    affectAmount = dataTransferToViewModel.isAffectingAmount ?: false
+                )
+                TransactionType.LENT -> Transaction.Lent(
+                    label = dataTransferToViewModel.label,
+                    amount = amount,
+                    note = dataTransferToViewModel.note,
+                    createdAt = dataTransferToViewModel.createdAt,
+                    paymentMethod = dataTransferToViewModel.paymentMethod,
+                    affectAmount = dataTransferToViewModel.isAffectingAmount ?: false,
+                    selectedIcon = TransactionType.LENT.icon
+                )
+                TransactionType.DEBT -> Transaction.Debt(
+                    label = dataTransferToViewModel.label,
+                    amount = amount,
+                    note = dataTransferToViewModel.note,
+                    createdAt = dataTransferToViewModel.createdAt,
+                    paymentMethod = dataTransferToViewModel.paymentMethod,
+                    affectAmount = dataTransferToViewModel.isAffectingAmount ?: false,
+                    selectedIcon = TransactionType.DEBT.icon
+                )
+                TransactionType.SAVINGS -> Transaction.Savings(
+                    label = dataTransferToViewModel.label,
+                    amount = amount,
+                    note = dataTransferToViewModel.note,
+                    createdAt = dataTransferToViewModel.createdAt,
+                    paymentMethod = dataTransferToViewModel.paymentMethod,
+                    affectAmount = dataTransferToViewModel.isAffectingAmount ?: false
+                )
+                TransactionType.GOAL -> Transaction.Goal(
+                    label = dataTransferToViewModel.label,
+                    value = amount,
+                    note = dataTransferToViewModel.note,
+                    createdAt = dataTransferToViewModel.createdAt,
+                    startedAt = dataTransferToViewModel.startedAt,
+                    endAt = dataTransferToViewModel.endAt,
+                    repeatable = dataTransferToViewModel.repeatable,
+                ).calculateStatus(System.currentTimeMillis())
+
+                else -> throw IllegalArgumentException("Invalid transaction type: ${dataTransferToViewModel.transactionType}")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Exception building transaction for type=${dataTransferToViewModel.transactionType.name}", e)
+            null
         } ?: return
 
+
         val result = try {
-            Log.d(TAG, "Starting addTransaction for goal: ${transaction.id}")
+            Log.d(TAG, "Starting addTransaction for type: ${transaction.type.name} (user: $userId)")
             storageService.addTransaction(userId, transaction)
         } catch (e: Exception) {
-            Log.e(TAG, "Exception in addTransaction", e)
+            Log.e(TAG, "Exception in addTransaction for type: ${transaction.type.name}", e)
             Result.failure(e)
         }
         

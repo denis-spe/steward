@@ -42,13 +42,21 @@ class StorageService @Inject constructor(
 
     // ================================== Adding the transaction ==============================
     override suspend fun addTransaction(userId: String, transaction: Transaction): Result<String> {
+        Log.d(TAG, "addTransaction: type=${transaction.type.name}, userId=$userId")
         return try {
+            if (userId.isEmpty()) {
+                Log.e(TAG, "addTransaction failed: userId is empty")
+                return Result.failure(IllegalArgumentException("User ID is empty"))
+            }
+
             val transactionRef = docRef.document(userId)
                 .collection(TRANSACTION_COLLECTION)
                 .document()
 
             val transactionData = transaction.toMap
             transactionData["id"] = transactionRef.id
+            
+            Log.d(TAG, "Writing transaction document to ${transactionRef.path}: $transactionData")
 
             // await the set operation to ensure data is persistent (locally) before returning
             // We use a timeout to prevent hanging indefinitely when the backend is unreachable.
@@ -56,6 +64,7 @@ class StorageService @Inject constructor(
                 transactionRef.set(transactionData).await()
             }
             
+            Log.i(TAG, "Transaction document set successfully: ${transactionRef.id}")
             Result.success(transactionRef.id)
         } catch (e: Exception) {
             if (e is CancellationException) throw e
@@ -456,6 +465,9 @@ class StorageService @Inject constructor(
                 // Add new listeners for added transactions
                 newTransactions.forEach { transaction ->
                     if (!subListeners.containsKey(transaction.id)) {
+                        // Initialize fulfillment entry immediately to prevent it being missing during first merge
+                        fulfillmentMap[transaction.id] = emptyList()
+
                         val subCollection = when (transaction) {
                             is Transaction.Lent -> transactionsCollection.document(transaction.id).collection(REPAYMENT_COLLECTION)
                             is Transaction.Debt -> transactionsCollection.document(transaction.id).collection(REFUND_COLLECTION)

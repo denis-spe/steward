@@ -131,9 +131,9 @@ sealed class Transaction {
         val status: GoalStatus = GoalStatus.NOT_STARTED,
         val repeatable: RecurrencePattern = RecurrencePattern.NONE,
     ) : Transaction() {
-        val totalAttain = attain.sumOf { it.value }
+        val totalAttain get() = attain.sumOf { it.value }
         val remainingValue: Double get() = value - totalAttain
-        val totalAchievement = achievement.groupBy { it.status }
+        val totalAchievement get() = achievement.groupBy { it.status }
 
         fun calculateSchedule(now: Long): Goal {
             val schedule = this.repeatable.onSchedule
@@ -305,7 +305,8 @@ sealed class Transaction {
             }
         }
 
-    val getStatus = when(this) {
+    val getStatus: String?
+            get() = when(this) {
         is Lent -> this.liabilitiesStatus.label
         is Debt -> this.liabilitiesStatus.label
         is Goal -> this.status.label

@@ -1,6 +1,7 @@
 // Grace and truth came through JESUS CHRIST
 package com.den.steward.backend.viewModels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.den.steward.backend.entitles.PaymentMethod
@@ -190,9 +191,9 @@ class DataAdditionViewModel @Inject constructor(
                     // 3. Reset the state after adding the transaction
                     reset()
                 } catch (e: Exception) {
+                    Log.e(TAG, "Error adding transaction of type $transactionType", e)
                     // 4. In case of error, stop the loading state and maybe keep the sheet closed or notify user
                     _dataAdditionState.update { it.copy(isSaving = false) }
-                    // Log the error or show a notification
                 }
             }
         }

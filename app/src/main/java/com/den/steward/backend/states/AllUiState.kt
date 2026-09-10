@@ -15,5 +15,5 @@ data class AllUiState(
     val sort: Sort = Sort.ASCENDING,
     val sortType: SortType = SortType.DATE,
     val filter: Filter = Filter.ALL,
-    val weekNumber: Int = selectedDate.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)
+    val weekNumber: Int? = selectedDate.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)
 )

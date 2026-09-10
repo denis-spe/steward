@@ -52,8 +52,16 @@ fun AllTabLazyList(transactions: DataState<Map<String, List<Transaction>>>) {
                                     }
                                 }
 
+                                val padding = remember(index, transactions.size) {
+                                    when {
+                                        index == transactions.lastIndex -> 10.dp
+                                        else -> 0.dp
+                                    }
+                                }
+
                                 AllTabLazyListItem(
                                     modifier = Modifier
+                                        .padding(bottom = padding)
                                         .animateItem(),
                                     shape = shape,
                                     transaction = transaction
