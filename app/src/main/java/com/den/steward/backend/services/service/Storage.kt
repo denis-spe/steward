@@ -28,7 +28,7 @@ interface Storage {
         userId: String,
         transactionId: String,
         fulfillmentId: String,
-        fulfillmentType: Class<out Transaction>
+        fulfillmentType: Transaction
     ): Result<Unit>
 
     suspend fun updateTransaction(

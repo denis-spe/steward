@@ -98,7 +98,8 @@ sealed class Transaction {
         override val createdAt: Long = System.currentTimeMillis(),
         val lent: Lent = Lent(),
         val paymentMethod: PaymentMethod = PaymentMethod.CASH,
-        val affectAmount: Boolean = false
+        val affectAmount: Boolean = false,
+        val debt: Debt = Debt()
     ) : Transaction()
 
     @Stable
@@ -111,7 +112,9 @@ sealed class Transaction {
         override val createdAt: Long = System.currentTimeMillis(),
         val debt: Debt = Debt(),
         val paymentMethod: PaymentMethod = PaymentMethod.CASH,
-        val affectAmount: Boolean = false
+        val affectAmount: Boolean = false,
+        val lentId: String = "",
+        val lent: Lent = Lent()
     ) : Transaction()
 
     @Stable

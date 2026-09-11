@@ -68,7 +68,11 @@ val DocumentSnapshot.toTransaction: Transaction?
 
         TransactionType.ATTAIN.name -> {
             val value = getDouble("value") ?: 0.0
-            Transaction.Attain(id = id, value = value, createdAt = createdAt)
+            Transaction.Attain(
+                id = id,
+                value = value,
+                createdAt = createdAt,
+            )
         }
 
         TransactionType.ACHIEVEMENT.name -> {

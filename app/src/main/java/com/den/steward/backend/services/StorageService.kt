@@ -355,7 +355,7 @@ class StorageService @Inject constructor(
         userId: String,
         transactionId: String,
         fulfillmentId: String,
-        fulfillmentType: Class<out Transaction>
+        fulfillmentType: Transaction
     ): Result<Unit> {
         val collection = when (fulfillmentType) {
             Transaction.Repayment::class.java -> REPAYMENT_COLLECTION
@@ -364,7 +364,8 @@ class StorageService @Inject constructor(
             Transaction.Achievement::class.java -> ACHIEVEMENT_COLLECTION
             else -> return Result.failure(
                 IllegalArgumentException("Invalid fulfillment type " +
-                        "${fulfillmentType.simpleName}"))
+                        fulfillmentType.type.name
+                ))
         }
         return try {
             val fulfillmentRef = docRef.document(userId)
@@ -436,10 +437,26 @@ class StorageService @Inject constructor(
                 val merged = latestTransactions.map { transaction ->
                     val subItems = fulfillmentMap[transaction.id] ?: emptyList()
                     when (transaction) {
-                        is Transaction.Lent -> transaction.copy(repayment = subItems.filterIsInstance<Transaction.Repayment>())
-                        is Transaction.Debt -> transaction.copy(refund = subItems.filterIsInstance<Transaction.Refund>())
-                        is Transaction.Goal -> transaction.copy(attain = subItems.filterIsInstance<Transaction.Attain>())
-                            .calculateStatus(System.currentTimeMillis())
+                        is Transaction.Lent -> {
+                            val repayment = subItems.filterIsInstance<Transaction.Repayment>()
+                                .map { it.copy(lent = transaction) }
+                            transaction.copy(
+                                repayment = repayment
+                            )
+                        }
+                        is Transaction.Debt -> {
+                            val refund = subItems.filterIsInstance<Transaction.Refund>()
+                                .map { it.copy(debt = transaction) }
+
+                            transaction.copy(refund = refund)
+                        }
+                        is Transaction.Goal -> {
+                            val attain = subItems.filterIsInstance<Transaction.Attain>()
+                                .map { it.copy(goal = transaction) }
+
+                            transaction.copy(attain = attain)
+                                .calculateStatus(System.currentTimeMillis())
+                        }
                         else -> transaction
                     }
                 }

@@ -35,6 +35,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.R
 import com.den.steward.backend.entitles.Transaction
@@ -42,8 +43,11 @@ import com.den.steward.backend.states.DataState
 import com.den.steward.backend.useCase.Filter
 import com.den.steward.backend.useCase.Sort
 import com.den.steward.backend.viewModels.ChartViewModel
+import com.den.steward.backend.viewModels.DataDeletionViewModel
 import com.den.steward.backend.viewModels.TodayViewModel
 import com.den.steward.ui.componentExtenison.shimmerEffect
+import com.den.steward.ui.dataDeletion.DataDeletionDialog
+import kotlinx.coroutines.android.awaitFrame
 
 private val icon_size = 80.dp
 
@@ -51,7 +55,8 @@ private val icon_size = 80.dp
 fun TodayTabList(
     modifier: Modifier = Modifier,
     chartViewModel: ChartViewModel,
-    todayViewModel: TodayViewModel
+    todayViewModel: TodayViewModel,
+    dataDeletionViewModel: DataDeletionViewModel
 ) {
     val transactionsState by todayViewModel.todayTransactions.collectAsStateWithLifecycle()
     val donutChartState by chartViewModel.donutChart.collectAsStateWithLifecycle()
@@ -86,6 +91,7 @@ fun TodayTabList(
                     modifier = modifier,
                     chartViewModel = chartViewModel,
                     todayViewModel = todayViewModel,
+                    dataDeletionViewModel = dataDeletionViewModel,
                     transactions = transactions
                 )
             }
@@ -206,7 +212,8 @@ fun TodayTabLazyList(
     modifier: Modifier = Modifier,
     chartViewModel: ChartViewModel,
     todayViewModel: TodayViewModel,
-    transactions: List<Transaction>
+    dataDeletionViewModel: DataDeletionViewModel,
+    transactions: List<Transaction>,
 ) {
     val todayUiState by todayViewModel.todayUiState.collectAsStateWithLifecycle()
 
@@ -245,7 +252,10 @@ fun TodayTabLazyList(
                     color = MaterialTheme.colorScheme.surface,
                     modifier = Modifier.animateItem(
                         fadeInSpec = tween(1000),
-                    )
+                    ),
+                    onDelete = {
+                        dataDeletionViewModel.updateSelectedTransaction(transaction)
+                    }
                 )
             }
         } else {
@@ -253,6 +263,13 @@ fun TodayTabLazyList(
                 TodayTabListEmpty()
             }
         }
+    }
+
+
+    DataDeletionDialog(
+        viewModel = dataDeletionViewModel
+    ) {
+        dataDeletionViewModel.updateOnDialogShow(false)
     }
 }
 

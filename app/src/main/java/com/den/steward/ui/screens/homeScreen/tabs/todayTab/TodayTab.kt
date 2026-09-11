@@ -14,13 +14,15 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.backend.viewModels.ChartViewModel
+import com.den.steward.backend.viewModels.DataDeletionViewModel
 import com.den.steward.backend.viewModels.TodayViewModel
 
 @Composable
 fun TodayTab(
     padding: PaddingValues,
     chartViewModel: ChartViewModel = hiltViewModel(),
-    todayViewModel: TodayViewModel = hiltViewModel()
+    todayViewModel: TodayViewModel = hiltViewModel(),
+    dataDeletionViewModel: DataDeletionViewModel = hiltViewModel()
 ) {
 
     Column(
@@ -33,7 +35,8 @@ fun TodayTab(
         TodayTabList(
             modifier = Modifier.fillMaxSize(),
             chartViewModel = chartViewModel,
-            todayViewModel = todayViewModel
+            todayViewModel = todayViewModel,
+            dataDeletionViewModel = dataDeletionViewModel
         )
     }
 }

@@ -33,6 +33,7 @@ import com.den.steward.backend.entitles.Transaction
 import com.den.steward.helper.formattedTime
 import com.den.steward.helper.toLocalDateTime
 import com.den.steward.ui.componentExtenison.shimmerEffect
+import com.den.steward.ui.components.SwipeDismiss
 import com.den.steward.ui.components.TransactionViewDialog
 
 @Composable
@@ -40,7 +41,9 @@ fun TodayTabLazyListItem(
     modifier: Modifier = Modifier,
     transaction: Transaction,
     shape: Shape = MaterialTheme.shapes.small,
-    color: Color = MaterialTheme.colorScheme.surface
+    color: Color = MaterialTheme.colorScheme.surface,
+    onUpdate: () -> Unit = {},
+    onDelete: () -> Unit = {}
 ) {
     val localDateTime = remember(transaction) { transaction.createdAt.toLocalDateTime() }
     val time = localDateTime.formattedTime
@@ -48,20 +51,24 @@ fun TodayTabLazyListItem(
     val amount = remember(transaction) { transaction.getFormattedAmountOrValue }
     val paymentMethod = remember(transaction) { transaction.getPaymentMethodOrNull }
 
-    Surface(
-        modifier = modifier
-            .padding(vertical = 2.dp),
-        onClick = {
-            onShow.value = true
-        },
+    SwipeDismiss(
         shape = shape,
-        color = color
+        onUpdate = onUpdate,
+        onDelete = onDelete,
+        modifier = modifier.padding(vertical = 2.dp)
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Surface(
+            onClick = {
+                onShow.value = true
+            },
+            shape = shape,
+            color = color
         ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
 
                 Row(
                     modifier = Modifier
@@ -167,6 +174,7 @@ fun TodayTabLazyListItem(
                 )
             }
         }
+    }
 
     TransactionViewDialog(
         transaction = transaction,
