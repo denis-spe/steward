@@ -13,9 +13,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.den.steward.backend.useCase.Filter
 import com.den.steward.backend.viewModels.ChartViewModel
 import com.den.steward.backend.viewModels.DataDeletionViewModel
 import com.den.steward.backend.viewModels.TodayViewModel
+import com.den.steward.ui.components.FilterBottomSheet
 
 @Composable
 fun TodayTab(
@@ -24,6 +26,8 @@ fun TodayTab(
     todayViewModel: TodayViewModel = hiltViewModel(),
     dataDeletionViewModel: DataDeletionViewModel = hiltViewModel()
 ) {
+
+    val todayUiState by todayViewModel.todayUiState.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -39,5 +43,14 @@ fun TodayTab(
             dataDeletionViewModel = dataDeletionViewModel
         )
     }
+
+    FilterBottomSheet(
+        isExpanded = todayUiState.isFilterExpanded,
+        selected = todayUiState.filter,
+        onFilterSelected = todayViewModel::updateFilter,
+        onDismiss = {
+            todayViewModel.updateIsFilterExpanded(false)
+        }
+    )
 }
 

@@ -124,12 +124,26 @@ fun TodayTabListHeader() {
 
 @Composable
 fun TodayTabListPanelButtons(
+    filter: Filter,
     filterSelected: Boolean,
     sortSelected: Boolean,
     onFilterClick: () -> Unit,
     onSortClick: () -> Unit
 ){
     val iconSize = 20.dp
+
+    val filterIcon = when (filter) {
+        Filter.ALL -> R.drawable.filter
+        Filter.EARNINGS -> R.drawable.ic_earnings
+        Filter.EXPENSE -> R.drawable.ic_expense
+        Filter.GOAL -> R.drawable.ic_finance_target
+        Filter.SAVINGS -> R.drawable.ic_savings
+        Filter.REPAYMENT -> R.drawable.ic_repayment
+        Filter.REFUND -> R.drawable.ic_refund
+        Filter.ATTAIN -> R.drawable.ic_attain
+        Filter.LENT -> R.drawable.ic_loan
+        Filter.DEBT -> R.drawable.ic_debt
+    }
 
     Surface(
         color = MaterialTheme.colorScheme.background
@@ -159,7 +173,7 @@ fun TodayTabListPanelButtons(
                 selected = filterSelected,
                 icon = {
                     Icon(
-                        painter = painterResource(R.drawable.filter),
+                        painter = painterResource(filterIcon),
                         contentDescription = "filter",
                         modifier = Modifier.size(iconSize)
                     )
@@ -233,9 +247,12 @@ fun TodayTabLazyList(
         stickyHeader {
             TodayTabListHeader()
             TodayTabListPanelButtons(
+                filter = todayUiState.filter,
                 filterSelected = todayUiState.filter != Filter.ALL,
                 sortSelected = todayUiState.sort != Sort.DESCENDING,
-                onFilterClick = {},
+                onFilterClick = {
+                    todayViewModel.updateIsFilterExpanded(true)
+                },
                 onSortClick = {}
             )
         }

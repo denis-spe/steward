@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -66,7 +67,7 @@ fun DataDeletionContent(
             verticalArrangement = Arrangement.Center
         ) {
             Icon(
-                imageVector = Icons.Rounded.ErrorOutline,
+                imageVector = Icons.Outlined.WarningAmber,
                 contentDescription = "Warning Icon",
                 tint = MaterialTheme.colorScheme.error
             )

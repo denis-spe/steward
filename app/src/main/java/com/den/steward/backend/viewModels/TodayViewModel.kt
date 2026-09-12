@@ -205,4 +205,17 @@ class TodayViewModel @Inject constructor(
             Filter.ALL -> null
         }
     }
+
+    fun updateFilter(filter: Filter) {
+        _todayUiState.value = _todayUiState.value.copy(
+            filter = filter,
+            isFilterExpanded = false
+        )
+    }
+
+    fun updateIsFilterExpanded(isExpanded: Boolean) {
+        _todayUiState.value = _todayUiState.value.copy(
+            isFilterExpanded = isExpanded
+        )
+    }
 }
