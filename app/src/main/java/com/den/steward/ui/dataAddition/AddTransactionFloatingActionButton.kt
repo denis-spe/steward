@@ -3,22 +3,30 @@ package com.den.steward.ui.dataAddition
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.automirrored.rounded.ReceiptLong
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.FloatingActionButtonElevation
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.backend.entitles.TransactionType
@@ -36,24 +44,45 @@ import com.den.steward.ui.components.transactionFields.TransactionPaymentMethodF
 import com.den.steward.ui.components.transactionFields.TransactionRecurrenceField
 import com.den.steward.ui.components.transactionFields.TransactionTimeField
 import com.den.steward.ui.components.transactionbuttons.TransactionButtons
+import com.den.steward.ui.theme.ExtendedTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTransactionFloatingActionButton(
+    modifier: Modifier = Modifier,
+    shape: Shape = CircleShape,
+    elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
     dataAdditionViewModel: DataAdditionViewModel
 ) {
     // The state of data addition for textField, validation and button state
     val dataAdditionState by dataAdditionViewModel.dataAdditionState.collectAsStateWithLifecycle()
 
-    FloatingActionButton(
-        onClick = { dataAdditionViewModel.updateShowTransactionTypeBottomSheet(true) },
-        shape = CircleShape,
-        elevation = FloatingActionButtonDefaults.elevation(0.dp),
+    Row(
+        horizontalArrangement = Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = Icons.Default.Add,
-            contentDescription = "Add Transaction"
+        Text(
+            "Transaction",
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+            color = ExtendedTheme.colors.tertiary
         )
+
+        Spacer(modifier = Modifier.width(5.dp))
+
+        FloatingActionButton(
+            onClick = { dataAdditionViewModel.updateShowTransactionTypeBottomSheet(true) },
+            shape = shape,
+            elevation = elevation,
+            modifier = modifier,
+            containerColor = ExtendedTheme.colors.tertiary,
+            contentColor = MaterialTheme.colorScheme.onSecondary
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Rounded.ReceiptLong,
+                contentDescription = "Add Transaction"
+            )
+        }
     }
 
     // 1. Selection of Transaction Type Bottom Drawer Sheet
@@ -204,21 +233,5 @@ fun TransactionBottomDrawerSheet(
                 onClick = dataAdditionViewModel::addCoreEntriesTransaction
             )
         }
-    }
-}
-
-@Composable
-fun FulfillmentBottomDrawerSheet(
-    transactionType: TransactionType,
-    show: Boolean,
-    onDismissRequest: () -> Unit
-) {
-    BottomDrawerSheet(
-        title = stringResource(id = transactionType.label),
-        description = stringResource(id = transactionType.description),
-        show = show,
-        onDismissRequest = onDismissRequest,
-    ) {
-
     }
 }

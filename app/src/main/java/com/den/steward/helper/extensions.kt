@@ -23,7 +23,7 @@ import kotlin.math.pow
 
 val String.title: String
     get() {
-        return this.replaceFirstChar { it.uppercase() }
+        return this.lowercase().replaceFirstChar { it.uppercase() }
     }
 
 val String.isEmailValid: String?

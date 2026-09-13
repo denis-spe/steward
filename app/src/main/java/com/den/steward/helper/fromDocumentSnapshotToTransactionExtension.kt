@@ -68,10 +68,12 @@ val DocumentSnapshot.toTransaction: Transaction?
 
         TransactionType.ATTAIN.name -> {
             val value = getDouble("value") ?: 0.0
+            val goalId = reference.parent.parent?.id ?: ""
             Transaction.Attain(
                 id = id,
                 value = value,
                 createdAt = createdAt,
+                goal = Transaction.Goal(id = goalId)
             )
         }
 
@@ -82,13 +84,15 @@ val DocumentSnapshot.toTransaction: Transaction?
             val status = getString("status")?.let { name ->
                 goalStatusMap[name]
             } ?: GoalStatus.NOT_STARTED
+            val goalId = reference.parent.parent?.id ?: ""
             Transaction.Achievement(
                 id = id,
                 value = value,
                 createdAt = createdAt,
                 startAt = startAt,
                 endAt = endAt,
-                status = status
+                status = status,
+                goal = Transaction.Goal(id = goalId)
             )
         }
 
@@ -168,6 +172,7 @@ val DocumentSnapshot.toTransaction: Transaction?
         }
 
         TransactionType.REPAYMENT.name -> {
+            val parentId = reference.parent.parent?.id ?: ""
             Transaction.Repayment(
                 id = id,
                 label = label,
@@ -176,10 +181,12 @@ val DocumentSnapshot.toTransaction: Transaction?
                 createdAt = createdAt,
                 paymentMethod = paymentMethod,
                 affectAmount = affectAmount,
+                lent = Transaction.Lent(id = parentId)
             )
         }
 
         TransactionType.REFUND.name -> {
+            val parentId = reference.parent.parent?.id ?: ""
             Transaction.Refund(
                 id = id,
                 label = label,
@@ -188,6 +195,7 @@ val DocumentSnapshot.toTransaction: Transaction?
                 createdAt = createdAt,
                 paymentMethod = paymentMethod,
                 affectAmount = affectAmount,
+                debt = Transaction.Debt(id = parentId)
             )
         }
 

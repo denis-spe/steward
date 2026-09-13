@@ -1,11 +1,17 @@
 // Grace and truth came through JESUS
 package com.den.steward.ui.components.transactionFields
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -15,13 +21,22 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.KeyboardActionHandler
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -46,11 +61,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.den.steward.R
+import com.den.steward.backend.entitles.Transaction
 import com.den.steward.helper.formatToAmount
 import com.den.steward.helper.getCurrencySymbol
 import com.den.steward.helper.setTextAndPlaceCursorAtEnd
 import com.den.steward.ui.components.CustomAmountKeyBoard
-
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -64,6 +79,9 @@ fun TransactionAmountField(
     displayState: String,
     updateDisplayState: (String) -> Unit = {},
     clearOnCancel: Boolean = false,
+    transactionName: String? = null,
+    transactions: List<Transaction>? = null,
+    onSetItem: (transaction: Transaction) -> Unit = {}
 ) {
     val isError = isAmountCorrect is TransactionFieldState.Error
     val color = if (isError)
@@ -75,9 +93,23 @@ fun TransactionAmountField(
     val showCustomKeyboard = remember { mutableStateOf(false) }
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusRequester = remember { FocusRequester() }
+    val selectedTransaction = remember { mutableStateOf<Transaction?>(null) }
+    val placeholderText = remember { mutableStateOf(placeholder) }
 
-    LaunchedEffect(state.text) {
+    LaunchedEffect(state.text, selectedTransaction.value) {
         updateIsAmountCorrect(TransactionFieldState.Initial)
+
+        if (selectedTransaction.value != null) {
+            val amount = when (val tx = selectedTransaction.value) {
+                is Transaction.Lent -> tx.remainingAmount
+                is Transaction.Debt -> tx.remainingAmount
+                is Transaction.Goal -> tx.remainingValue
+                else -> 0.0
+            }
+            placeholderText.value = amount.formatToAmount().replace(symbol, "").trim()
+        } else {
+            placeholderText.value = placeholder
+        }
     }
 
     if (onDialogShow.value) {
@@ -117,6 +149,16 @@ fun TransactionAmountField(
 
                     item {
                         Text("Enter the amount", textAlign = TextAlign.Center)
+
+                        if (transactions == null) return@item
+
+                        TransactionAmountFieldFulfilment(
+                            state = state,
+                            transactionName = transactionName,
+                            transaction = transactions,
+                            selectedTransaction = selectedTransaction,
+                            onSetItem = onSetItem
+                        )
                     }
 
                     item {
@@ -138,7 +180,7 @@ fun TransactionAmountField(
                             lineLimits = TextFieldLineLimits.SingleLine,
                             placeholder = {
                                 Text(
-                                    text = placeholder,
+                                    text = placeholderText.value,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = AMOUNT_FONT_SIZE
                                 )
@@ -163,9 +205,10 @@ fun TransactionAmountField(
                             onKeyboardAction = KeyboardActionHandler {
                                 if (state.text.isNotEmpty()) {
                                     onDialogShow.value = false
-                                    updateDisplayState(if (state.text.isNotEmpty())
-                                        state.text.toString() else
-                                        "0.0"
+                                    updateDisplayState(
+                                        if (state.text.isNotEmpty())
+                                            state.text.toString() else
+                                            "0.0"
                                     )
                                 }
                             },
@@ -221,6 +264,175 @@ fun TransactionAmountField(
         symbol = symbol
     )
 
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TransactionAmountFieldFulfilment(
+    state: TextFieldState,
+    transactionName: String?,
+    transaction: List<Transaction>,
+    selectedTransaction: MutableState<Transaction?>,
+    onSetItem: (transaction: Transaction) -> Unit,
+) {
+    val expand = remember { mutableStateOf(false) }
+    if (transactionName == null) return
+
+    val fulfilmentName = when (transactionName) {
+        "Lent" -> "repayment"
+        "Debt" -> "refund"
+        else -> "attainment"
+    }
+
+    Box(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ) {
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .align(Alignment.Center),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            TextButton(
+                onClick = {
+                    expand.value = true
+                },
+                contentPadding = PaddingValues(10.dp),
+                content = {
+                    Text(
+                        text = selectedTransaction.value?.let { "Fulfill: ${it.getLabel}" }
+                            ?: "Select a $transactionName to add $fulfilmentName",
+                        fontWeight = FontWeight.Bold,
+                        style = if (selectedTransaction.value == null)
+                            MaterialTheme.typography.labelLarge
+                        else MaterialTheme.typography.titleMedium,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            )
+
+            if (expand.value) {
+                ModalBottomSheet(
+                    onDismissRequest = {
+                        expand.value = false
+                    },
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    dragHandle = {
+                        Box(
+                            modifier = Modifier
+                                .padding(vertical = 12.dp)
+                                .size(width = 32.dp, height = 4.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                                    shape = CircleShape
+                                )
+                        )
+                    }
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 24.dp, start = 16.dp, end = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Select ${transactionName.lowercase()} to fulfill",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            textAlign = TextAlign.Center
+                        )
+
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+
+                        if (selectedTransaction.value != null) {
+                            TextButton(
+                                onClick = {
+                                    state.setTextAndPlaceCursorAtEnd("")
+                                    selectedTransaction.value = null
+                                    expand.value = false
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Clear Selection", color = MaterialTheme.colorScheme.error)
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+
+                        LazyColumn(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(transaction.size) { index ->
+                                val item = transaction[index]
+                                val isSelected = selectedTransaction.value?.id == item.id
+                                
+                                OutlinedCard(
+                                    onClick = {
+                                        state.setTextAndPlaceCursorAtEnd("")
+                                        selectedTransaction.value = item
+                                        onSetItem(item)
+                                        expand.value = false
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    border = if (isSelected)
+                                        BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                                    else 
+                                        CardDefaults.outlinedCardBorder()
+                                ) {
+                                    ListItem(
+                                        headlineContent = { 
+                                            Text(
+                                                item.getLabel,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                            ) 
+                                        },
+                                        supportingContent = {
+                                            val remaining = when (item) {
+                                                is Transaction.Lent -> item.remainingAmount
+                                                is Transaction.Debt -> item.remainingAmount
+                                                is Transaction.Goal -> item.remainingValue
+                                                else -> 0.0
+                                            }
+                                            Text("Remaining: ${remaining.formatToAmount()}")
+                                        },
+                                        leadingContent = {
+                                            item.getIcon?.let {
+                                                Icon(
+                                                    painter = painterResource(id = it),
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(24.dp),
+                                                    tint = Color.Unspecified
+                                                )
+                                            }
+                                        },
+                                        trailingContent = {
+                                            if (isSelected) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.Close, // Reusing close as a marker or check
+                                                    contentDescription = "Selected",
+                                                    tint = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                        },
+                                        colors = ListItemDefaults.colors(
+                                            containerColor = if (isSelected) 
+                                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                                            else 
+                                                Color.Transparent
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 

@@ -1,18 +1,27 @@
 package com.den.steward.ui.screens.homeScreen
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import com.den.steward.backend.states.HomeTab
 import com.den.steward.backend.viewModels.DataAdditionViewModel
 import com.den.steward.backend.viewModels.HomeViewModel
-import com.den.steward.ui.dataAddition.AddTransactionFloatingActionButton
+import com.den.steward.ui.dataAddition.MainFloatingActionButton
 import com.den.steward.ui.screens.homeScreen.tabs.allTab.AllTab
 import com.den.steward.ui.screens.homeScreen.tabs.overviewTab.OverviewTab
 import com.den.steward.ui.screens.homeScreen.tabs.planTab.PlanTab
@@ -30,49 +39,77 @@ fun HomeScreen(
     val onTabChange = remember(homeViewModel) {
         { tab: HomeTab -> homeViewModel.updateHomeTab(tab) }
     }
+    val dataAdditionState by dataAdditionViewModel.dataAdditionState.collectAsStateWithLifecycle()
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        floatingActionButton = {
-            AddTransactionFloatingActionButton(
-                dataAdditionViewModel = dataAdditionViewModel
-            )
-        },
-        topBar = {
-            HomeTopBar(
-                currentTab = homeUiState.currentTab,
-                onTabChange = onTabChange
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            topBar = {
+                HomeTopBar(
+                    currentTab = homeUiState.currentTab,
+                    onTabChange = onTabChange
+                )
+            }
+        ) { padding ->
+            when (homeUiState.currentTab) {
+                HomeTab.TODAY -> {
+                    TodayTab(
+                        padding = padding
+                    )
+                }
+
+                HomeTab.YESTERDAY -> {
+                    YesterdayTab(
+                        padding = padding
+                    )
+                }
+
+                HomeTab.ALL -> {
+                    AllTab(
+                        padding = padding
+                    )
+                }
+
+                HomeTab.OVERVIEW -> {
+                    OverviewTab(
+                        padding = padding
+                    )
+                }
+
+                HomeTab.PLAN -> {
+                    PlanTab(
+                        padding = padding
+                    )
+                }
+            }
+        }
+
+        if (dataAdditionState.showMainBottomSheet) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.1f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {
+                            dataAdditionViewModel.updateMainBottomSheetState(false)
+                        }
+                    )
             )
         }
-    ) { padding ->
-        when(homeUiState.currentTab) {
-            HomeTab.TODAY -> {
-                TodayTab(
-                    padding = padding
-                )
-            }
-            HomeTab.YESTERDAY -> {
-                YesterdayTab(
-                    padding = padding
-                )
-            }
-            HomeTab.ALL -> {
-                AllTab(
-                    padding = padding
-                )
-            }
 
-            HomeTab.OVERVIEW -> {
-                OverviewTab(
-                    padding = padding
-                )
-            }
-
-            HomeTab.PLAN -> {
-                PlanTab(
-                    padding = padding
-                )
-            }
+        // Place the FAB at the end so it's above both the Scaffold and the Overlay
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .navigationBarsPadding()
+                .padding(16.dp),
+            contentAlignment = Alignment.BottomEnd
+        ) {
+            MainFloatingActionButton(
+                dataAdditionViewModel = dataAdditionViewModel
+            )
         }
     }
 }

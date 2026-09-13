@@ -11,18 +11,19 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,11 +37,17 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.den.steward.R
 import com.den.steward.backend.useCase.Filter
+import com.den.steward.backend.useCase.OrderBy
+import com.den.steward.backend.useCase.SortBy
 import com.den.steward.helper.title
+import com.den.steward.ui.theme.ExtendedTheme
+
+
+private val ICON_SIZE = 24.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SortFilterBottomSheetLayout(
+private fun SortFilterBottomSheetLayout(
     title: String,
     icon: @Composable () -> Unit,
     onDismiss: () -> Unit,
@@ -88,8 +95,12 @@ fun SortFilterBottomSheetLayout(
                             )
                         }
 
-                        IconButton(
-                            onClick = onDismiss
+                        FilledIconButton (
+                            onClick = onDismiss,
+                            colors = IconButtonDefaults.filledIconButtonColors(
+                                containerColor = ExtendedTheme.colors.lightGray,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            )
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Close,
@@ -199,7 +210,7 @@ fun FilterBottomSheetItem(
     }
 
     val filterName = remember(filter) {
-        if (filter == Filter.ALL) "All Activities" else filter.name.lowercase().title
+        if (filter == Filter.ALL) "All Activities" else filter.name.title
     }
     val primaryColor = MaterialTheme.colorScheme.primary
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
@@ -228,7 +239,8 @@ fun FilterBottomSheetItem(
                 Image(
                     painter = painterResource(id = icon),
                     contentDescription = "$filterName filter icon",
-                    colorFilter = ColorFilter.tint(selectedColor)
+                    colorFilter = ColorFilter.tint(selectedColor),
+                    modifier = Modifier.size(ICON_SIZE)
                 )
 
                 Spacer(
@@ -253,3 +265,228 @@ fun FilterBottomSheetItem(
 
 }
 
+
+@Composable
+fun OrderByBottomSheet(
+    isExpanded: Boolean,
+    selected: OrderBy,
+    onSortSelected: (OrderBy) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    if (isExpanded) {
+        OrderByBottomSheetContent(
+            selected = selected,
+            onSortSelected = onSortSelected,
+            onDismiss = onDismiss
+        )
+    }
+}
+
+@Composable
+private fun OrderByBottomSheetContent(selected: OrderBy, onSortSelected: (OrderBy) -> Unit, onDismiss: () -> Unit) {
+    val entries = OrderBy.entries
+
+    SortFilterBottomSheetLayout(
+        title = "Transaction Order",
+        icon = {
+            Image(
+                painter = painterResource(id = R.drawable.sort),
+                contentDescription = "OrderBy Icon",
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
+
+            )
+        },
+        onDismiss = onDismiss
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.3f)
+        ) {
+            entries.forEach { entry ->
+                OrderByBottomSheetItem(
+                    orderBy = entry,
+                    selected = selected == entry,
+                    onSortSelected = onSortSelected
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun OrderByBottomSheetItem(orderBy: OrderBy, selected: Boolean, onSortSelected: (OrderBy) -> Unit) {
+    val primary = MaterialTheme.colorScheme.primary
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+
+    val selectedTextColor = remember(selected) {
+        if (selected) primary else onSurfaceColor
+    }
+
+    val icon = when (orderBy) {
+        OrderBy.ASCENDING -> R.drawable.ascending_sort
+        OrderBy.DESCENDING -> R.drawable.descending_sorting
+    }
+
+    val desc = when (orderBy) {
+        OrderBy.ASCENDING -> "Order by ascending order"
+        OrderBy.DESCENDING -> "Order by descending order"
+    }
+
+    val name = remember(orderBy) {
+        orderBy.name.title
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .selectable(
+                selected = selected,
+                onClick = { onSortSelected(orderBy) },
+                role = Role.RadioButton
+            )
+    ) {
+        Image(
+            painter = painterResource(id = icon),
+            contentDescription = "$name filter icon",
+            colorFilter = ColorFilter.tint(selectedTextColor),
+            modifier = Modifier.size(ICON_SIZE)
+        )
+
+        Spacer(
+            modifier = Modifier.width(10.dp)
+        )
+
+        Column {
+            Text(
+                name,
+                style = MaterialTheme.typography.titleMedium,
+                color = selectedTextColor
+            )
+
+            Text(
+                desc,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+    }
+}
+
+@Composable
+fun SortByBottomSheet(
+    isExpanded: Boolean,
+    selected: SortBy,
+    onSortSelected: (SortBy) -> Unit,
+    onDismiss: () -> Unit,
+){
+    if (isExpanded) {
+        SortByBottomSheetContent(
+            selected = selected,
+            onSortSelected = onSortSelected,
+            onDismiss = onDismiss
+        )
+    }
+}
+
+@Composable
+fun SortByBottomSheetContent(
+    selected: SortBy,
+    onSortSelected: (SortBy) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val entries = SortBy.entries
+    SortFilterBottomSheetLayout(
+        title = "Transaction Sort",
+        icon = {
+            Image(
+                painter = painterResource(id = R.drawable.sort),
+                contentDescription = "OrderBy Icon",
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
+            )
+        },
+        onDismiss = onDismiss
+    ) {
+        LazyColumn (
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.3f)
+            ) {
+            items(
+                count = entries.size,
+                key = { index -> entries[index] }
+            ) { index ->
+                val entry = entries[index]
+
+                SortByBottomSheetItem(
+                    sortBy = entry,
+                    selected = selected == entry,
+                    onSortSelected = onSortSelected
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SortByBottomSheetItem(sortBy: SortBy, selected: Boolean, onSortSelected: (SortBy) -> Unit) {
+    val primary = MaterialTheme.colorScheme.primary
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+
+    val selectedTextColor = remember(selected) {
+        if (selected) primary else onSurfaceColor
+    }
+
+    val icon = when (sortBy) {
+        SortBy.TIME -> R.drawable.time
+        SortBy.AMOUNT -> R.drawable.outline_amount
+        SortBy.LABEL -> R.drawable.outline_label
+        SortBy.FULFILLED -> R.drawable.ic_refund
+    }
+
+    val desc = when (sortBy) {
+        SortBy.TIME -> "Sort by date"
+        SortBy.AMOUNT -> "Sort by amount"
+        SortBy.LABEL -> "Sort by name"
+        SortBy.FULFILLED -> "Sort by fulfilled"
+    }
+
+    val name = remember(sortBy) {
+        sortBy.name.title
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .selectable(
+                selected = selected,
+                onClick = { onSortSelected(sortBy) },
+                role = Role.RadioButton
+            )
+    ) {
+        Image(
+            painter = painterResource(id = icon),
+            contentDescription = "$name filter icon",
+            colorFilter = ColorFilter.tint(selectedTextColor),
+            modifier = Modifier.size(ICON_SIZE)
+        )
+
+        Spacer(
+            modifier = Modifier.width(10.dp)
+        )
+
+        Column {
+            Text(
+                name,
+                style = MaterialTheme.typography.titleMedium,
+                color = selectedTextColor
+            )
+
+            Text(
+                desc,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+    }
+}

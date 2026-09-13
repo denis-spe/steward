@@ -287,7 +287,7 @@ fun TodaySummaryView(
     todayViewModel: TodayViewModel
 ) {
     val currentAmountMapState by todayViewModel.currentAmountForDifferentMethods.collectAsStateWithLifecycle()
-    val todayTransactionsState by todayViewModel.todayTransactions.collectAsStateWithLifecycle()
+    val todayTransactionsState by todayViewModel.todaySummaryTransactions.collectAsStateWithLifecycle()
 
     TodayStatisticLayout {
         Column(

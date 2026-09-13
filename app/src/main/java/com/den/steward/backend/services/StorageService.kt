@@ -358,10 +358,10 @@ class StorageService @Inject constructor(
         fulfillmentType: Transaction
     ): Result<Unit> {
         val collection = when (fulfillmentType) {
-            Transaction.Repayment::class.java -> REPAYMENT_COLLECTION
-            Transaction.Refund::class.java -> REFUND_COLLECTION
-            Transaction.Attain::class.java -> ATTAIN_COLLECTION
-            Transaction.Achievement::class.java -> ACHIEVEMENT_COLLECTION
+            is Transaction.Repayment -> REPAYMENT_COLLECTION
+            is Transaction.Refund -> REFUND_COLLECTION
+            is Transaction.Attain -> ATTAIN_COLLECTION
+            is Transaction.Achievement -> ACHIEVEMENT_COLLECTION
             else -> return Result.failure(
                 IllegalArgumentException("Invalid fulfillment type " +
                         fulfillmentType.type.name

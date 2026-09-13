@@ -44,7 +44,8 @@ val LocalExtendedColors = staticCompositionLocalOf {
         text = Color.Unspecified,
         background = Color.Unspecified,
         primary = Color.Unspecified,
-        secondary = Color.Unspecified
+        secondary = Color.Unspecified,
+        tertiary = Color.Unspecified
     )
 }
 
@@ -61,14 +62,16 @@ fun StewardTheme(
             text = Color.White,
             background = Color(0xFF252525),
             primary = colorResource(id = R.color.steward_primary),
-            secondary = Color(0xFF1F79D7)
+            secondary = Color(0xFF1F79D7),
+            tertiary = Color(0xFF603AA9)
         )
     } else {
         ExtendedColors(
             text = Color.Black,
             background = Color(0xFFF5F5F5),
             primary = colorResource(id = R.color.steward_gold),
-            secondary = Color(0xFFC54E29)
+            secondary = Color(0xFFC54E29),
+            tertiary = Color(0xFF009688)
         )
     }
 

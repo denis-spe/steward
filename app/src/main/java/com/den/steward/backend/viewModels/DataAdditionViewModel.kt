@@ -9,12 +9,19 @@ import com.den.steward.backend.entitles.RecurrencePattern
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataAdditionState
+import com.den.steward.backend.states.DataState
 import com.den.steward.backend.useCase.AddDataUseCase
+import com.den.steward.backend.useCase.DataFetchUseCase
 import com.den.steward.helper.toEpochMillis
 import com.den.steward.ui.components.transactionFields.TransactionFieldState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -25,6 +32,7 @@ import javax.inject.Inject
 @HiltViewModel
 class DataAdditionViewModel @Inject constructor(
     private val addDataUseCase: AddDataUseCase,
+    private val dataFetchUseCase: DataFetchUseCase
 ) : ViewModel() {
     companion object {
         private const val TAG = "DataAdditionViewModel"
@@ -134,14 +142,59 @@ class DataAdditionViewModel @Inject constructor(
         _dataAdditionState.update { it.copy(isStartNotEqualToEndDateTime = isStartNotEqualToEndDateTime) }
     }
 
+    fun updateMainBottomSheetState(show: Boolean) {
+        _dataAdditionState.update { it.copy(showMainBottomSheet = show) }
+    }
+
     fun onBottomDrawerSheetItemClick(transactionType: TransactionType) {
         _dataAdditionState.update { it.copy(
             showTransactionAdditionBottomSheet = true,
             showTransactionTypeBottomSheet = false,
-            selectedTransactionType = transactionType
+            selectedTransactionType = transactionType,
         ) }
     }
 
+    fun updateSelectedFulfillmentTransactionType(transactionType: TransactionType) {
+        _dataAdditionState.update { it.copy(selectedFulfillmentTransactionType = transactionType) }
+    }
+
+    fun updateSelectedParentTransaction(transaction: Transaction) {
+        _dataAdditionState.update { it.copy(selectedParentTransaction = transaction) }
+    }
+
+    fun updateShowFulfillmentTransactionAdditionBottomSheet(show: Boolean) {
+        _dataAdditionState.update { it.copy(showFulfillmentTransactionAdditionBottomSheet = show) }
+    }
+
+    fun fetchTransactionByType(transactionType: TransactionType): StateFlow<DataState<List<Transaction>>> {
+        return dataFetchUseCase.fetchAllTransactions
+            .map { state ->
+                if (state is DataState.Success) {
+                    val transactions = state.data.filter { it.type == transactionType }
+                    DataState.Success(transactions)
+                } else {
+                    state
+                }
+            }
+            .distinctUntilChanged()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = DataState.Loading
+            )
+    }
+
+    fun reset() {
+        _dataAdditionState.update {
+            DataAdditionState(
+                showTransactionAdditionBottomSheet = false,
+                showTransactionTypeBottomSheet = false,
+                showMainBottomSheet = true
+            )
+        }
+    }
+
+    // ============= Data Addition ===========
     fun addCoreEntriesTransaction() {
         val currentState = _dataAdditionState.value
         
@@ -171,6 +224,8 @@ class DataAdditionViewModel @Inject constructor(
                 showTransactionAdditionBottomSheet = false
             ) }
 
+            val createdAt = currentState.localDateCreatedAt.atTime(currentState.localTimeCreatedAt).toEpochMillis()
+
             viewModelScope.launch {
                 try {
                     // 2. Perform the database operation
@@ -179,7 +234,7 @@ class DataAdditionViewModel @Inject constructor(
                             label = currentState.currentLabel,
                             amount = currentState.currentAmount,
                             note = currentState.currentNote,
-                            createdAt = currentState.localDateTimeCreatedAt.toEpochMillis(),
+                            createdAt = createdAt,
                             paymentMethod = currentState.paymentMethod,
                             isAffectingAmount = currentState.isAffectingAmount,
                             transactionType = transactionType,
@@ -199,12 +254,86 @@ class DataAdditionViewModel @Inject constructor(
         }
     }
 
-    fun reset() {
-        _dataAdditionState.update { 
-            DataAdditionState(
-                showTransactionAdditionBottomSheet = false,
-                showTransactionTypeBottomSheet = false
-            )
+    fun addFulfillmentTransaction() {
+        val currentState = _dataAdditionState.value
+        if (currentState.isSaving || currentState.selectedParentTransaction == null) return
+
+        val amountValue = currentState.currentAmount.toDoubleOrNull()
+        val isAmountInvalid = currentState.currentAmount.isEmpty() || amountValue == null || amountValue == 0.0
+
+        if (isAmountInvalid) {
+            _dataAdditionState.update { it.copy(
+                isAmountCorrect = TransactionFieldState.Error("Amount cannot be empty or 0")
+            ) }
+            return
+        }
+
+        val parent = currentState.selectedParentTransaction
+        val createdAt = currentState.localDateCreatedAt.atTime(currentState.localTimeCreatedAt).toEpochMillis()
+
+        val fulfillment = try {
+            when (currentState.selectedFulfillmentTransactionType) {
+                TransactionType.REPAYMENT -> {
+                    if (parent !is Transaction.Lent) throw IllegalArgumentException("Parent must be Lent")
+                    Transaction.Repayment(
+                        amount = amountValue,
+                        createdAt = createdAt,
+                        lent = parent,
+                        paymentMethod = currentState.paymentMethod,
+                        affectAmount = currentState.isAffectingAmount,
+                        label = "${parent.label} repayment",
+                        note = currentState.currentNote
+                    )
+                }
+
+                TransactionType.REFUND -> {
+                    if (parent !is Transaction.Debt) throw IllegalArgumentException("Parent must be Debt")
+                    Transaction.Refund(
+                        amount = amountValue,
+                        createdAt = createdAt,
+                        debt = parent,
+                        paymentMethod = currentState.paymentMethod,
+                        affectAmount = currentState.isAffectingAmount,
+                        label = "Refund ${parent.label}",
+                        note = currentState.currentNote
+                    )
+                }
+
+                TransactionType.ATTAIN -> {
+                    if (parent !is Transaction.Goal) throw IllegalArgumentException("Parent must be Goal")
+                    Transaction.Attain(
+                        value = amountValue,
+                        createdAt = createdAt,
+                        goal = parent
+                    )
+                }
+
+                else -> throw IllegalArgumentException("Invalid fulfillment type")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error building fulfillment transaction", e)
+            return
+        }
+
+        // Immediately update state to indicate saving and close the sheet
+        _dataAdditionState.update { it.copy(
+            isSaving = true,
+            showFulfillmentTransactionAdditionBottomSheet = false
+        ) }
+
+        viewModelScope.launch {
+            try {
+                // Perform the database operation
+                addDataUseCase.addFulfillment(
+                    parent.id,
+                    fulfillment
+                )
+                // Reset the state after adding
+                reset()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error adding fulfillment transaction", e)
+                _dataAdditionState.update { it.copy(isSaving = false) }
+            }
         }
     }
 }

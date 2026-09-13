@@ -6,6 +6,7 @@ import com.den.steward.backend.services.service.Account
 import com.den.steward.backend.services.service.Storage
 import com.den.steward.backend.states.DataState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
@@ -56,5 +57,18 @@ class DataFetchUseCase @Inject constructor(
 
     suspend fun getTransaction(transactionId: String): Result<Transaction?> {
         return storageService.getTransaction(userId, transactionId)
+    }
+
+    fun fetchAllFulfillment(transaction: Transaction): Flow<DataState<List<Transaction>>> {
+        return storageService.fetchTransactionFulfillment(userId, transaction)
+            .distinctUntilChanged()
+            .map {
+                val originalTransactions = it.getOrThrow()
+                DataState.Success(originalTransactions) as DataState<List<Transaction>>
+            }
+            .catch { e ->
+                // 4. Provide a fallback for null messages
+                emit(DataState.Error(e.message ?: "An unknown error occurred"))
+            }.flowOn(Dispatchers.IO)
     }
 }

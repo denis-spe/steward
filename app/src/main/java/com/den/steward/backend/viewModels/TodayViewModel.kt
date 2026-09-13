@@ -10,8 +10,8 @@ import com.den.steward.backend.states.TodayUiState
 import com.den.steward.backend.useCase.DataFetchUseCase
 import com.den.steward.backend.useCase.DataFilterUseCase
 import com.den.steward.backend.useCase.Filter
-import com.den.steward.backend.useCase.Sort
-import com.den.steward.backend.useCase.SortType
+import com.den.steward.backend.useCase.OrderBy
+import com.den.steward.backend.useCase.SortBy
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -37,11 +37,11 @@ class TodayViewModel @Inject constructor(
                 is DataState.Success -> {
                     var transactions = state.data
 
-                    val comparator = when (uiState.sortType) {
-                        SortType.DATE -> compareBy<Transaction> { it.createdAt }
-                        SortType.AMOUNT -> compareBy { it.getAmountOrValue ?: 0.0 }
-                        SortType.NAME -> compareBy { it.getLabel.lowercase() }
-                        SortType.FULFILLED -> compareBy { transaction ->
+                    val comparator = when (uiState.sortBy) {
+                        SortBy.TIME -> compareBy<Transaction> { it.createdAt }
+                        SortBy.AMOUNT -> compareBy { it.getAmountOrValue ?: 0.0 }
+                        SortBy.LABEL -> compareBy { it.getLabel.lowercase() }
+                        SortBy.FULFILLED -> compareBy { transaction ->
                             when (transaction) {
                                 is Transaction.Lent -> transaction.remainingAmount
                                 is Transaction.Debt -> transaction.remainingAmount
@@ -51,7 +51,7 @@ class TodayViewModel @Inject constructor(
                         }
                     }
 
-                    val finalComparator = if (uiState.sort == Sort.ASCENDING) {
+                    val finalComparator = if (uiState.orderBy == OrderBy.ASCENDING) {
                         comparator
                     } else {
                         comparator.reversed()
@@ -60,6 +60,25 @@ class TodayViewModel @Inject constructor(
                     val targetType = mapFilterToTransactionType(uiState.filter)
                     transactions = transactions.sortedWith(finalComparator)
                         .filter { targetType == null || it.type == targetType }
+
+                    DataState.Success(transactions)
+                }
+                is DataState.Error -> DataState.Error(state.message)
+                is DataState.Loading -> DataState.Loading
+            }
+        }
+        .distinctUntilChanged()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = DataState.Loading
+        )
+
+    val todaySummaryTransactions: StateFlow<DataState<List<Transaction>>> = dataFilterUseCase.todayTransactions
+        .combine(_todayUiState) { state, _ ->
+            when (state) {
+                is DataState.Success -> {
+                    var transactions = state.data
 
                     DataState.Success(transactions)
                 }
@@ -216,6 +235,31 @@ class TodayViewModel @Inject constructor(
     fun updateIsFilterExpanded(isExpanded: Boolean) {
         _todayUiState.value = _todayUiState.value.copy(
             isFilterExpanded = isExpanded
+        )
+    }
+
+    fun updateSortBy(sortBy: SortBy) {
+        _todayUiState.value = _todayUiState.value.copy(
+            sortBy = sortBy,
+            isSortByExpanded = false
+        )
+    }
+    fun updateIsSortByExpanded(isExpanded: Boolean) {
+        _todayUiState.value = _todayUiState.value.copy(
+            isSortByExpanded = isExpanded
+        )
+    }
+
+    fun updateOrderBy(orderBy: OrderBy) {
+        _todayUiState.value = _todayUiState.value.copy(
+            orderBy = orderBy,
+            isOrderByExpanded = false
+        )
+    }
+
+    fun updateIsOrderExpanded(isExpanded: Boolean) {
+        _todayUiState.value = _todayUiState.value.copy(
+            isOrderByExpanded = isExpanded
         )
     }
 }

@@ -41,6 +41,7 @@ class DataDeletionViewModel @Inject constructor(
         if (selectedTransaction.value == null) return
         val transactionId = when(selectedTransaction.value!!.type) {
             TransactionType.ATTAIN -> (selectedTransaction.value as Transaction.Attain).goal.id
+            TransactionType.ACHIEVEMENT -> (selectedTransaction.value as Transaction.Achievement).goal.id
             TransactionType.REPAYMENT -> (selectedTransaction.value as Transaction.Repayment).lent.id
             TransactionType.REFUND -> (selectedTransaction.value as Transaction.Refund).debt.id
             else -> return

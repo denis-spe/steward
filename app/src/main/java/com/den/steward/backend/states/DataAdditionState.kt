@@ -14,12 +14,23 @@ import java.time.LocalTime
 
 @Immutable
 data class DataAdditionState(
+    // Show the main bottom sheet
+    val showMainBottomSheet: Boolean = false,
 
     // Selected transaction type
     val selectedTransactionType: TransactionType? = null,
 
+    // Selected fulfillment transaction type
+    val selectedFulfillmentTransactionType: TransactionType? = null,
+
+    // Selected parent transaction id for fulfillment
+    val selectedParentTransaction: Transaction? = null,
+
     // Show transaction addition bottom sheet
     val showTransactionAdditionBottomSheet: Boolean = false,
+
+    // Show fulfillment transaction addition bottom sheet
+    val showFulfillmentTransactionAdditionBottomSheet: Boolean = false,
 
     // Show transaction type bottom sheet
     val showTransactionTypeBottomSheet: Boolean = false,

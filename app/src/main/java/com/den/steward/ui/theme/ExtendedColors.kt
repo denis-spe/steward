@@ -10,8 +10,11 @@ data class ExtendedColors(
     val text: Color,
     val background: Color,
     val primary: Color,
-    val secondary: Color
+    val secondary: Color,
+    val tertiary: Color,
 ) {
     val lightPrimary: Color = primary.copy(alpha = 0.1f).compositeOver(background)
     val lightSecondary: Color = secondary.copy(alpha = 0.3f).compositeOver(background)
+
+    val lightGray: Color = Color.Gray.copy(alpha = 0.1f).compositeOver(background)
 }

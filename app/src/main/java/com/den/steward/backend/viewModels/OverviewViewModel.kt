@@ -9,9 +9,8 @@ import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.OverviewUiState
 import com.den.steward.backend.useCase.DataFetchUseCase
-import com.den.steward.backend.useCase.Filter
-import com.den.steward.backend.useCase.Sort
-import com.den.steward.backend.useCase.SortType
+import com.den.steward.backend.useCase.OrderBy
+import com.den.steward.backend.useCase.SortBy
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -19,7 +18,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import javax.inject.Inject
@@ -54,11 +52,11 @@ class OverviewViewModel @Inject constructor(
                             }
                         }
                     ).mapValues { (_, transactions) ->
-                        val comparator = when (uiState.sortType) {
-                            SortType.DATE -> compareBy<Transaction> { it.createdAt }
-                            SortType.AMOUNT -> compareBy { it.getAmountOrValue ?: 0.0 }
-                            SortType.NAME -> compareBy { it.getLabel.lowercase() }
-                            SortType.FULFILLED -> compareBy { transaction ->
+                        val comparator = when (uiState.sortBy) {
+                            SortBy.TIME -> compareBy<Transaction> { it.createdAt }
+                            SortBy.AMOUNT -> compareBy { it.getAmountOrValue ?: 0.0 }
+                            SortBy.LABEL -> compareBy { it.getLabel.lowercase() }
+                            SortBy.FULFILLED -> compareBy { transaction ->
                                 when (transaction) {
                                     is Transaction.Lent -> transaction.remainingAmount
                                     is Transaction.Debt -> transaction.remainingAmount
@@ -68,7 +66,7 @@ class OverviewViewModel @Inject constructor(
                             }
                         }
 
-                        val finalComparator = if (uiState.sort == Sort.ASCENDING) {
+                        val finalComparator = if (uiState.orderBy == OrderBy.ASCENDING) {
                             comparator
                         } else {
                             comparator.reversed()
@@ -91,18 +89,18 @@ class OverviewViewModel @Inject constructor(
             initialValue = DataState.Loading
         )
 
-    fun updateSort(sort: Sort) {
+    fun updateSort(orderBy: OrderBy) {
         _overviewUiState.update {
             it.copy(
-                sort = sort
+                orderBy = orderBy
             )
         }
     }
 
-    fun updateSortType(sortType: SortType) {
+    fun updateSortType(sortBy: SortBy) {
         _overviewUiState.update {
             it.copy(
-                sortType = sortType
+                sortBy = sortBy
             )
         }
     }

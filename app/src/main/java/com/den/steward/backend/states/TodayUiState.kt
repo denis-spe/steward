@@ -1,14 +1,14 @@
 package com.den.steward.backend.states
 
 import com.den.steward.backend.useCase.Filter
-import com.den.steward.backend.useCase.Sort
-import com.den.steward.backend.useCase.SortType
+import com.den.steward.backend.useCase.OrderBy
+import com.den.steward.backend.useCase.SortBy
 
 data class TodayUiState(
     val filter: Filter = Filter.ALL,
-    val sort: Sort = Sort.DESCENDING,
-    val sortType: SortType = SortType.DATE,
+    val orderBy: OrderBy = OrderBy.DESCENDING,
+    val sortBy: SortBy = SortBy.TIME,
     val isFilterExpanded: Boolean = false,
-    val isSortExpanded: Boolean = false,
-    val isSortTypeExpanded: Boolean = false,
+    val isSortByExpanded: Boolean = false,
+    val isOrderByExpanded: Boolean = false,
 )

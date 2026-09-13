@@ -7,8 +7,8 @@ import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.PeriodType
 import com.den.steward.backend.useCase.Filter
 import com.den.steward.backend.useCase.PeriodDataHandleUseCase
-import com.den.steward.backend.useCase.Sort
-import com.den.steward.backend.useCase.SortType
+import com.den.steward.backend.useCase.OrderBy
+import com.den.steward.backend.useCase.SortBy
 import com.den.steward.helper.formattedDate
 import com.den.steward.helper.toLocalDateTime
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -66,10 +66,10 @@ class AllViewModel @Inject constructor(
         }
     }
 
-    fun updateSort(sort: Sort) {
+    fun updateSort(orderBy: OrderBy) {
         _allUiState.update {
             it.copy(
-                sort = sort
+                orderBy = orderBy
             )
         }
     }
@@ -82,10 +82,10 @@ class AllViewModel @Inject constructor(
         }
     }
 
-    fun updateSortType(sortType: SortType) {
+    fun updateSortType(sortBy: SortBy) {
         _allUiState.update {
             it.copy(
-                sortType = sortType
+                sortBy = sortBy
             )
         }
     }
@@ -95,8 +95,8 @@ class AllViewModel @Inject constructor(
         periodDataHandleUseCase.getTransactionsForPeriod(
             date = state.selectedDate,
             periodType = state.periodType,
-            sort = state.sort,
-            sortType = state.sortType,
+            orderBy = state.orderBy,
+            sortBy = state.sortBy,
             filter = state.filter
         )
             .distinctUntilChanged() // Avoid re-mapping if data is identical

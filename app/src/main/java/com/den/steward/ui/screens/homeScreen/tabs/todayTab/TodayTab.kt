@@ -13,11 +13,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.den.steward.backend.useCase.Filter
 import com.den.steward.backend.viewModels.ChartViewModel
 import com.den.steward.backend.viewModels.DataDeletionViewModel
 import com.den.steward.backend.viewModels.TodayViewModel
 import com.den.steward.ui.components.FilterBottomSheet
+import com.den.steward.ui.components.OrderByBottomSheet
+import com.den.steward.ui.components.SortByBottomSheet
 
 @Composable
 fun TodayTab(
@@ -50,6 +51,24 @@ fun TodayTab(
         onFilterSelected = todayViewModel::updateFilter,
         onDismiss = {
             todayViewModel.updateIsFilterExpanded(false)
+        }
+    )
+
+    OrderByBottomSheet(
+        isExpanded = todayUiState.isOrderByExpanded,
+        selected = todayUiState.orderBy,
+        onSortSelected = todayViewModel::updateOrderBy,
+        onDismiss = {
+            todayViewModel.updateIsOrderExpanded(false)
+        }
+    )
+
+    SortByBottomSheet(
+        isExpanded = todayUiState.isSortByExpanded,
+        selected = todayUiState.sortBy,
+        onSortSelected = todayViewModel::updateSortBy,
+        onDismiss = {
+            todayViewModel.updateIsSortByExpanded(false)
         }
     )
 }

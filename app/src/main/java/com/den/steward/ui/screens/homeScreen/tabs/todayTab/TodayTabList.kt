@@ -7,6 +7,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,10 +15,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Sort
-import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -35,19 +35,19 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.R
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.useCase.Filter
-import com.den.steward.backend.useCase.Sort
+import com.den.steward.backend.useCase.OrderBy
+import com.den.steward.backend.useCase.SortBy
 import com.den.steward.backend.viewModels.ChartViewModel
 import com.den.steward.backend.viewModels.DataDeletionViewModel
 import com.den.steward.backend.viewModels.TodayViewModel
 import com.den.steward.ui.componentExtenison.shimmerEffect
 import com.den.steward.ui.dataDeletion.DataDeletionDialog
-import kotlinx.coroutines.android.awaitFrame
+import com.den.steward.ui.theme.ExtendedTheme
 
 private val icon_size = 80.dp
 
@@ -125,11 +125,15 @@ fun TodayTabListHeader() {
 @Composable
 fun TodayTabListPanelButtons(
     filter: Filter,
+    sortBy: SortBy,
+    orderBy: OrderBy,
     filterSelected: Boolean,
-    sortSelected: Boolean,
+    orderBySelected: Boolean,
+    sortBySelected: Boolean,
     onFilterClick: () -> Unit,
-    onSortClick: () -> Unit
-){
+    onSortByClick: () -> Unit,
+    onOrderByClick: () -> Unit,
+) {
     val iconSize = 20.dp
 
     val filterIcon = when (filter) {
@@ -145,53 +149,114 @@ fun TodayTabListPanelButtons(
         Filter.DEBT -> R.drawable.ic_debt
     }
 
+    val orderByIcon = when (orderBy) {
+        OrderBy.ASCENDING -> R.drawable.ascending_sort
+        OrderBy.DESCENDING -> R.drawable.descending_sorting
+    }
+
+    val sortByIcon = when (sortBy) {
+        SortBy.TIME -> R.drawable.time
+        SortBy.AMOUNT -> R.drawable.outline_amount
+        SortBy.LABEL -> R.drawable.outline_label
+        SortBy.FULFILLED -> R.drawable.ic_refund
+    }
+
     Surface(
         color = MaterialTheme.colorScheme.background
     ) {
-        Row(
+        LazyRow (
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            TodayTabListPanelButton(
-                text = "Type",
-                selected = sortSelected,
-                icon = {
-                    Icon(
-                        imageVector = Icons.Default.AccessTime,
-                        contentDescription = "Sort",
-                        modifier = Modifier.size(iconSize)
-                    )
-                },
-                onClick = onSortClick
-            )
+            item(key = "Order By") {
+                TodayTabListPanelButton(
+                    text = "Order By",
+                    selected = orderBySelected,
+                    icon = {
+                        Icon(
+                            painter = painterResource(orderByIcon),
+                            contentDescription = "Order",
+                            modifier = Modifier.size(iconSize)
+                        )
+                    },
+                    onClick = onOrderByClick
+                )
+            }
+            item(key = "Sort By") {
+                TodayTabListPanelButton(
+                    text = "Sort By",
+                    selected = sortBySelected,
+                    icon = {
+                        Icon(
+                            painter = painterResource(sortByIcon),
+                            contentDescription = "SortBy",
+                            modifier = Modifier.size(iconSize)
+                        )
+                    },
+                    onClick = onSortByClick
+                )
+            }
 
-            TodayTabListPanelButton(
-                text = "Filter",
-                selected = filterSelected,
-                icon = {
-                    Icon(
-                        painter = painterResource(filterIcon),
-                        contentDescription = "filter",
-                        modifier = Modifier.size(iconSize)
-                    )
-                },
-                onClick = onFilterClick
-            )
-            TodayTabListPanelButton(
-                text = "Sort",
-                selected = sortSelected,
-                icon = {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Outlined.Sort,
-                        contentDescription = "Sort",
-                        modifier = Modifier.size(iconSize)
-                    )
-                },
-                onClick = onSortClick
-            )
+            item(key = "Filter") {
+                TodayTabListPanelButton(
+                    text = "Filter",
+                    selected = filterSelected,
+                    icon = {
+                        Icon(
+                            painter = painterResource(filterIcon),
+                            contentDescription = "filter",
+                            modifier = Modifier.size(iconSize)
+                        )
+                    },
+                    onClick = onFilterClick
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun TodayTabListPanelButtonsShimmer() {
+    val height = 46.dp
+
+    Surface(
+        color = MaterialTheme.colorScheme.background
+    ) {
+        LazyRow (
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            item(key = "Order By") {
+                Box(
+                    modifier = Modifier
+                        .size(100.dp, height)
+                        .clip(CircleShape)
+                        .shimmerEffect()
+                )
+            }
+            item(key = "Sort By") {
+                Box(
+                    modifier = Modifier
+                        .size(110.dp, height)
+                        .clip(CircleShape)
+                        .shimmerEffect()
+                )
+            }
+
+            item(key = "Filter") {
+                Box(
+                    modifier = Modifier
+                        .size(106.dp, height)
+                        .clip(CircleShape)
+                        .shimmerEffect()
+                )
+            }
         }
     }
 }
@@ -207,9 +272,10 @@ fun TodayTabListPanelButton(
         onClick = onClick,
         colors = ButtonDefaults.buttonColors(
             containerColor = if (selected) MaterialTheme.colorScheme.primary
-            else Color.Gray.copy(alpha = 0.1f),
+            else ExtendedTheme.colors.lightGray,
             contentColor = if (selected) Color.White else MaterialTheme.colorScheme.onBackground
-        )
+        ),
+        contentPadding = PaddingValues(horizontal = 17.dp, vertical = 5.dp)
     ) {
         Text(
             text,
@@ -248,12 +314,20 @@ fun TodayTabLazyList(
             TodayTabListHeader()
             TodayTabListPanelButtons(
                 filter = todayUiState.filter,
+                sortBy = todayUiState.sortBy,
+                orderBy = todayUiState.orderBy,
                 filterSelected = todayUiState.filter != Filter.ALL,
-                sortSelected = todayUiState.sort != Sort.DESCENDING,
+                orderBySelected = todayUiState.orderBy != OrderBy.DESCENDING,
+                sortBySelected = todayUiState.sortBy != SortBy.TIME,
                 onFilterClick = {
                     todayViewModel.updateIsFilterExpanded(true)
                 },
-                onSortClick = {}
+                onSortByClick = {
+                    todayViewModel.updateIsSortByExpanded(true)
+                },
+                onOrderByClick = {
+                    todayViewModel.updateIsOrderExpanded(true)
+                }
             )
         }
 
@@ -313,6 +387,7 @@ fun TodayTabLazyListShimmer(
 
         stickyHeader {
             TodayTabListHeader()
+            TodayTabListPanelButtonsShimmer()
         }
 
         items(numberOfShimmerItems) {

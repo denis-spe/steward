@@ -45,9 +45,9 @@ class PeriodDataHandleUseCase @Inject constructor(
     fun getTransactionsInRange(
         startDate: LocalDate,
         endDate: LocalDate, // Exclusive
-        sort: Sort = Sort.ASCENDING,
+        orderBy: OrderBy = OrderBy.ASCENDING,
         filter: Filter = Filter.ALL,
-        sortType: SortType
+        sortBy: SortBy
     ): Flow<DataState<List<Transaction>>> {
         val startMillis = startDate.atStartOfDay(zoneId).toInstant().toEpochMilli()
         val endMillis = endDate.atStartOfDay(zoneId).toInstant().toEpochMilli()
@@ -64,11 +64,11 @@ class PeriodDataHandleUseCase @Inject constructor(
                         filtered = filtered.filter { it.type == targetType }
                     }
 
-                    val comparator = when (sortType) {
-                        SortType.DATE -> compareBy<Transaction> { it.createdAt }
-                        SortType.AMOUNT -> compareBy { it.getAmountOrValue ?: 0.0 }
-                        SortType.NAME -> compareBy { it.getLabel.lowercase() }
-                        SortType.FULFILLED -> compareBy { transaction ->
+                    val comparator = when (sortBy) {
+                        SortBy.TIME -> compareBy<Transaction> { it.createdAt }
+                        SortBy.AMOUNT -> compareBy { it.getAmountOrValue ?: 0.0 }
+                        SortBy.LABEL -> compareBy { it.getLabel.lowercase() }
+                        SortBy.FULFILLED -> compareBy { transaction ->
                             when (transaction) {
                                 is Transaction.Lent -> transaction.remainingAmount
                                 is Transaction.Debt -> transaction.remainingAmount
@@ -79,7 +79,7 @@ class PeriodDataHandleUseCase @Inject constructor(
                     }
 
                     // 3. Apply sorting
-                    val finalComparator = if (sort == Sort.DESCENDING) {
+                    val finalComparator = if (orderBy == OrderBy.DESCENDING) {
                         comparator.reversed()
                     } else {
                         comparator
@@ -99,10 +99,10 @@ class PeriodDataHandleUseCase @Inject constructor(
      */
     fun weeklyTransactions(
         now: LocalDate,
-        sort: Sort = Sort.ASCENDING,
+        orderBy: OrderBy = OrderBy.ASCENDING,
         filterForDayOfWeek: DayOfWeek? = null,
         filter: Filter = Filter.ALL,
-        sortType: SortType
+        sortBy: SortBy
     ): Flow<DataState<List<Transaction>>> {
         val startOfWeek = now.with(TemporalAdjusters.previousOrSame(firstDayOfWeek))
         
@@ -110,13 +110,13 @@ class PeriodDataHandleUseCase @Inject constructor(
             val selectedDate = startOfWeek.with(TemporalAdjusters.nextOrSame(filterForDayOfWeek))
             getTransactionsInRange(
                 selectedDate, selectedDate.plusDays(1),
-                sort, filter, sortType = sortType)
+                orderBy, filter, sortBy = sortBy)
         } else {
             getTransactionsInRange(
                 startOfWeek,
                 startOfWeek.plusDays(7),
-                sort, filter,
-                sortType = sortType
+                orderBy, filter,
+                sortBy = sortBy
                 )
         }
     }
@@ -127,24 +127,24 @@ class PeriodDataHandleUseCase @Inject constructor(
     fun getTransactionsForPeriod(
         date: LocalDate,
         periodType: PeriodType,
-        sort: Sort = Sort.ASCENDING,
+        orderBy: OrderBy = OrderBy.ASCENDING,
         filter: Filter = Filter.ALL,
-        sortType: SortType
+        sortBy: SortBy
     ): Flow<DataState<List<Transaction>>> {
         return when (periodType) {
             PeriodType.DAY -> getTransactionsInRange(
-                date, date.plusDays(1), sort, filter, sortType = sortType
+                date, date.plusDays(1), orderBy, filter, sortBy = sortBy
             )
-            PeriodType.WEEK -> weeklyTransactions(date, sort, null, filter, sortType = sortType)
+            PeriodType.WEEK -> weeklyTransactions(date, orderBy, null, filter, sortBy = sortBy)
             PeriodType.MONTH -> {
                 val start = date.with(TemporalAdjusters.firstDayOfMonth())
                 val end = start.plusMonths(1)
-                getTransactionsInRange(start, end, sort, filter, sortType = sortType)
+                getTransactionsInRange(start, end, orderBy, filter, sortBy = sortBy)
             }
             PeriodType.YEAR -> {
                 val start = date.with(TemporalAdjusters.firstDayOfYear())
                 val end = start.plusYears(1)
-                getTransactionsInRange(start, end, sort, filter, sortType = sortType)
+                getTransactionsInRange(start, end, orderBy, filter, sortBy = sortBy)
             }
         }
     }
