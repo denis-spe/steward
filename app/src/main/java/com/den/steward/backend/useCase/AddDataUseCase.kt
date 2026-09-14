@@ -80,7 +80,7 @@ class AddDataUseCase @Inject constructor(
                     startedAt = dataTransferToViewModel.startedAt,
                     endAt = dataTransferToViewModel.endAt,
                     repeatable = dataTransferToViewModel.repeatable,
-                ).calculateStatus(System.currentTimeMillis())
+                )
 
                 else -> throw IllegalArgumentException("Invalid transaction type: ${dataTransferToViewModel.transactionType}")
             }

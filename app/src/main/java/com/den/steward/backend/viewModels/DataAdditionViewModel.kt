@@ -286,15 +286,15 @@ class DataAdditionViewModel @Inject constructor(
                     )
                 }
 
-                TransactionType.REFUND -> {
+                TransactionType.SETTLEMENT -> {
                     if (parent !is Transaction.Debt) throw IllegalArgumentException("Parent must be Debt")
-                    Transaction.Refund(
+                    Transaction.Settlement(
                         amount = amountValue,
                         createdAt = createdAt,
                         debt = parent,
                         paymentMethod = currentState.paymentMethod,
                         affectAmount = currentState.isAffectingAmount,
-                        label = "Refund ${parent.label}",
+                        label = "${parent.label} settlement",
                         note = currentState.currentNote
                     )
                 }

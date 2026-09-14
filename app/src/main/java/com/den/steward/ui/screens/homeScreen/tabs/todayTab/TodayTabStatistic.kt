@@ -1,6 +1,9 @@
 // I Worship the LORD GOD of hosts
 package com.den.steward.ui.screens.homeScreen.tabs.todayTab
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -26,7 +29,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Balance
 import androidx.compose.material.icons.filled.DonutSmall
-import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material.icons.outlined.Balance
 import androidx.compose.material.icons.outlined.DonutSmall
@@ -34,11 +36,9 @@ import androidx.compose.material.icons.outlined.PieChart
 import androidx.compose.material.icons.outlined.Wallet
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -49,16 +49,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.den.steward.R
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.viewModels.ChartViewModel
 import com.den.steward.backend.viewModels.TodayViewModel
@@ -120,7 +115,7 @@ fun TodayTabStatisticView(
 }
 
 @Composable
-fun TodayTabStatisticPanel(tabs: List<String>, pager: PagerState) {
+private fun TodayTabStatisticPanel(tabs: List<String>, pager: PagerState) {
     val scope = rememberCoroutineScope()
 
     Column(
@@ -175,12 +170,13 @@ fun TodayTabStatisticPanel(tabs: List<String>, pager: PagerState) {
 }
 
 @Composable
-fun TodayStatisticLayout(
+private fun TodayStatisticLayout(
     content: @Composable ColumnScope.() -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(bottom = 2.dp)
             .height(240.dp),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
@@ -200,7 +196,7 @@ fun TodayStatisticLayout(
 }
 
 @Composable
-fun TodayTabDonutChart(
+private fun TodayTabDonutChart(
     viewModel: ChartViewModel,
     chartSize: Dp = 160.dp,
     strokeWidth: Dp = 18.dp,
@@ -264,7 +260,7 @@ fun TodayTabDonutChart(
 }
 
 @Composable
-fun TodaySummaryView(
+private fun TodaySummaryView(
     todayViewModel: TodayViewModel
 ) {
     val currentAmountMapState by todayViewModel.currentAmountForDifferentMethods.collectAsStateWithLifecycle()
@@ -365,7 +361,7 @@ fun TodaySummaryView(
 }
 
 @Composable
-fun TodayTabUnpaidLiabilitiesView(todayViewModel: TodayViewModel) {
+private fun TodayTabUnpaidLiabilitiesView(todayViewModel: TodayViewModel) {
     val statsState by todayViewModel.liabilitiesPaymentStats.collectAsStateWithLifecycle()
 
     TodayStatisticLayout {
@@ -381,10 +377,11 @@ fun TodayTabUnpaidLiabilitiesView(todayViewModel: TodayViewModel) {
 
             when (val state = statsState) {
                 is DataState.Success -> {
-                    val loans = remember(state.data) { state.data["Loans"] ?: 0.0 }
-                    val debts = remember(state.data) { state.data["Debts"] ?: 0.0 }
-                    val total = remember(loans, debts) { loans + debts }
-                    
+                    val totalLoans = remember(state.data) { state.data.totalLoan }
+                    val unpaidLoans = remember(state.data) { state.data.unPaidLoan }
+                    val totalDebts = remember(state.data) { state.data.totalDebt }
+                    val unpaidDebts = remember(state.data) { state.data.unPaidDebt }
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -392,39 +389,118 @@ fun TodayTabUnpaidLiabilitiesView(todayViewModel: TodayViewModel) {
                         LiabilityCard(
                             modifier = Modifier.weight(1f),
                             title = "Receivable",
-                            amount = loans,
-                            color = MaterialTheme.colorScheme.primary
+                            amount = totalLoans,
+                            unpaidAmount = unpaidLoans,
+                            color = MaterialTheme.colorScheme.primary,
+                            progressTitle = "loans"
                         )
                         LiabilityCard(
                             modifier = Modifier.weight(1f),
                             title = "Payable",
-                            amount = debts,
-                            color = MaterialTheme.colorScheme.error
+                            amount = totalDebts,
+                            unpaidAmount = unpaidDebts,
+                            color = MaterialTheme.colorScheme.error,
+                            progressTitle = "debts"
                         )
                     }
-
-                    if (total > 0) {
-                        val percentage = remember(loans, total) { (loans / total).toFloat() }
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            LinearProgressIndicator(
-                                progress = { percentage },
-                                modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
-                                color = MaterialTheme.colorScheme.primary,
-                                trackColor = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
-                                strokeCap = StrokeCap.Round
-                            )
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text("Loans ratio", style = MaterialTheme.typography.labelSmall)
-                                Text("${(percentage * 100).toInt()}%", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                            }
-                        }
+                }
+                is DataState.Loading -> {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        LiabilityCardShimmer(modifier = Modifier.weight(1f))
+                        LiabilityCardShimmer(modifier = Modifier.weight(1f))
                     }
                 }
-                is DataState.Loading -> repeat(2) { Box(Modifier.fillMaxWidth().height(60.dp).shimmerEffect()) }
                 is DataState.Error -> Text(text = state.message, color = MaterialTheme.colorScheme.error)
+            }
+        }
+    }
+}
+
+@Composable
+private fun LiabilityCardProgress(
+    modifier: Modifier = Modifier,
+    title: String,
+    totalAmount: Double,
+    unpaidAmount: Double,
+    color: Color
+) {
+    val progress = remember(totalAmount, unpaidAmount) {
+        if (totalAmount > 0) ((totalAmount - unpaidAmount) / totalAmount).toFloat().coerceIn(0f, 1f) else 0f
+    }
+
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress,
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        label = "LiabilityProgress"
+    )
+
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        LinearProgressIndicator(
+            progress = { animatedProgress },
+            modifier = modifier
+                .height(6.dp)
+                .clip(CircleShape),
+            color = color,
+            trackColor = color.copy(alpha = 0.1f),
+            strokeCap = StrokeCap.Round
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Medium,
+                color = color.copy(alpha = 0.7f)
+            )
+            Text(
+                text = "${(progress * 100).toInt()}%",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = color
+            )
+        }
+    }
+}
+
+@Composable
+private fun LiabilityCardShimmer(
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .clip(MaterialTheme.shapes.medium)
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+            .padding(12.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Title
+            Box(Modifier.size(60.dp, 14.dp).clip(MaterialTheme.shapes.extraSmall).shimmerEffect())
+
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                // Remaining section
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Box(Modifier.size(50.dp, 10.dp).clip(MaterialTheme.shapes.extraSmall).shimmerEffect())
+                    Box(Modifier.size(80.dp, 20.dp).clip(MaterialTheme.shapes.extraSmall).shimmerEffect())
+                }
+                // Total section
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Box(Modifier.size(40.dp, 10.dp).clip(MaterialTheme.shapes.extraSmall).shimmerEffect())
+                    Box(Modifier.size(70.dp, 16.dp).clip(MaterialTheme.shapes.extraSmall).shimmerEffect())
+                }
+            }
+
+            // Progress bar section
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Box(Modifier.fillMaxWidth().height(6.dp).clip(CircleShape).shimmerEffect())
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Box(Modifier.size(40.dp, 10.dp).clip(MaterialTheme.shapes.extraSmall).shimmerEffect())
+                    Box(Modifier.size(30.dp, 10.dp).clip(MaterialTheme.shapes.extraSmall).shimmerEffect())
+                }
             }
         }
     }
@@ -434,21 +510,59 @@ fun TodayTabUnpaidLiabilitiesView(todayViewModel: TodayViewModel) {
 private fun LiabilityCard(
     modifier: Modifier = Modifier,
     title: String,
+    progressTitle: String,
     amount: Double,
-    color: Color
+    color: Color,
+    unpaidAmount: Double
 ) {
     Box(
         modifier = modifier
             .clip(MaterialTheme.shapes.medium)
-            .background(color.copy(alpha = 0.1f))
+            .background(color.copy(alpha = 0.05f))
             .padding(12.dp)
     ) {
-        Column {
-            Text(text = title, style = MaterialTheme.typography.labelSmall, color = color)
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
-                text = amount.formatToAmount(),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
+                text = title,
+                style = MaterialTheme.typography.labelMedium,
+                color = color,
+                fontWeight = FontWeight.Bold
+            )
+
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column {
+                    Text(
+                        text = "Remaining",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = color.copy(alpha = 0.6f)
+                    )
+                    Text(
+                        text = unpaidAmount.formatToAmount(),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = color
+                    )
+                }
+                Column {
+                    Text(
+                        text = "Total",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = color.copy(alpha = 0.6f)
+                    )
+                    Text(
+                        text = amount.formatToAmount(),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = color.copy(alpha = 0.8f)
+                    )
+                }
+            }
+
+            LiabilityCardProgress(
+                modifier = Modifier.fillMaxWidth(),
+                title = progressTitle,
+                totalAmount = amount,
+                unpaidAmount = unpaidAmount,
                 color = color
             )
         }

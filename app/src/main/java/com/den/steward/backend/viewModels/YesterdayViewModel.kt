@@ -2,7 +2,6 @@ package com.den.steward.backend.viewModels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.den.steward.backend.entitles.PaymentMethod
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataState
@@ -19,7 +18,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
@@ -108,7 +106,7 @@ class YesterdayViewModel @Inject constructor(
 
                     TransactionType.EXPENSE,
                     TransactionType.LENT,
-                    TransactionType.REFUND -> outgoing += amount
+                    TransactionType.SETTLEMENT -> outgoing += amount
                     else -> {}
                 }
             }
@@ -123,7 +121,7 @@ class YesterdayViewModel @Inject constructor(
             Filter.GOAL -> TransactionType.GOAL
             Filter.SAVINGS -> TransactionType.SAVINGS
             Filter.REPAYMENT -> TransactionType.REPAYMENT
-            Filter.REFUND -> TransactionType.REFUND
+            Filter.SETTLEMENT -> TransactionType.SETTLEMENT
             Filter.ATTAIN -> TransactionType.ATTAIN
             Filter.LENT -> TransactionType.LENT
             Filter.DEBT -> TransactionType.DEBT

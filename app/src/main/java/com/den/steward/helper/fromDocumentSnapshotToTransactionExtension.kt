@@ -57,13 +57,12 @@ val DocumentSnapshot.toTransaction: Transaction?
                 value = value,
                 note = note,
                 goalType = goalType,
-                status = status,
                 startedAt = startedAt,
                 endAt = endAt,
                 createdAt = createdAt,
                 repeatable = repeatable,
                 selectedIcon = selectedIcon.toInt()
-            ).calculateStatus(System.currentTimeMillis())
+            )
         }
 
         TransactionType.ATTAIN.name -> {
@@ -149,7 +148,6 @@ val DocumentSnapshot.toTransaction: Transaction?
                 paymentMethod = paymentMethod,
                 affectAmount = affectAmount,
                 selectedIcon = selectedIcon.toInt(),
-                liabilitiesStatus = liabilitiesStatus
             )
         }
 
@@ -167,7 +165,20 @@ val DocumentSnapshot.toTransaction: Transaction?
                 paymentMethod = paymentMethod,
                 affectAmount = affectAmount,
                 selectedIcon = selectedIcon.toInt(),
-                liabilitiesStatus = liabilitiesStatus
+            )
+        }
+
+        TransactionType.SETTLEMENT.name -> {
+            val parentId = reference.parent.parent?.id ?: ""
+            Transaction.Settlement(
+                id = id,
+                label = label,
+                amount = amount,
+                note = note,
+                createdAt = createdAt,
+                paymentMethod = paymentMethod,
+                affectAmount = affectAmount,
+                debt = Transaction.Debt(id = parentId)
             )
         }
 
@@ -182,20 +193,6 @@ val DocumentSnapshot.toTransaction: Transaction?
                 paymentMethod = paymentMethod,
                 affectAmount = affectAmount,
                 lent = Transaction.Lent(id = parentId)
-            )
-        }
-
-        TransactionType.REFUND.name -> {
-            val parentId = reference.parent.parent?.id ?: ""
-            Transaction.Refund(
-                id = id,
-                label = label,
-                amount = amount,
-                note = note,
-                createdAt = createdAt,
-                paymentMethod = paymentMethod,
-                affectAmount = affectAmount,
-                debt = Transaction.Debt(id = parentId)
             )
         }
 

@@ -32,11 +32,13 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.helper.formatToAmount
 import com.den.steward.helper.formattedTime
+import com.den.steward.helper.title
 import com.den.steward.helper.toLocalDateTime
 import com.den.steward.ui.componentExtenison.shimmerEffect
 import com.den.steward.ui.components.SwipeDismiss
@@ -159,6 +161,24 @@ fun AllTabLazyListItem(
                                         color = if (transaction.getAffectAmount == "Yes")
                                             MaterialTheme.colorScheme.primary
                                         else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            transaction.getParentTransaction?.let { parent ->
+                                val label = stringResource(id = parent.type.label)
+                                val color = colorResource(parent.type.color)
+
+                                Box(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .background(color.copy(alpha = 0.1f))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = label,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = color,
                                     )
                                 }
                             }

@@ -38,7 +38,7 @@ class DataFetchUseCase @Inject constructor(
                             transaction.repayment.forEach { add(it.copy(lent = transaction)) }
                         }
                         is Transaction.Debt -> {
-                            transaction.refund.forEach { add(it.copy(debt = transaction)) }
+                            transaction.settlement.forEach { add(it.copy(debt = transaction)) }
                         }
                         is Transaction.Goal -> {
                             transaction.attain.forEach { add(it.copy(goal = transaction)) }

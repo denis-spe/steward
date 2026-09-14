@@ -42,8 +42,8 @@ enum class TransactionType(
         R.color.repayment
     ),
 
-    REFUND(
-        R.string.refund,
+    SETTLEMENT(
+        R.string.settlement,
         R.string.refund_desc,
         R.drawable.ic_refund,
         R.color.refund

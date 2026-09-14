@@ -281,7 +281,7 @@ fun TransactionAmountFieldFulfilment(
 
     val fulfilmentName = when (transactionName) {
         "Lent" -> "repayment"
-        "Debt" -> "refund"
+        "Debt" -> "settlement"
         else -> "attainment"
     }
 

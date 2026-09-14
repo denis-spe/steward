@@ -190,7 +190,7 @@ fun FilterBottomSheetItem(
         Filter.GOAL -> R.drawable.ic_finance_target
         Filter.SAVINGS -> R.drawable.ic_savings
         Filter.REPAYMENT -> R.drawable.ic_repayment
-        Filter.REFUND -> R.drawable.ic_refund
+        Filter.SETTLEMENT -> R.drawable.ic_refund
         Filter.ATTAIN -> R.drawable.ic_attain
         Filter.LENT -> R.drawable.ic_loan
         Filter.DEBT -> R.drawable.ic_debt
@@ -203,7 +203,7 @@ fun FilterBottomSheetItem(
         Filter.GOAL -> "Manage your long-term financial targets"
         Filter.SAVINGS -> "View your savings and reserve funds"
         Filter.REPAYMENT -> "Track payments made towards loans"
-        Filter.REFUND -> "Monitor returned funds and reversals"
+        Filter.SETTLEMENT -> "Monitor returned settlement and reversals"
         Filter.ATTAIN -> "Track progress towards your goals"
         Filter.LENT -> "Manage money lent out to others"
         Filter.DEBT -> "Track your outstanding liabilities"

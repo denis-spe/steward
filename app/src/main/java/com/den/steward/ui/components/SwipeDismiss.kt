@@ -76,7 +76,8 @@ fun SwipeDismiss(
 @Composable
 private fun SwipeDismissBackground(dismissState: SwipeToDismissBoxState) {
     val direction = dismissState.dismissDirection
-    
+    if (direction == SwipeToDismissBoxValue.Settled) return
+
     val targetColor = when (dismissState.targetValue) {
         SwipeToDismissBoxValue.StartToEnd -> ExtendedTheme.colors.lightSecondary
         SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.errorContainer

@@ -9,8 +9,8 @@ import com.den.steward.backend.entitles.Transaction.Earnings
 import com.den.steward.backend.entitles.Transaction.Expense
 import com.den.steward.backend.entitles.Transaction.Goal
 import com.den.steward.backend.entitles.Transaction.Lent
-import com.den.steward.backend.entitles.Transaction.Refund
 import com.den.steward.backend.entitles.Transaction.Repayment
+import com.den.steward.backend.entitles.Transaction.Settlement
 import com.den.steward.backend.entitles.Transaction.Savings
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
@@ -53,7 +53,6 @@ val Transaction.toMap: MutableMap<String, Any>
                 mapping["paymentMethod"] = this.paymentMethod.name
                 mapping["affectAmount"] = this.affectAmount
                 mapping["selectedIcon"] = this.selectedIcon
-                mapping["liabilitiesStatus"] = this.liabilitiesStatus.name
             }
 
             is Debt -> {
@@ -63,7 +62,6 @@ val Transaction.toMap: MutableMap<String, Any>
                 mapping["paymentMethod"] = this.paymentMethod.name
                 mapping["affectAmount"] = this.affectAmount
                 mapping["selectedIcon"] = this.selectedIcon
-                mapping["liabilitiesStatus"] = this.liabilitiesStatus.name
             }
 
             is Savings -> {
@@ -94,7 +92,7 @@ val Transaction.toMap: MutableMap<String, Any>
                 mapping["value"] = this.value
             }
 
-            is Repayment -> {
+            is Settlement -> {
                 mapping["amount"] = this.amount
                 mapping["label"] = this.label
                 mapping["note"] = this.note
@@ -102,7 +100,7 @@ val Transaction.toMap: MutableMap<String, Any>
                 mapping["affectAmount"] = this.affectAmount
             }
 
-            is Refund -> {
+            is Repayment -> {
                 mapping["amount"] = this.amount
                 mapping["label"] = this.label
                 mapping["note"] = this.note

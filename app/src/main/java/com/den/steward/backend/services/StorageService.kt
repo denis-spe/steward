@@ -30,7 +30,7 @@ class StorageService @Inject constructor(
         private const val USER_COLLECTION = "Users"
         private const val TRANSACTION_COLLECTION = "Transactions"
         private const val REPAYMENT_COLLECTION = "Repayments"
-        private const val REFUND_COLLECTION = "Refunds"
+        private const val SETTLEMENT_COLLECTION = "Settlements"
         private const val ATTAIN_COLLECTION = "Attain"
         private const val ACHIEVEMENT_COLLECTION = "Achievement"
         private const val TAG = "StorageService"
@@ -81,7 +81,7 @@ class StorageService @Inject constructor(
                 .collection(ACHIEVEMENT_COLLECTION)
                 .document()
 
-            val finalGoal = transaction.calculateStatus(System.currentTimeMillis())
+            val finalGoal = transaction
 
             val achievement = Transaction.Achievement(
                 id = achievedRef.id,
@@ -111,8 +111,8 @@ class StorageService @Inject constructor(
         fulfillment: Transaction
     ): Result<Unit> {
         val collection = when (fulfillment) {
+            is Transaction.Settlement -> SETTLEMENT_COLLECTION
             is Transaction.Repayment -> REPAYMENT_COLLECTION
-            is Transaction.Refund -> REFUND_COLLECTION
             is Transaction.Attain -> ATTAIN_COLLECTION
             is Transaction.Achievement -> ACHIEVEMENT_COLLECTION
             else -> return Result.failure(
@@ -156,7 +156,6 @@ class StorageService @Inject constructor(
             val now = System.currentTimeMillis()
             val resetGoal = transaction.copy(attain = emptyList())
                 .calculateSchedule(now)
-                .calculateStatus(now)
 
             val updates: Map<String, Any> = mapOf(
                 "startedAt" to com.google.firebase.Timestamp(java.util.Date(resetGoal.startedAt)),
@@ -220,8 +219,8 @@ class StorageService @Inject constructor(
         newFulfillment: Transaction
     ): Result<Unit> {
         val collection = when (newFulfillment) {
+            is Transaction.Settlement -> SETTLEMENT_COLLECTION
             is Transaction.Repayment -> REPAYMENT_COLLECTION
-            is Transaction.Refund -> REFUND_COLLECTION
             is Transaction.Attain -> ATTAIN_COLLECTION
             is Transaction.Achievement -> ACHIEVEMENT_COLLECTION
             else -> return Result.failure(
@@ -266,7 +265,7 @@ class StorageService @Inject constructor(
 
             val fulfillmentCollection = when (transaction) {
                 is Transaction.Lent -> REPAYMENT_COLLECTION
-                is Transaction.Debt -> REFUND_COLLECTION
+                is Transaction.Debt -> SETTLEMENT_COLLECTION
                 is Transaction.Goal -> ATTAIN_COLLECTION
                 else -> null
             }
@@ -292,8 +291,8 @@ class StorageService @Inject constructor(
                 
                 val updatedTransaction = when (transaction) {
                     is Transaction.Lent -> transaction.copy(repayment = subItems.filterIsInstance<Transaction.Repayment>())
-                    is Transaction.Debt -> transaction.copy(refund = subItems.filterIsInstance<Transaction.Refund>())
-                    is Transaction.Goal -> transaction.copy(attain = subItems.filterIsInstance<Transaction.Attain>()).calculateStatus(System.currentTimeMillis())
+                    is Transaction.Debt -> transaction.copy(settlement = subItems.filterIsInstance<Transaction.Settlement>())
+                    is Transaction.Goal -> transaction.copy(attain = subItems.filterIsInstance<Transaction.Attain>())
                     else -> transaction
                 }
                 Result.success(updatedTransaction)
@@ -319,7 +318,7 @@ class StorageService @Inject constructor(
 
         val fulfillmentCollection = when (transaction) {
             is Transaction.Lent -> REPAYMENT_COLLECTION
-            is Transaction.Debt -> REFUND_COLLECTION
+            is Transaction.Debt -> SETTLEMENT_COLLECTION
             is Transaction.Goal -> ATTAIN_COLLECTION
             else -> null
         }
@@ -358,8 +357,8 @@ class StorageService @Inject constructor(
         fulfillmentType: Transaction
     ): Result<Unit> {
         val collection = when (fulfillmentType) {
+            is Transaction.Settlement -> SETTLEMENT_COLLECTION
             is Transaction.Repayment -> REPAYMENT_COLLECTION
-            is Transaction.Refund -> REFUND_COLLECTION
             is Transaction.Attain -> ATTAIN_COLLECTION
             is Transaction.Achievement -> ACHIEVEMENT_COLLECTION
             else -> return Result.failure(
@@ -394,7 +393,7 @@ class StorageService @Inject constructor(
             is Transaction.Debt -> docRef.document(userId)
                 .collection(TRANSACTION_COLLECTION)
                 .document(transaction.id)
-                .collection(REFUND_COLLECTION)
+                .collection(SETTLEMENT_COLLECTION)
 
             is Transaction.Goal -> docRef.document(userId)
                 .collection(TRANSACTION_COLLECTION)
@@ -445,17 +444,16 @@ class StorageService @Inject constructor(
                             )
                         }
                         is Transaction.Debt -> {
-                            val refund = subItems.filterIsInstance<Transaction.Refund>()
+                            val settlement = subItems.filterIsInstance<Transaction.Settlement>()
                                 .map { it.copy(debt = transaction) }
 
-                            transaction.copy(refund = refund)
+                            transaction.copy(settlement = settlement)
                         }
                         is Transaction.Goal -> {
                             val attain = subItems.filterIsInstance<Transaction.Attain>()
                                 .map { it.copy(goal = transaction) }
 
                             transaction.copy(attain = attain)
-                                .calculateStatus(System.currentTimeMillis())
                         }
                         else -> transaction
                     }
@@ -487,7 +485,7 @@ class StorageService @Inject constructor(
 
                         val subCollection = when (transaction) {
                             is Transaction.Lent -> transactionsCollection.document(transaction.id).collection(REPAYMENT_COLLECTION)
-                            is Transaction.Debt -> transactionsCollection.document(transaction.id).collection(REFUND_COLLECTION)
+                            is Transaction.Debt -> transactionsCollection.document(transaction.id).collection(SETTLEMENT_COLLECTION)
                             is Transaction.Goal -> transactionsCollection.document(transaction.id).collection(ATTAIN_COLLECTION)
                             is Transaction.Achievement -> transactionsCollection.document(transaction.id).collection(ACHIEVEMENT_COLLECTION)
                             else -> null

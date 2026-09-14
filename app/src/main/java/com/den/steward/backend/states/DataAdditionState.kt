@@ -50,7 +50,7 @@ data class DataAdditionState(
     // Adjustment transaction types
     val adjustmentEntries: List<TransactionType> = listOf(
         TransactionType.REPAYMENT,
-        TransactionType.REFUND,
+        TransactionType.SETTLEMENT,
         TransactionType.ATTAIN,
     ),
 

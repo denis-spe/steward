@@ -73,7 +73,7 @@ class ChartUseCase @Inject constructor (
 
                             TransactionType.EXPENSE,
                             TransactionType.LENT,
-                            TransactionType.REFUND -> {
+                            TransactionType.SETTLEMENT -> {
                                 outgoing += transaction.getAmountOrValue ?: 0.0
                             }
                             else -> {}

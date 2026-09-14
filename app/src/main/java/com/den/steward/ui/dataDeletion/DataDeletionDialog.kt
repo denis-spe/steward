@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.WarningAmber
-import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
@@ -26,11 +25,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.viewModels.DataDeletionViewModel
-import com.den.steward.helper.title
 
 @Composable
 fun DataDeletionDialog(
@@ -133,8 +130,8 @@ fun DataDeletionContent(
                     onClick = {
                         when(transaction) {
                             is Transaction.Attain,
-                            is Transaction.Refund,
                             is Transaction.Repayment,
+                            is Transaction.Settlement,
                             is Transaction.Achievement -> viewModel.deleteFulfillment()
                             else -> viewModel.deleteTransaction()
                         }

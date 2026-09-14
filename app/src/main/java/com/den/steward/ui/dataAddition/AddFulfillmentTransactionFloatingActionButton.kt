@@ -3,10 +3,8 @@ package com.den.steward.ui.dataAddition
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -18,7 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -29,11 +26,9 @@ import com.den.steward.ui.components.bottomDrawerSheet.BottomDrawerSheetItem
 
 import androidx.compose.material.icons.rounded.AssignmentTurnedIn
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.backend.entitles.Transaction
@@ -83,7 +78,7 @@ fun AddFulfillmentTransactionFloatingActionButton(
     ) {
         TransactionType.entries.filter {
             it == TransactionType.REPAYMENT ||
-                    it == TransactionType.REFUND ||
+                    it == TransactionType.SETTLEMENT ||
                     it == TransactionType.ATTAIN
         }.forEach { type ->
             BottomDrawerSheetItem(
@@ -122,7 +117,7 @@ fun FulfillmentTransactionBottomDrawerSheet(
     // Map fulfillment type to parent transaction type
     val parentType = when (selectedTransactionType) {
         TransactionType.REPAYMENT -> TransactionType.LENT
-        TransactionType.REFUND -> TransactionType.DEBT
+        TransactionType.SETTLEMENT -> TransactionType.DEBT
         TransactionType.ATTAIN -> TransactionType.GOAL
         else -> null
     }
@@ -212,6 +207,7 @@ fun FulfillmentTransactionBottomDrawerSheet(
                 modifier = Modifier.padding(vertical = 16.dp),
                 transactionType = selectedTransactionType,
                 isErrors = dataAdditionState.isAmountCorrect is TransactionFieldState.Error ||
+                        dataAdditionState.selectedParentTransaction == null ||
                         (if (selectedTransactionType == TransactionType.GOAL)
                             dataAdditionState.isStartNotEqualToEndDateTime is TransactionFieldState.Error
                         else false),

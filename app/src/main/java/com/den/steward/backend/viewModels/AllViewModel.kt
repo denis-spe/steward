@@ -119,7 +119,7 @@ class AllViewModel @Inject constructor(
 
                     TransactionType.EXPENSE,
                     TransactionType.LENT,
-                    TransactionType.REFUND -> outgoing += amount
+                    TransactionType.SETTLEMENT -> outgoing += amount
                     else -> {}
                 }
             }

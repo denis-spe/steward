@@ -156,7 +156,7 @@ class PeriodDataHandleUseCase @Inject constructor(
             Filter.GOAL -> TransactionType.GOAL
             Filter.SAVINGS -> TransactionType.SAVINGS
             Filter.REPAYMENT -> TransactionType.REPAYMENT
-            Filter.REFUND -> TransactionType.REFUND
+            Filter.SETTLEMENT -> TransactionType.SETTLEMENT
             Filter.ATTAIN -> TransactionType.ATTAIN
             Filter.LENT -> TransactionType.LENT
             Filter.DEBT -> TransactionType.DEBT

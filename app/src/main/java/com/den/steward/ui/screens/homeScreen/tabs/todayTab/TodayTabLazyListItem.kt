@@ -49,18 +49,33 @@ fun TodayTabLazyListItem(
     shape: Shape = MaterialTheme.shapes.small,
     color: Color = MaterialTheme.colorScheme.surface,
     onUpdate: suspend () -> Unit = {},
-    onDelete: suspend () -> Unit = {}
+    onDelete: suspend () -> Unit = {},
+    onClick: () -> Unit = {}
 ) {
     val localDateTime = remember(transaction) { transaction.createdAt.toLocalDateTime() }
     val time = localDateTime.formattedTime
-    val onShow = remember { mutableStateOf(false) }
-    val amount = remember(transaction) { transaction.getFormattedAmountOrValue }
-    val paymentMethod = remember(transaction) { transaction.getPaymentMethodOrNull }
-    val percentage = remember(transaction) { transaction.getPercentage }
-    val typeColor = colorResource(id = transaction.type.color)
-    
+
+    // Grouping UI properties that depend on 'transaction' into a single 'remember' block
+    // to reduce overhead during scroll-driven recompositions.
+    val uiData = remember(transaction) {
+        object {
+            val amount = transaction.getFormattedAmountOrValue
+            val paymentMethod = transaction.getPaymentMethodOrNull
+            val percentage = transaction.getPercentage
+            val affectAmount = transaction.getAffectAmount
+            val parent = transaction.getParentTransaction
+            val status = transaction.getStatus
+            val statusColorRes = transaction.getStatusColor
+            val typeColorRes = transaction.type.color
+        }
+    }
+
+    val typeColor = colorResource(id = uiData.typeColorRes)
+
+    // Optimization: Ensure progress animation target is stable
+    val progressTarget = remember(uiData.percentage) { (uiData.percentage?.toFloat() ?: 0f) / 100f }
     val animatedProgress by animateFloatAsState(
-        targetValue = (percentage?.toFloat() ?: 0f) / 100f,
+        targetValue = progressTarget,
         label = "ProgressAnimation"
     )
 
@@ -71,7 +86,7 @@ fun TodayTabLazyListItem(
         modifier = modifier.padding(vertical = 4.dp)
     ) {
         Surface(
-            onClick = { onShow.value = true },
+            onClick = onClick,
             shape = shape,
             color = color,
             tonalElevation = 1.dp
@@ -125,7 +140,7 @@ fun TodayTabLazyListItem(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
 
-                            if (transaction.getAffectAmount != null) {
+                            if (uiData.affectAmount != null) {
                                 Box(
                                     modifier = Modifier
                                         .clip(CircleShape)
@@ -133,12 +148,58 @@ fun TodayTabLazyListItem(
                                         .padding(horizontal = 6.dp, vertical = 2.dp)
                                 ) {
                                     Text(
-                                        text = if (transaction.getAffectAmount == "Yes") "Affected" else "Neutral",
+                                        text = if (uiData.affectAmount == "Yes") "Affected" else "Neutral",
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = if (transaction.getAffectAmount == "Yes") 
-                                            MaterialTheme.colorScheme.primary 
+                                        color = if (uiData.affectAmount == "Yes")
+                                            typeColor
                                         else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
+                                }
+                            }
+
+                            uiData.parent?.let { parent ->
+                                val parentLabel = stringResource(id = parent.type.label)
+                                val parentColor = colorResource(parent.type.color)
+
+                                Box(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .background(parentColor.copy(alpha = 0.1f))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = parentLabel,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = parentColor,
+                                    )
+                                }
+                            }
+
+                            if (uiData.status != null) {
+                                val statusColor = colorResource(uiData.statusColorRes)
+
+                                Box(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .background(statusColor.copy(alpha = 0.1f))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(6.dp)
+                                                .clip(CircleShape)
+                                                .background(statusColor)
+                                        )
+                                        Text(
+                                            text = uiData.status,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = statusColor
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -150,24 +211,24 @@ fun TodayTabLazyListItem(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
-                            text = amount,
+                            text = uiData.amount,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = typeColor
                         )
 
-                        if (paymentMethod != null) {
+                        if (uiData.paymentMethod != null) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 Image(
-                                    painter = painterResource(id = paymentMethod.icon),
+                                    painter = painterResource(id = uiData.paymentMethod.icon),
                                     contentDescription = null,
                                     modifier = Modifier.size(14.dp),
                                 )
                                 Text(
-                                    text = paymentMethod.label,
+                                    text = uiData.paymentMethod.label,
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -177,7 +238,7 @@ fun TodayTabLazyListItem(
                 }
 
                 // Progress Bar for Goals/Loans/Debts
-                if (percentage != null) {
+                if (uiData.percentage != null) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         LinearProgressIndicator(
                             progress = { animatedProgress },
@@ -199,7 +260,7 @@ fun TodayTabLazyListItem(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = "${percentage.toInt()}%",
+                                text = "${uiData.percentage.toInt()}%",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = typeColor
@@ -209,13 +270,6 @@ fun TodayTabLazyListItem(
                 }
             }
         }
-    }
-
-    TransactionViewDialog(
-        transaction = transaction,
-        onShow = onShow.value
-    ) {
-        onShow.value = false
     }
 }
 

@@ -25,6 +25,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,6 +46,7 @@ import com.den.steward.backend.viewModels.ChartViewModel
 import com.den.steward.backend.viewModels.DataDeletionViewModel
 import com.den.steward.backend.viewModels.TodayViewModel
 import com.den.steward.ui.componentExtenison.shimmerEffect
+import com.den.steward.ui.components.TransactionViewDialog
 import com.den.steward.ui.dataDeletion.DataDeletionDialog
 import com.den.steward.ui.theme.ExtendedTheme
 
@@ -70,7 +72,8 @@ fun TodayTabList(
     }
 
     Crossfade(
-        targetState = combinedState
+        targetState = combinedState,
+        label = "TodayTabListCrossfade"
     ) { state ->
         when (state) {
             is DataState.Loading -> {
@@ -142,7 +145,7 @@ fun TodayTabListPanelButtons(
         Filter.GOAL -> R.drawable.ic_finance_target
         Filter.SAVINGS -> R.drawable.ic_savings
         Filter.REPAYMENT -> R.drawable.ic_repayment
-        Filter.REFUND -> R.drawable.ic_refund
+        Filter.SETTLEMENT -> R.drawable.ic_refund
         Filter.ATTAIN -> R.drawable.ic_attain
         Filter.LENT -> R.drawable.ic_loan
         Filter.DEBT -> R.drawable.ic_debt
@@ -172,7 +175,7 @@ fun TodayTabListPanelButtons(
         ) {
             item(key = "Order By") {
                 TodayTabListPanelButton(
-                    text = "Order By",
+                    text = "Order",
                     selected = orderBySelected,
                     icon = {
                         Icon(
@@ -186,7 +189,7 @@ fun TodayTabListPanelButtons(
             }
             item(key = "Sort By") {
                 TodayTabListPanelButton(
-                    text = "Sort By",
+                    text = "Sort",
                     selected = sortBySelected,
                     icon = {
                         Icon(
@@ -234,7 +237,7 @@ fun TodayTabListPanelButtonsShimmer() {
             item(key = "Order By") {
                 Box(
                     modifier = Modifier
-                        .size(100.dp, height)
+                        .size(80.dp, height)
                         .clip(CircleShape)
                         .shimmerEffect()
                 )
@@ -242,7 +245,7 @@ fun TodayTabListPanelButtonsShimmer() {
             item(key = "Sort By") {
                 Box(
                     modifier = Modifier
-                        .size(110.dp, height)
+                        .size(90.dp, height)
                         .clip(CircleShape)
                         .shimmerEffect()
                 )
@@ -251,7 +254,7 @@ fun TodayTabListPanelButtonsShimmer() {
             item(key = "Filter") {
                 Box(
                     modifier = Modifier
-                        .size(106.dp, height)
+                        .size(96.dp, height)
                         .clip(CircleShape)
                         .shimmerEffect()
                 )
@@ -295,6 +298,7 @@ fun TodayTabLazyList(
     transactions: List<Transaction>,
 ) {
     val todayUiState by todayViewModel.todayUiState.collectAsStateWithLifecycle()
+    val selectedTransactionForView = remember { mutableStateOf<Transaction?>(null) }
 
     LazyColumn(
         modifier = modifier,
@@ -345,6 +349,9 @@ fun TodayTabLazyList(
                     ),
                     onDelete = {
                         dataDeletionViewModel.updateSelectedTransaction(transaction)
+                    },
+                    onClick = {
+                        selectedTransactionForView.value = transaction
                     }
                 )
             }
@@ -355,6 +362,13 @@ fun TodayTabLazyList(
         }
     }
 
+    selectedTransactionForView.value?.let { transaction ->
+        TransactionViewDialog(
+            transaction = transaction,
+            onShow = true,
+            onDismissRequest = { selectedTransactionForView.value = null }
+        )
+    }
 
     DataDeletionDialog(
         viewModel = dataDeletionViewModel

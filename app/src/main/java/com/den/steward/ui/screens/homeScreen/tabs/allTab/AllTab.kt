@@ -104,7 +104,7 @@ fun AllTab(
         Filter.GOAL -> R.drawable.ic_finance_target
         Filter.SAVINGS -> R.drawable.ic_savings
         Filter.REPAYMENT -> R.drawable.ic_repayment
-        Filter.REFUND -> R.drawable.ic_refund
+        Filter.SETTLEMENT -> R.drawable.ic_refund
         Filter.ATTAIN -> R.drawable.ic_attain
         Filter.LENT -> R.drawable.ic_loan
         Filter.DEBT -> R.drawable.ic_debt

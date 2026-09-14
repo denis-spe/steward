@@ -6,6 +6,7 @@ import com.den.steward.backend.entitles.PaymentMethod
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataState
+import com.den.steward.backend.states.LiabilitiesPaymentStatsState
 import com.den.steward.backend.states.TodayUiState
 import com.den.steward.backend.useCase.DataFetchUseCase
 import com.den.steward.backend.useCase.DataFilterUseCase
@@ -113,7 +114,7 @@ class TodayViewModel @Inject constructor(
 
                                 TransactionType.EXPENSE,
                                 TransactionType.LENT,
-                                TransactionType.REFUND -> current - amount
+                                TransactionType.SETTLEMENT -> current - amount
 
                                 else -> current
                             }
@@ -135,17 +136,27 @@ class TodayViewModel @Inject constructor(
             initialValue = DataState.Loading
         )
 
-    val liabilitiesPaymentStats: StateFlow<DataState<Map<String, Double>>> = dataFetchUseCase.fetchAllTransactions
+    val liabilitiesPaymentStats: StateFlow<DataState<LiabilitiesPaymentStatsState>> = dataFetchUseCase.fetchAllTransactions
         .map { state ->
             when (state) {
                 is DataState.Success -> {
-                    val liabilitiesPayAmount = mutableMapOf<String, Double>()
+                    var totalLoan = 0.0
+                    var totalDebt = 0.0
                     var unPaidLoan = 0.0
                     var unPaidDebt = 0.0
                     var paidCount = 0.0
                     var unPaidCount = 0.0
 
                     state.data.forEach { transaction ->
+                        totalLoan += when (transaction) {
+                            is Transaction.Lent -> transaction.amount
+                            else -> 0.0
+                        }
+                        totalDebt += when (transaction) {
+                            is Transaction.Debt -> transaction.amount
+                            else -> 0.0
+                        }
+
                         unPaidLoan += when (transaction) {
                             is Transaction.Lent -> transaction.remainingAmount
                             else -> 0.0
@@ -168,10 +179,14 @@ class TodayViewModel @Inject constructor(
                         }
                     }
 
-                    liabilitiesPayAmount["Loans"] = unPaidLoan
-                    liabilitiesPayAmount["Debts"] = unPaidDebt
-                    liabilitiesPayAmount["Paid"] = paidCount
-                    liabilitiesPayAmount["Unpaid"] = unPaidCount
+                    val liabilitiesPayAmount = LiabilitiesPaymentStatsState(
+                        totalLoan = totalLoan,
+                        totalDebt = totalDebt,
+                        unPaidLoan = unPaidLoan,
+                        unPaidDebt = unPaidDebt,
+                        paidCount = paidCount,
+                        unPaidCount = unPaidCount
+                    )
 
                     DataState.Success(liabilitiesPayAmount)
                 }
@@ -202,7 +217,7 @@ class TodayViewModel @Inject constructor(
 
                     TransactionType.EXPENSE,
                     TransactionType.LENT,
-                    TransactionType.REFUND -> outgoing += amount
+                    TransactionType.SETTLEMENT -> outgoing += amount
                     else -> {}
                 }
             }
@@ -217,7 +232,7 @@ class TodayViewModel @Inject constructor(
             Filter.GOAL -> TransactionType.GOAL
             Filter.SAVINGS -> TransactionType.SAVINGS
             Filter.REPAYMENT -> TransactionType.REPAYMENT
-            Filter.REFUND -> TransactionType.REFUND
+            Filter.SETTLEMENT -> TransactionType.SETTLEMENT
             Filter.ATTAIN -> TransactionType.ATTAIN
             Filter.LENT -> TransactionType.LENT
             Filter.DEBT -> TransactionType.DEBT

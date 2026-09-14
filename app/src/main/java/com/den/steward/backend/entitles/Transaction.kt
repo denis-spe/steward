@@ -67,7 +67,15 @@ sealed class Transaction {
     ) : Transaction() {
         val totalRepayment: Double get() = repayment.sumOf { it.amount }
         val remainingAmount: Double get() = amount - totalRepayment
-        val percentage = (totalRepayment / amount) * 100
+        val percentage: Double get() = if (amount > 0) (totalRepayment / amount) * 100 else 0.0
+
+        val status: LiabilitiesStatus get() {
+            return when (remainingAmount) {
+                0.0 -> LiabilitiesStatus.PAID
+                amount -> LiabilitiesStatus.UNPAID
+                else -> LiabilitiesStatus.PAYING
+            }
+        }
     }
 
     @Stable
@@ -77,18 +85,39 @@ sealed class Transaction {
         val note: String = "",
         val amount: Double = 0.0,
         override val type: TransactionType = TransactionType.DEBT,
-        val refund: List<Refund> = emptyList(),
+        val settlement: List<Settlement> = emptyList(),
         override val createdAt: Long = System.currentTimeMillis(),
         val selectedIcon: Int = R.drawable.debt,
         val paymentMethod: PaymentMethod = PaymentMethod.CASH,
         val affectAmount: Boolean = false,
         val liabilitiesStatus: LiabilitiesStatus = LiabilitiesStatus.UNPAID
     ) : Transaction() {
-        val totalRefund: Double get() = refund.sumOf { it.amount }
+        val totalRefund: Double get() = settlement.sumOf { it.amount }
         val remainingAmount: Double get() = amount - totalRefund
-        val percentage = (totalRefund / amount) * 100
+        val percentage: Double get() = if (amount > 0) (totalRefund / amount) * 100 else 0.0
+
+        val status: LiabilitiesStatus get() {
+            return when (remainingAmount) {
+                0.0 -> LiabilitiesStatus.PAID
+                amount -> LiabilitiesStatus.UNPAID
+                else -> LiabilitiesStatus.PAYING
+            }
+        }
     }
 
+
+    @Stable
+    data class Settlement(
+        override val id: String = "",
+        val label: String = "",
+        val note: String = "",
+        val amount: Double = 0.0,
+        override val type: TransactionType = TransactionType.SETTLEMENT,
+        override val createdAt: Long = System.currentTimeMillis(),
+        val paymentMethod: PaymentMethod = PaymentMethod.CASH,
+        val affectAmount: Boolean = false,
+        val debt: Debt = Debt()
+    ) : Transaction()
 
     @Stable
     data class Repayment(
@@ -98,21 +127,6 @@ sealed class Transaction {
         val amount: Double = 0.0,
         override val type: TransactionType = TransactionType.REPAYMENT,
         override val createdAt: Long = System.currentTimeMillis(),
-        val lent: Lent = Lent(),
-        val paymentMethod: PaymentMethod = PaymentMethod.CASH,
-        val affectAmount: Boolean = false,
-        val debt: Debt = Debt()
-    ) : Transaction()
-
-    @Stable
-    data class Refund(
-        override val id: String = "",
-        val label: String = "",
-        val note: String = "",
-        val amount: Double = 0.0,
-        override val type: TransactionType = TransactionType.REFUND,
-        override val createdAt: Long = System.currentTimeMillis(),
-        val debt: Debt = Debt(),
         val paymentMethod: PaymentMethod = PaymentMethod.CASH,
         val affectAmount: Boolean = false,
         val lentId: String = "",
@@ -133,13 +147,23 @@ sealed class Transaction {
         val selectedIcon: Int = R.drawable.tag_goal,
         val startedAt: Long = System.currentTimeMillis(),
         val endAt: Long = System.currentTimeMillis(),
-        val status: GoalStatus = GoalStatus.NOT_STARTED,
         val repeatable: RecurrencePattern = RecurrencePattern.NONE,
     ) : Transaction() {
         val totalAttain get() = attain.sumOf { it.value }
         val remainingValue: Double get() = value - totalAttain
         val totalAchievement get() = achievement.groupBy { it.status }
-        val percentage = (totalAttain / value) * 100
+        val percentage: Double get() = if (value > 0) (totalAttain / value) * 100 else 0.0
+
+        val status: GoalStatus get() {
+            val time = System.currentTimeMillis()
+
+            return when {
+                remainingValue <= 0.0 -> GoalStatus.COMPLETED
+                time > endAt -> GoalStatus.FAILED
+                totalAttain == 0.0 && time < startedAt -> GoalStatus.NOT_STARTED
+                else -> GoalStatus.IN_PROGRESS
+            }
+        }
 
         fun calculateSchedule(now: Long): Goal {
             val schedule = this.repeatable.onSchedule
@@ -153,18 +177,6 @@ sealed class Transaction {
                 startedAt = now,
                 endAt = now + duration
             )
-        }
-
-        fun calculateStatus(now: Long): Goal {
-            val newStatus = when {
-                now < this.startedAt -> GoalStatus.NOT_STARTED
-                now >= this.endAt -> {
-                    if (this.totalAttain >= this.value) GoalStatus.COMPLETED
-                    else GoalStatus.FAILED
-                }
-                else -> GoalStatus.IN_PROGRESS
-            }
-            return this.copy(status = newStatus)
         }
     }
 
@@ -197,8 +209,8 @@ sealed class Transaction {
                 is Lent -> this.label.title
                 is Debt -> this.label.title
                 is Goal -> this.label.title
+                is Settlement -> this.label.title
                 is Repayment -> this.label.title
-                is Refund -> this.label.title
                 is Attain -> "${this.goal.label.title} Attainment"
                 is Achievement -> "${this.goal.label.title} Achievement"
                 is Savings -> this.label.title
@@ -213,8 +225,8 @@ sealed class Transaction {
                 is Lent -> this.paymentMethod
                 is Debt -> this.paymentMethod
                 is Goal -> null
+                is Settlement -> this.paymentMethod
                 is Repayment -> this.paymentMethod
-                is Refund -> this.paymentMethod
                 is Savings -> this.paymentMethod
                 is Attain -> null
                 is Achievement -> null
@@ -229,8 +241,8 @@ sealed class Transaction {
                 is Lent -> this.note
                 is Debt -> this.note
                 is Goal -> this.note
+                is Settlement -> this.note
                 is Repayment -> this.note
-                is Refund -> this.note
                 is Savings -> this.note
                 is Attain -> "Attained ${this.value} of ${this.goal.value}"
                 is Achievement -> "Achieved ${this.value} of ${this.goal.value}"
@@ -245,8 +257,8 @@ sealed class Transaction {
                 is Savings -> this.amount
                 is Debt -> this.amount
                 is Goal -> this.value
+                is Settlement -> this.amount
                 is Repayment -> this.amount
-                is Refund -> this.amount
                 is Attain -> this.value
                 is Achievement -> this.value
             }
@@ -265,8 +277,8 @@ sealed class Transaction {
                     else this.value.toString()
                 }
 
+                is Settlement -> this.amount.formatToAmount()
                 is Repayment -> this.amount.formatToAmount()
-                is Refund -> this.amount.formatToAmount()
                 is Attain -> {
                     if (this.goal.goalType == GoalType.AMOUNT) this.value.formatToAmount()
                     else this.value.toString()
@@ -288,8 +300,8 @@ sealed class Transaction {
                 is Debt -> this.affectAmount
                 is Savings -> this.affectAmount
                 is Goal -> null
+                is Settlement -> this.affectAmount
                 is Repayment -> this.affectAmount
-                is Refund -> this.affectAmount
                 is Attain -> null
                 is Achievement -> null
             }
@@ -313,10 +325,20 @@ sealed class Transaction {
 
     val getStatus: String?
             get() = when(this) {
-        is Lent -> this.liabilitiesStatus.label
-        is Debt -> this.liabilitiesStatus.label
+        is Lent -> this.status.label
         is Goal -> this.status.label
+        is Debt -> this.status.label
         else -> null
+    }
+
+    val getStatusColor: Int
+        get() {
+        return when(this) {
+            is Lent -> this.status.color
+            is Debt -> this.status.color
+            is Goal -> this.status.color
+            else -> this.type.color
+        }
     }
 
     val getPercentage: Double?
@@ -325,6 +347,17 @@ sealed class Transaction {
                 is Lent -> this.percentage
                 is Debt -> this.percentage
                 is Goal -> this.percentage
+                else -> null
+            }
+        }
+
+    val getParentTransaction: Transaction?
+        get() {
+            return when(this) {
+                is Settlement -> this.debt
+                is Repayment -> this.lent
+                is Attain -> this.goal
+                is Achievement -> this.goal
                 else -> null
             }
         }

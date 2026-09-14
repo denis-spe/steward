@@ -7,7 +7,7 @@ enum class Filter {
     GOAL,
     SAVINGS,
     REPAYMENT,
-    REFUND,
+    SETTLEMENT,
     ATTAIN,
     LENT,
     DEBT,

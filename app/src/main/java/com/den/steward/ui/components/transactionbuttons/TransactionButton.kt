@@ -36,7 +36,7 @@ fun TransactionButtons(
         TransactionType.GOAL -> "Set a goal"
         TransactionType.ATTAIN -> "Attain your goal"
         TransactionType.REPAYMENT -> "Make a repayment"
-        TransactionType.REFUND -> "Request a refund"
+        TransactionType.SETTLEMENT -> "Submit a settlement"
         TransactionType.SAVINGS -> "Record your money"
         else -> ""
     }
@@ -49,7 +49,7 @@ fun TransactionButtons(
         TransactionType.GOAL -> "Goal"
         TransactionType.ATTAIN -> "Attain"
         TransactionType.REPAYMENT -> "Repayment"
-        TransactionType.REFUND -> "Refund"
+        TransactionType.SETTLEMENT -> "Settlement"
         TransactionType.SAVINGS -> "Save"
         else -> ""
     }
