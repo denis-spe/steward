@@ -15,9 +15,17 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.states.DataState
+import com.den.steward.backend.states.PeriodType
+import com.den.steward.backend.viewModels.AllViewModel
+import java.time.LocalDate
 
 @Composable
-fun AllTabLazyList(transactions: DataState<Map<String, List<Transaction>>>) {
+fun AllTabLazyList(
+    transactions: DataState<Map<String, List<Transaction>>>,
+    allViewModel: AllViewModel,
+    selectedDate: LocalDate,
+    periodType: PeriodType
+) {
     Surface {
         LazyColumn(
             modifier = Modifier.fillMaxWidth()
@@ -25,6 +33,23 @@ fun AllTabLazyList(transactions: DataState<Map<String, List<Transaction>>>) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            item {
+                PeriodTypeSelector(
+                    currentPeriodType = periodType,
+                    onPeriodTypeChange = allViewModel::updatePeriodType
+                )
+            }
+
+            item(
+                key = "summary"
+            ) {
+                AllTabSummaryCard(
+                    transactionsState = transactions,
+                    allViewModel = allViewModel,
+                    selectedDate = selectedDate,
+                    periodType = periodType
+                )
+            }
             when (transactions) {
                 is DataState.Success -> {
                     val groupedTransactions = transactions.data
@@ -39,7 +64,7 @@ fun AllTabLazyList(transactions: DataState<Map<String, List<Transaction>>>) {
 
                             items(
                                 count = transactions.size,
-                                key = { index -> transactions[index].id }
+                                key = { index -> "all_${date}_${transactions[index].id}" }
                             ) { index ->
                                 val transaction = transactions[index]
 

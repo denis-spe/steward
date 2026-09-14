@@ -4,20 +4,20 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.den.steward.backend.viewModels.ChartViewModel
-import com.den.steward.backend.viewModels.DataFetchViewModel
+import com.den.steward.backend.states.HomeTab
+import com.den.steward.backend.useCase.Filter
 import com.den.steward.backend.viewModels.OverviewViewModel
 
 @Composable
 fun OverviewTab(
     padding: PaddingValues,
-    overviewViewModel: OverviewViewModel = hiltViewModel()
+    overviewViewModel: OverviewViewModel = hiltViewModel(),
+    onTabChange: (HomeTab, Filter?) -> Unit = { _, _ -> }
 ) {
     val overviewUiState by overviewViewModel.overviewUiState.collectAsStateWithLifecycle()
     val groupedTransactions by overviewViewModel.groupedTransactions.collectAsStateWithLifecycle()
@@ -29,7 +29,8 @@ fun OverviewTab(
             .padding(padding)
     ) {
         OverviewList(
-            dataState = groupedTransactions
+            dataState = groupedTransactions,
+            onTabChange = onTabChange
         )
     }
 }

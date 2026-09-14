@@ -14,5 +14,8 @@ data class AllUiState(
     val orderBy: OrderBy = OrderBy.ASCENDING,
     val sortBy: SortBy = SortBy.TIME,
     val filter: Filter = Filter.ALL,
+    val isFilterExpanded: Boolean = false,
+    val isOrderByExpanded: Boolean = false,
+    val isSortByExpanded: Boolean = false,
     val weekNumber: Int? = selectedDate.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)
 )

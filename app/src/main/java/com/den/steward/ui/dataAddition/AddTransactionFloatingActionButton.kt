@@ -3,7 +3,6 @@ package com.den.steward.ui.dataAddition
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -57,32 +56,18 @@ fun AddTransactionFloatingActionButton(
     // The state of data addition for textField, validation and button state
     val dataAdditionState by dataAdditionViewModel.dataAdditionState.collectAsStateWithLifecycle()
 
-    Row(
-        horizontalArrangement = Arrangement.End,
-        verticalAlignment = Alignment.CenterVertically
+    FloatingActionButton(
+        onClick = { dataAdditionViewModel.updateShowTransactionTypeBottomSheet(true) },
+        shape = shape,
+        elevation = elevation,
+        modifier = modifier,
+        containerColor = ExtendedTheme.colors.tertiary,
+        contentColor = MaterialTheme.colorScheme.onSecondary
     ) {
-        Text(
-            "Transaction",
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold,
-            color = ExtendedTheme.colors.tertiary
+        Icon(
+            imageVector = Icons.AutoMirrored.Rounded.ReceiptLong,
+            contentDescription = "Add Transaction"
         )
-
-        Spacer(modifier = Modifier.width(5.dp))
-
-        FloatingActionButton(
-            onClick = { dataAdditionViewModel.updateShowTransactionTypeBottomSheet(true) },
-            shape = shape,
-            elevation = elevation,
-            modifier = modifier,
-            containerColor = ExtendedTheme.colors.tertiary,
-            contentColor = MaterialTheme.colorScheme.onSecondary
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Rounded.ReceiptLong,
-                contentDescription = "Add Transaction"
-            )
-        }
     }
 
     // 1. Selection of Transaction Type Bottom Drawer Sheet

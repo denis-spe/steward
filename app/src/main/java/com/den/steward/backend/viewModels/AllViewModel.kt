@@ -2,6 +2,8 @@ package com.den.steward.backend.viewModels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.den.steward.backend.entitles.Transaction
+import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.AllUiState
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.PeriodType
@@ -88,6 +90,41 @@ class AllViewModel @Inject constructor(
                 sortBy = sortBy
             )
         }
+    }
+
+    fun updateIsFilterExpanded(isExpanded: Boolean) {
+        _allUiState.update { it.copy(isFilterExpanded = isExpanded) }
+    }
+
+    fun updateIsOrderByExpanded(isExpanded: Boolean) {
+        _allUiState.update { it.copy(isOrderByExpanded = isExpanded) }
+    }
+
+    fun updateIsSortByExpanded(isExpanded: Boolean) {
+        _allUiState.update { it.copy(isSortByExpanded = isExpanded) }
+    }
+
+    fun calculateFlow(transactions: List<Transaction>): Double {
+        var incoming = 0.0
+        var outgoing = 0.0
+
+        transactions.forEach { transaction ->
+            if (transaction.getAffectAmount == "Yes") {
+                val amount = transaction.getAmountOrValue ?: 0.0
+                when (transaction.type) {
+                    TransactionType.EARNINGS,
+                    TransactionType.SAVINGS,
+                    TransactionType.DEBT,
+                    TransactionType.REPAYMENT -> incoming += amount
+
+                    TransactionType.EXPENSE,
+                    TransactionType.LENT,
+                    TransactionType.REFUND -> outgoing += amount
+                    else -> {}
+                }
+            }
+        }
+        return incoming - outgoing
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

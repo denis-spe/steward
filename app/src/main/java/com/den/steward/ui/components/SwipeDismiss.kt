@@ -31,6 +31,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.den.steward.ui.theme.ExtendedColors
@@ -40,8 +41,8 @@ import com.den.steward.ui.theme.ExtendedTheme
 fun SwipeDismiss(
     modifier: Modifier = Modifier,
     shape: Shape = MaterialTheme.shapes.medium,
-    onUpdate: () -> Unit,
-    onDelete: () -> Unit,
+    onUpdate: suspend () -> Unit,
+    onDelete: suspend () -> Unit,
     content: @Composable (RowScope.() -> Unit),
 ) {
     val dismissState = rememberSwipeToDismissBoxState()
@@ -75,12 +76,17 @@ fun SwipeDismiss(
 @Composable
 private fun SwipeDismissBackground(dismissState: SwipeToDismissBoxState) {
     val direction = dismissState.dismissDirection
+    
+    val targetColor = when (dismissState.targetValue) {
+        SwipeToDismissBoxValue.StartToEnd -> ExtendedTheme.colors.lightSecondary
+        SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.errorContainer
+        else -> MaterialTheme.colorScheme.surfaceVariant
+    }
 
-    val backgroundColor = when (direction) {
-            SwipeToDismissBoxValue.StartToEnd -> ExtendedTheme.colors.lightSecondary
-            SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.errorContainer
-            else -> MaterialTheme.colorScheme.surfaceVariant
-        }
+    val backgroundColor by animateColorAsState(
+        targetValue = targetColor,
+        label = "SwipeDismissBackground"
+    )
 
     val icon = when (direction) {
         SwipeToDismissBoxValue.StartToEnd -> Icons.Rounded.Edit
@@ -100,6 +106,12 @@ private fun SwipeDismissBackground(dismissState: SwipeToDismissBoxState) {
         else -> Alignment.Center
     }
 
+    val contentColor = when (direction) {
+        SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.onSurface
+        SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.onErrorContainer
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
     val scale by animateFloatAsState(
         if (dismissState.targetValue == SwipeToDismissBoxValue.Settled) 0.8f else 1.2f,
         label = "SwipeDismissIconScale"
@@ -107,7 +119,8 @@ private fun SwipeDismissBackground(dismissState: SwipeToDismissBoxState) {
 
     Surface(
         color = backgroundColor,
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        contentColor = contentColor
     ) {
         Box(
             modifier = Modifier
@@ -124,25 +137,25 @@ private fun SwipeDismissBackground(dismissState: SwipeToDismissBoxState) {
                         Icon(
                             imageVector = icon,
                             contentDescription = label,
-                            tint = MaterialTheme.colorScheme.onSurface
+                            tint = contentColor
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = label,
                             style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface
+                            fontWeight = FontWeight.Bold
                         )
                     } else {
                         Text(
                             text = label,
                             style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onErrorContainer
+                            fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Icon(
                             imageVector = icon,
                             contentDescription = label,
-                            tint = MaterialTheme.colorScheme.onErrorContainer
+                            tint = contentColor
                         )
                     }
                 }

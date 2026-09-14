@@ -67,6 +67,7 @@ sealed class Transaction {
     ) : Transaction() {
         val totalRepayment: Double get() = repayment.sumOf { it.amount }
         val remainingAmount: Double get() = amount - totalRepayment
+        val percentage = (totalRepayment / amount) * 100
     }
 
     @Stable
@@ -85,6 +86,7 @@ sealed class Transaction {
     ) : Transaction() {
         val totalRefund: Double get() = refund.sumOf { it.amount }
         val remainingAmount: Double get() = amount - totalRefund
+        val percentage = (totalRefund / amount) * 100
     }
 
 
@@ -137,6 +139,7 @@ sealed class Transaction {
         val totalAttain get() = attain.sumOf { it.value }
         val remainingValue: Double get() = value - totalAttain
         val totalAchievement get() = achievement.groupBy { it.status }
+        val percentage = (totalAttain / value) * 100
 
         fun calculateSchedule(now: Long): Goal {
             val schedule = this.repeatable.onSchedule
@@ -315,4 +318,14 @@ sealed class Transaction {
         is Goal -> this.status.label
         else -> null
     }
+
+    val getPercentage: Double?
+        get() {
+            return when(this) {
+                is Lent -> this.percentage
+                is Debt -> this.percentage
+                is Goal -> this.percentage
+                else -> null
+            }
+        }
 }

@@ -36,9 +36,6 @@ fun HomeScreen(
 ) {
 
     val homeUiState by homeViewModel.homeUiState.collectAsStateWithLifecycle()
-    val onTabChange = remember(homeViewModel) {
-        { tab: HomeTab -> homeViewModel.updateHomeTab(tab) }
-    }
     val dataAdditionState by dataAdditionViewModel.dataAdditionState.collectAsStateWithLifecycle()
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -47,7 +44,7 @@ fun HomeScreen(
             topBar = {
                 HomeTopBar(
                     currentTab = homeUiState.currentTab,
-                    onTabChange = onTabChange
+                    onTabChange = { homeViewModel.updateHomeTab(it) }
                 )
             }
         ) { padding ->
@@ -66,13 +63,17 @@ fun HomeScreen(
 
                 HomeTab.ALL -> {
                     AllTab(
-                        padding = padding
+                        padding = padding,
+                        homeViewModel = homeViewModel
                     )
                 }
 
                 HomeTab.OVERVIEW -> {
                     OverviewTab(
-                        padding = padding
+                        padding = padding,
+                        onTabChange = { tab, filter ->
+                            homeViewModel.updateHomeTab(tab, filter)
+                        }
                     )
                 }
 

@@ -1,7 +1,5 @@
-// I Worship the LORD GOD of hosts
-package com.den.steward.ui.screens.homeScreen.tabs.todayTab
+package com.den.steward.ui.screens.homeScreen.tabs.yesterdayTab
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -34,11 +32,8 @@ import androidx.compose.material.icons.outlined.PieChart
 import androidx.compose.material.icons.outlined.Wallet
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -50,26 +45,26 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.den.steward.R
 import com.den.steward.backend.states.DataState
-import com.den.steward.backend.viewModels.ChartViewModel
-import com.den.steward.backend.viewModels.TodayViewModel
+import com.den.steward.backend.viewModels.YesterdayChartViewModel
+import com.den.steward.backend.viewModels.YesterdayViewModel
 import com.den.steward.helper.formatToAmount
 import com.den.steward.ui.componentExtenison.shimmerEffect
+import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayDonutChartEmptyView
+import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayDonutChartErrorView
+import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayDonutChartShimmerView
+import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayDonutChartView
 import kotlinx.coroutines.launch
 
 @Composable
-fun TodayTabStatisticView(
-    chartViewModel: ChartViewModel,
-    todayViewModel: TodayViewModel
+fun YesterdayTabStatisticView(
+    chartViewModel: YesterdayChartViewModel,
+    yesterdayViewModel: YesterdayViewModel
 ) {
     val tabs = listOf(
         "Flow Chart",
@@ -86,7 +81,7 @@ fun TodayTabStatisticView(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        TodayTabStatisticPanel(
+        YesterdayTabStatisticPanel(
             tabs = tabs,
             pager = pager
         )
@@ -103,16 +98,16 @@ fun TodayTabStatisticView(
                     .padding(horizontal = 16.dp)
             ) {
                 when (page) {
-                    0 -> TodayTabDonutChart(
+                    0 -> YesterdayTabDonutChart(
                         viewModel = chartViewModel,
                         chartSize = 160.dp,
                         strokeWidth = 18.dp,
                         strokeCap = StrokeCap.Round
                     )
 
-                    1 -> TodaySummaryView(todayViewModel = todayViewModel)
+                    1 -> YesterdaySummaryView(yesterdayViewModel = yesterdayViewModel)
 
-                    2 -> TodayTabUnpaidLiabilitiesView(todayViewModel = todayViewModel)
+                    2 -> YesterdayTabUnpaidLiabilitiesView()
                 }
             }
         }
@@ -120,7 +115,7 @@ fun TodayTabStatisticView(
 }
 
 @Composable
-fun TodayTabStatisticPanel(tabs: List<String>, pager: PagerState) {
+fun YesterdayTabStatisticPanel(tabs: List<String>, pager: PagerState) {
     val scope = rememberCoroutineScope()
 
     Column(
@@ -175,7 +170,7 @@ fun TodayTabStatisticPanel(tabs: List<String>, pager: PagerState) {
 }
 
 @Composable
-fun TodayStatisticLayout(
+fun YesterdayStatisticLayout(
     content: @Composable ColumnScope.() -> Unit
 ) {
     Card(
@@ -200,8 +195,8 @@ fun TodayStatisticLayout(
 }
 
 @Composable
-fun TodayTabDonutChart(
-    viewModel: ChartViewModel,
+fun YesterdayTabDonutChart(
+    viewModel: YesterdayChartViewModel,
     chartSize: Dp = 160.dp,
     strokeWidth: Dp = 18.dp,
     strokeCap: StrokeCap = StrokeCap.Round
@@ -210,7 +205,7 @@ fun TodayTabDonutChart(
     val donutChartCenterAmount by viewModel.donutChartCenterAmount.collectAsStateWithLifecycle()
     val donutStatusSummary by viewModel.donutStatusSummary.collectAsStateWithLifecycle()
 
-    TodayStatisticLayout {
+    YesterdayStatisticLayout {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(24.dp),
@@ -264,213 +259,80 @@ fun TodayTabDonutChart(
 }
 
 @Composable
-fun TodaySummaryView(
-    todayViewModel: TodayViewModel
+fun YesterdaySummaryView(
+    yesterdayViewModel: YesterdayViewModel
 ) {
-    val currentAmountMapState by todayViewModel.currentAmountForDifferentMethods.collectAsStateWithLifecycle()
-    val todayTransactionsState by todayViewModel.todaySummaryTransactions.collectAsStateWithLifecycle()
+    val currentAmountMapState by yesterdayViewModel.yesterdaySummaryTransactions.collectAsStateWithLifecycle()
 
-    TodayStatisticLayout {
-        Row(
-            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
-            horizontalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-            // --- Total Flow ---
-            Column(
-                modifier = Modifier.weight(0.45f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = "Today's Net",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                when (val state = todayTransactionsState) {
-                    is DataState.Success -> {
-                        val flow = remember(state.data) { todayViewModel.calculateFlow(state.data) }
-                        Text(
-                            text = flow.formatToAmount(),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = if (flow >= 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                        )
-                    }
-                    is DataState.Loading -> Box(Modifier.fillMaxWidth().height(30.dp).shimmerEffect())
-                    is DataState.Error -> Text(text = state.message, color = MaterialTheme.colorScheme.error)
-                }
-                
-                Spacer(Modifier.height(4.dp))
-                
-                Box(
-                    modifier = Modifier
-                        .clip(MaterialTheme.shapes.small)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.05f))
-                        .padding(8.dp)
-                ) {
-                    Text(
-                        text = "Transactions today show your spending patterns.",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-
-            VerticalDivider(modifier = Modifier.fillMaxHeight(), thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
-
-            // --- Account Balances ---
-            Column(
-                modifier = Modifier.weight(0.55f),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(
-                    text = "Account Balances",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                when (val state = currentAmountMapState) {
-                    is DataState.Success -> {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            state.data.forEach { (method, amount) ->
-                                Column (
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                                    horizontalAlignment = Alignment.Start
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Image(
-                                            painter = painterResource(id = method.icon),
-                                            contentDescription = null,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                        Text(
-                                            text = method.label,
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-                                    }
-                                    Text(
-                                        text = amount.formatToAmount(),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    is DataState.Loading -> repeat(2) { Box(Modifier.fillMaxWidth().height(24.dp).shimmerEffect()) }
-                    is DataState.Error -> Text(text = state.message, color = MaterialTheme.colorScheme.error)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun TodayTabUnpaidLiabilitiesView(todayViewModel: TodayViewModel) {
-    val statsState by todayViewModel.liabilitiesPaymentStats.collectAsStateWithLifecycle()
-
-    TodayStatisticLayout {
+    YesterdayStatisticLayout {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "Liability Breakdown",
+                text = "Yesterday's Net",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-
-            when (val state = statsState) {
+            when (val state = currentAmountMapState) {
                 is DataState.Success -> {
-                    val loans = remember(state.data) { state.data["Loans"] ?: 0.0 }
-                    val debts = remember(state.data) { state.data["Debts"] ?: 0.0 }
-                    val total = remember(loans, debts) { loans + debts }
-                    
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        LiabilityCard(
-                            modifier = Modifier.weight(1f),
-                            title = "Receivable",
-                            amount = loans,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        LiabilityCard(
-                            modifier = Modifier.weight(1f),
-                            title = "Payable",
-                            amount = debts,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-
-                    if (total > 0) {
-                        val percentage = remember(loans, total) { (loans / total).toFloat() }
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            LinearProgressIndicator(
-                                progress = { percentage },
-                                modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
-                                color = MaterialTheme.colorScheme.primary,
-                                trackColor = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
-                                strokeCap = StrokeCap.Round
-                            )
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text("Loans ratio", style = MaterialTheme.typography.labelSmall)
-                                Text("${(percentage * 100).toInt()}%", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
+                    val flow = remember(state.data) { yesterdayViewModel.calculateFlow(state.data) }
+                    Text(
+                        text = flow.formatToAmount(),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = if (flow >= 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                    )
                 }
-                is DataState.Loading -> repeat(2) { Box(Modifier.fillMaxWidth().height(60.dp).shimmerEffect()) }
+                is DataState.Loading -> Box(Modifier.fillMaxWidth().height(30.dp).shimmerEffect())
                 is DataState.Error -> Text(text = state.message, color = MaterialTheme.colorScheme.error)
+            }
+            
+            Spacer(Modifier.height(4.dp))
+            
+            Box(
+                modifier = Modifier
+                    .clip(MaterialTheme.shapes.small)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.05f))
+                    .padding(8.dp)
+            ) {
+                Text(
+                    text = "Yesterday's financial activities summarized.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }
 }
 
 @Composable
-private fun LiabilityCard(
-    modifier: Modifier = Modifier,
-    title: String,
-    amount: Double,
-    color: Color
-) {
+fun YesterdayTabUnpaidLiabilitiesView() {
     Box(
-        modifier = modifier
-            .clip(MaterialTheme.shapes.medium)
-            .background(color.copy(alpha = 0.1f))
-            .padding(12.dp)
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
     ) {
-        Column {
-            Text(text = title, style = MaterialTheme.typography.labelSmall, color = color)
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                imageVector = Icons.Default.Balance,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = amount.formatToAmount(),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = color
+                text = "Liabilities for yesterday are included in the overall overview status.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 32.dp)
             )
         }
     }
 }
 
 @Composable
-fun VerticalDivider(
-    modifier: Modifier = Modifier,
-    thickness: Dp = 1.dp,
-    color: Color = MaterialTheme.colorScheme.outlineVariant
-) {
-    Box(
-        modifier
-            .fillMaxHeight()
-            .width(thickness)
-            .background(color = color)
-    )
-}
-
-@Composable
-fun TodayTabStatisticShimmer() {
+fun YesterdayTabStatisticShimmer() {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -503,7 +365,7 @@ fun TodayTabStatisticShimmer() {
         )
 
         // Main Card Shimmer
-        TodayStatisticLayout {
+        YesterdayStatisticLayout {
             Box(
                 modifier = Modifier
                     .fillMaxSize()

@@ -3,7 +3,6 @@ package com.den.steward.ui.dataAddition
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -62,32 +61,18 @@ fun AddFulfillmentTransactionFloatingActionButton(
     val onShow = remember { mutableStateOf(false) }
     val dataAdditionState by dataAdditionViewModel.dataAdditionState.collectAsStateWithLifecycle()
 
-    Row(
-        horizontalArrangement = Arrangement.End,
-        verticalAlignment = Alignment.CenterVertically
+    FloatingActionButton(
+        onClick = { onShow.value = true },
+        modifier = modifier,
+        shape = shape,
+        elevation = elevation,
+        containerColor = ExtendedTheme.colors.secondary,
+        contentColor = MaterialTheme.colorScheme.onSecondary
     ) {
-        Text(
-            "Fulfillment",
-            style = MaterialTheme.typography.labelLarge,
-            color = ExtendedTheme.colors.secondary,
-            fontWeight = FontWeight.Bold
+        Icon(
+            imageVector = Icons.Rounded.AssignmentTurnedIn,
+            contentDescription = "Add Fulfillment"
         )
-
-        Spacer(modifier = Modifier.width(5.dp))
-
-        FloatingActionButton(
-            onClick = { onShow.value = true },
-            modifier = modifier,
-            shape = shape,
-            elevation = elevation,
-            containerColor = ExtendedTheme.colors.secondary,
-            contentColor = MaterialTheme.colorScheme.onSecondary
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.AssignmentTurnedIn,
-                contentDescription = "Add Fulfillment"
-            )
-        }
     }
 
     BottomDrawerSheet(

@@ -1,6 +1,8 @@
 // Glory be to LORD our GOD
 package com.den.steward.ui.screens.homeScreen.tabs.todayTab
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,27 +10,31 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.helper.formattedTime
 import com.den.steward.helper.toLocalDateTime
@@ -42,136 +48,165 @@ fun TodayTabLazyListItem(
     transaction: Transaction,
     shape: Shape = MaterialTheme.shapes.small,
     color: Color = MaterialTheme.colorScheme.surface,
-    onUpdate: () -> Unit = {},
-    onDelete: () -> Unit = {}
+    onUpdate: suspend () -> Unit = {},
+    onDelete: suspend () -> Unit = {}
 ) {
     val localDateTime = remember(transaction) { transaction.createdAt.toLocalDateTime() }
     val time = localDateTime.formattedTime
     val onShow = remember { mutableStateOf(false) }
     val amount = remember(transaction) { transaction.getFormattedAmountOrValue }
     val paymentMethod = remember(transaction) { transaction.getPaymentMethodOrNull }
+    val percentage = remember(transaction) { transaction.getPercentage }
+    val typeColor = colorResource(id = transaction.type.color)
+    
+    val animatedProgress by animateFloatAsState(
+        targetValue = (percentage?.toFloat() ?: 0f) / 100f,
+        label = "ProgressAnimation"
+    )
 
     SwipeDismiss(
         shape = shape,
         onUpdate = onUpdate,
         onDelete = onDelete,
-        modifier = modifier.padding(vertical = 2.dp)
+        modifier = modifier.padding(vertical = 4.dp)
     ) {
         Surface(
-            onClick = {
-                onShow.value = true
-            },
+            onClick = { onShow.value = true },
             shape = shape,
-            color = color
+            color = color,
+            tonalElevation = 1.dp
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 18.dp, horizontal = 3.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.Start,
-                        verticalArrangement = Arrangement.Center
+                    // Leading Icon
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(typeColor.copy(alpha = 0.1f)),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            time,
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = MaterialTheme.typography.bodySmall.fontWeight,
-                            color = Color.Gray
+                        Icon(
+                            painter = painterResource(id = transaction.type.icon),
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = typeColor
                         )
                     }
 
+                    // Center Content
                     Column(
                         modifier = Modifier.weight(1f),
-                        horizontalAlignment = Alignment.Start,
-                        verticalArrangement = Arrangement.Center
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                         Text(
-                            transaction.getLabel,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = MaterialTheme.typography.bodyMedium.fontWeight
-                        )
-
-                        if (transaction.getAffectAmount != null) {
-                            Text(
-                                buildAnnotatedString {
-                                    append("Affected: ")
-                                    append(transaction.getAffectAmount)
-                                },
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = MaterialTheme.typography.bodySmall.fontWeight,
-                                color = Color.Gray
-                            )
-                        }
-
-                        if (transaction is Transaction.Goal) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(10.dp)
-                                        .background(colorResource(id = transaction.status.color))
-                                )
-                                Text(
-                                    buildAnnotatedString {
-                                        append("Status: ")
-                                        append(transaction.status.label)
-                                    },
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = MaterialTheme.typography.bodySmall.fontWeight,
-                                    color = Color.Gray
-                                )
-                            }
-                        }
-
-                    }
-                    Column(
-                        horizontalAlignment = Alignment.End,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            amount,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = MaterialTheme.typography.bodyMedium.fontWeight
+                            text = transaction.getLabel,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1
                         )
 
                         Row(
-                            horizontalArrangement = Arrangement.End,
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(top = 4.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            AsyncImage(
-                                model = paymentMethod?.icon,
-                                contentDescription = paymentMethod?.label,
-                                modifier = Modifier
-                                    .size(18.dp)
-                                    .padding(end = 4.dp)
+                            Text(
+                                text = time,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            AsyncImage(
-                                model = transaction.type.icon,
-                                contentDescription = stringResource(id = transaction.type.label),
-                                modifier = Modifier
-                                    .size(18.dp)
-                                    .padding(end = 4.dp),
-                                colorFilter = ColorFilter.tint(colorResource(id = transaction.type.color))
+
+                            if (transaction.getAffectAmount != null) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = if (transaction.getAffectAmount == "Yes") "Affected" else "Neutral",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = if (transaction.getAffectAmount == "Yes") 
+                                            MaterialTheme.colorScheme.primary 
+                                        else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Trailing Content (Amount)
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = amount,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = typeColor
+                        )
+
+                        if (paymentMethod != null) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Image(
+                                    painter = painterResource(id = paymentMethod.icon),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp),
+                                )
+                                Text(
+                                    text = paymentMethod.label,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Progress Bar for Goals/Loans/Debts
+                if (percentage != null) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        LinearProgressIndicator(
+                            progress = { animatedProgress },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(6.dp)
+                                .clip(CircleShape),
+                            color = typeColor,
+                            trackColor = typeColor.copy(alpha = 0.1f),
+                            strokeCap = StrokeCap.Round
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Progress",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "${percentage.toInt()}%",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = typeColor
                             )
                         }
                     }
                 }
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    color = Color.LightGray
-                )
             }
         }
     }
@@ -184,90 +219,74 @@ fun TodayTabLazyListItem(
     }
 }
 
-
 @Composable
 fun TodayTabLazyListItemShimmer() {
     Surface(
-        modifier = Modifier.padding(vertical = 2.dp),
+        modifier = Modifier.padding(vertical = 4.dp),
+        shape = MaterialTheme.shapes.small,
+        tonalElevation = 1.dp
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 18.dp, horizontal = 3.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Leading Icon Shimmer
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .shimmerEffect()
+                )
+
+                // Center Content Shimmer
                 Column(
                     modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.Center
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-
-                    // Label shimmer
                     Box(
                         modifier = Modifier
-                            .size(60.dp, 16.dp)
-                            .clip(MaterialTheme.shapes.small)
+                            .width(120.dp)
+                            .height(18.dp)
+                            .clip(MaterialTheme.shapes.extraSmall)
                             .shimmerEffect()
                     )
-
-                    Spacer(modifier = Modifier.size(8.dp))
-
-                    // Description shimmer
                     Box(
                         modifier = Modifier
-                            .size(100.dp, 16.dp)
-                            .clip(MaterialTheme.shapes.small)
+                            .width(80.dp)
+                            .height(14.dp)
+                            .clip(MaterialTheme.shapes.extraSmall)
                             .shimmerEffect()
                     )
                 }
 
+                // Trailing Content Shimmer
                 Column(
                     horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.Center
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    // Amount shimmer
                     Box(
                         modifier = Modifier
-                            .size(100.dp, 16.dp)
-                            .clip(MaterialTheme.shapes.small)
+                            .width(70.dp)
+                            .height(18.dp)
+                            .clip(MaterialTheme.shapes.extraSmall)
                             .shimmerEffect()
                     )
-
-                    Row(
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(top = 4.dp)
-                    ) {
-                        // Payment Method shimmer
-                        Box(
-                            modifier = Modifier
-                                .size(16.dp, 16.dp)
-                                .clip(CircleShape)
-                                .shimmerEffect()
-                        )
-
-                        Spacer(modifier = Modifier.size(4.dp))
-
-                        // Transaction Type shimmer
-                        Box(
-                            modifier = Modifier
-                                .size(16.dp, 16.dp)
-                                .clip(CircleShape)
-                                .shimmerEffect()
-                        )
-                    }
+                    Box(
+                        modifier = Modifier
+                            .width(40.dp)
+                            .height(14.dp)
+                            .clip(MaterialTheme.shapes.extraSmall)
+                            .shimmerEffect()
+                    )
                 }
             }
-            HorizontalDivider(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                color = Color.LightGray
-            )
         }
     }
 }

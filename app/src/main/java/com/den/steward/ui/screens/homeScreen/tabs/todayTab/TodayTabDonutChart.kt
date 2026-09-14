@@ -24,6 +24,7 @@ import com.den.steward.ui.componentExtenison.shimmerEffect
 import com.den.steward.ui.components.charts.DonutChart
 import com.den.steward.ui.components.charts.DonutChartData
 import com.den.steward.ui.components.charts.collections.DonutChartDataCollection
+import com.den.steward.ui.theme.ExtendedTheme
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -130,7 +131,7 @@ fun TodayDonutChartEmptyView(
         modifier = Modifier
             .size(chartSize)
             .clip(CircleShape)
-            .background(Color.LightGray),
+            .background(ExtendedTheme.colors.lightGray),
         contentAlignment = Alignment.Center
     ) {
         Box(
