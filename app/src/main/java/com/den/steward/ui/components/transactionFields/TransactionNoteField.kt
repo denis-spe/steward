@@ -234,7 +234,12 @@ private fun TransactionNoteFieldItem(
                 displayState.take(MAX_LABEL_LENGTH) + "..." else
                 (displayState.ifEmpty { "..." })
 
-            Text(textValue, fontSize = FONT_SIZE)
+            Text(
+                text = textValue,
+                fontSize = FONT_SIZE,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
         }
     ) {
         onDialogShow.value = true

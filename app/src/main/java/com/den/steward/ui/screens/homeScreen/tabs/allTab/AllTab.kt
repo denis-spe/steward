@@ -1,56 +1,67 @@
 // Grace and truth came through JESUS CHRIST
 package com.den.steward.ui.screens.homeScreen.tabs.allTab
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AcUnit
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Restore
+import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.height
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.R
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.states.DataState
-import com.den.steward.helper.formatToAmount
-import com.den.steward.ui.componentExtenison.shimmerEffect
-import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabListPanelButton
-
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.backend.states.PeriodType
 import com.den.steward.backend.useCase.Filter
 import com.den.steward.backend.useCase.OrderBy
@@ -58,10 +69,11 @@ import com.den.steward.backend.useCase.PeriodDataHandleUseCase
 import com.den.steward.backend.useCase.SortBy
 import com.den.steward.backend.viewModels.AllViewModel
 import com.den.steward.backend.viewModels.HomeViewModel
+import com.den.steward.helper.formatToAmount
 import com.den.steward.helper.formattedDate
-import com.den.steward.ui.components.FilterBottomSheet
-import com.den.steward.ui.components.OrderByBottomSheet
-import com.den.steward.ui.components.SortByBottomSheet
+import com.den.steward.ui.componentExtenison.shimmerEffect
+import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabListPanelButton
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -122,6 +134,7 @@ fun AllTab(
         SortBy.FULFILLED -> R.drawable.ic_refund
     }
 
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -135,7 +148,7 @@ fun AllTab(
                 .fillMaxWidth()
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             WeekView(
                 pagerState = pagerState,
@@ -144,14 +157,12 @@ fun AllTab(
             ) {
                 allViewModel.updateSelectedDate(it)
             }
-        }
 
-        // --- Controls Section ---
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-        ) {
+            PeriodTypeSelector(
+                currentPeriodType = allUiState.periodType,
+                onPeriodTypeChange = allViewModel::updatePeriodType
+            )
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -164,112 +175,82 @@ fun AllTab(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                IconButton(
-                    onClick = {
+                Spacer(modifier = Modifier.width(4.dp))
+
+                AllTabListPanelButtons(
+                    filterSelected = allUiState.filter != Filter.ALL,
+                    orderBySelected = allUiState.orderBy != OrderBy.ASCENDING,
+                    sortBySelected = allUiState.sortBy != SortBy.TIME,
+                    onFilterClick = { allViewModel.updateIsFilterExpanded(true) },
+                    onSortByClick = { allViewModel.updateIsSortByExpanded(true) },
+                    onOrderByClick = { allViewModel.updateIsOrderByExpanded(true) },
+                    onResetClick = {
                         coroutineScope.launch {
                             pagerState.animateScrollToPage(PeriodDataHandleUseCase.INITIAL_PAGE)
                         }
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Restore,
-                        contentDescription = "Restore",
-                        modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
+                    },
+                    filterIcon = filterIcon,
+                    orderByIcon = orderByIcon,
+                    sortByIcon = sortByIcon
+                )
             }
-
-            AllTabListPanelButtons(
-                filterSelected = allUiState.filter != Filter.ALL,
-                orderBySelected = allUiState.orderBy != OrderBy.ASCENDING,
-                sortBySelected = allUiState.sortBy != SortBy.TIME,
-                onFilterClick = { allViewModel.updateIsFilterExpanded(true) },
-                onSortByClick = { allViewModel.updateIsSortByExpanded(true) },
-                onOrderByClick = { allViewModel.updateIsOrderByExpanded(true) },
-                filterIcon = filterIcon,
-                orderByIcon = orderByIcon,
-                sortByIcon = sortByIcon
-            )
         }
 
         HorizontalDivider(
-            modifier = Modifier.padding(top = 8.dp),
             thickness = 0.5.dp,
             color = MaterialTheme.colorScheme.outlineVariant
         )
 
         AllTabLazyList(
             transactions = transactionsState,
-            allViewModel = allViewModel,
             selectedDate = allUiState.selectedDate,
-            periodType = allUiState.periodType
+            periodType = allUiState.periodType,
+            allUiState = allUiState,
+            calculateFlow = allViewModel::calculateFlow,
+            updateFilter = allViewModel::updateFilter,
+            updateSort = allViewModel::updateSort,
+            updateSortType = allViewModel::updateSortType,
+            updateIsFilterExpanded = allViewModel::updateIsFilterExpanded,
+            updateIsOrderByExpanded = allViewModel::updateIsOrderByExpanded,
+            updateIsSortByExpanded = allViewModel::updateIsSortByExpanded
         )
     }
-
-    // --- Bottom Sheets ---
-    FilterBottomSheet(
-        isExpanded = allUiState.isFilterExpanded,
-        selected = allUiState.filter,
-        onFilterSelected = {
-            allViewModel.updateFilter(it)
-            allViewModel.updateIsFilterExpanded(false)
-        },
-        onDismiss = { allViewModel.updateIsFilterExpanded(false) }
-    )
-
-    OrderByBottomSheet(
-        isExpanded = allUiState.isOrderByExpanded,
-        selected = allUiState.orderBy,
-        onSortSelected = {
-            allViewModel.updateSort(it)
-            allViewModel.updateIsOrderByExpanded(false)
-        },
-        onDismiss = { allViewModel.updateIsOrderByExpanded(false) }
-    )
-
-    SortByBottomSheet(
-        isExpanded = allUiState.isSortByExpanded,
-        selected = allUiState.sortBy,
-        onSortSelected = {
-            allViewModel.updateSortType(it)
-            allViewModel.updateIsSortByExpanded(false)
-        },
-        onDismiss = { allViewModel.updateIsSortByExpanded(false) }
-    )
 }
 
 @Composable
 fun AllTabSummaryCard(
     transactionsState: DataState<Map<String, List<Transaction>>>,
-    allViewModel: AllViewModel,
     selectedDate: LocalDate,
-    periodType: PeriodType
+    periodType: PeriodType,
+    calculateFlow: (List<Transaction>) -> Double
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(110.dp),
+            .padding(bottom = 2.dp),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp),
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = when(periodType) {
+                text = when (periodType) {
                     PeriodType.DAY -> selectedDate.formattedDate
                     PeriodType.WEEK -> "Weekly Summary"
                     PeriodType.MONTH -> "Monthly Summary"
                     PeriodType.YEAR -> "Yearly Summary"
                 },
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                ),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
@@ -277,17 +258,57 @@ fun AllTabSummaryCard(
 
             when (transactionsState) {
                 is DataState.Success -> {
-                    val allList = remember(transactionsState.data) { 
-                        transactionsState.data.values.flatten() 
+                    val allList = remember(transactionsState.data) {
+                        transactionsState.data.values.flatten()
                     }
-                    val flow = remember(allList) { allViewModel.calculateFlow(allList) }
-                    Text(
-                        text = flow.formatToAmount(),
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = if (flow >= 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                    val flow = remember(allList) { calculateFlow(allList) }
+                    val transactionSize = remember(allList) { allList.size }
+                    val totalReceived = remember(allList) {
+                        var received = 0.0
+                        allList.forEach { transaction ->
+                            when (transaction) {
+                                is Transaction.Earnings -> received += transaction.amount
+                                is Transaction.Savings -> received += transaction.amount
+                                is Transaction.Debt -> received += transaction.amount
+                                is Transaction.Repayment -> received += transaction.amount
+                                else -> {}
+                            }
+                        }
+                        received
+                    }
+                    val totalSpent = remember(allList) {
+                        var spent = 0.0
+                        allList.forEach { transaction ->
+                            when (transaction) {
+                                is Transaction.Expense -> spent += transaction.amount
+                                is Transaction.Lent -> spent += transaction.amount
+                                is Transaction.Settlement -> spent += transaction.amount
+                                else -> {}
+                            }
+                        }
+                        spent
+                    }
+                    val totalSavings = remember(allList) {
+                        var savings = 0.0
+                        allList.forEach { transaction ->
+                            when (transaction) {
+                                is Transaction.Savings -> savings += transaction.amount
+                                else -> {}
+                            }
+                        }
+                        savings
+                    }
+
+                    AllTabSummaryCardContent(
+                        flow = flow,
+                        transactionSize = transactionSize,
+                        totalReceived = totalReceived,
+                        totalSpent = totalSpent,
+                        totalSavings = totalSavings
                     )
+
                 }
+
                 is DataState.Loading -> {
                     Box(
                         modifier = Modifier
@@ -297,10 +318,171 @@ fun AllTabSummaryCard(
                             .shimmerEffect()
                     )
                 }
+
                 is DataState.Error -> {
                     Text(text = "Error loading summary", color = MaterialTheme.colorScheme.error)
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun AllTabSummaryCardContent(
+    flow: Double,
+    transactionSize: Int,
+    totalReceived: Double,
+    totalSpent: Double,
+    totalSavings: Double
+) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = 16.dp,
+                    vertical = 8.dp
+                ),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Text(
+                text = "Flow",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = flow.formatToAmount(),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.ExtraBold,
+                color = if (flow >= 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+            )
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AllTabSummaryTransactionCard(
+                icon = Icons.Default.ArrowUpward,
+                text = "Total Received",
+                amount = totalReceived,
+                color = colorResource(R.color.earnings),
+            )
+            Spacer(
+                modifier = Modifier.width(3.dp)
+            )
+
+            AllTabSummaryTransactionCard(
+                icon = Icons.Default.ArrowDownward,
+                text = "Total Spent",
+                amount = totalSpent,
+                color = colorResource(R.color.expense),
+            )
+        }
+
+        Spacer(
+            modifier = Modifier.height(4.dp)
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AllTabSummaryTransactionCard(
+                icon = Icons.Default.Savings,
+                text = "Savings",
+                amount = totalSavings,
+                color = colorResource(R.color.debt),
+            )
+
+            Spacer(
+                modifier = Modifier.width(3.dp)
+            )
+
+            AllTabSummaryTransactionCard(
+                icon = Icons.Default.AcUnit,
+                text = "Transaction Count",
+                amount = transactionSize.toDouble(),
+                color = colorResource(R.color.purple_200),
+            )
+        }
+    }
+}
+
+@Composable
+fun AllTabSummaryTransactionCard(
+    icon: ImageVector,
+    text: String,
+    amount: Double,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = Modifier
+            .width(160.dp)
+            .height(100.dp),
+        shape = MaterialTheme.shapes.large,
+        shadowElevation = 1.dp,
+        contentColor = MaterialTheme.colorScheme.onSurface
+    ) {
+        Column(
+            modifier = modifier.padding(16.dp),
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(
+                            color.copy(
+                                alpha = 0.2f
+                            )
+                        )
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .padding(3.dp)
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = color
+                        )
+                    }
+                }
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = amount.formatToAmount(),
+                style = MaterialTheme.typography.labelMedium
+                    .copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp
+                    ),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
         }
     }
 }
@@ -333,6 +515,7 @@ fun PeriodTypeSelector(
     }
 }
 
+
 @Composable
 fun AllTabListPanelButtons(
     filterSelected: Boolean,
@@ -343,51 +526,112 @@ fun AllTabListPanelButtons(
     onOrderByClick: () -> Unit,
     filterIcon: Int,
     orderByIcon: Int,
-    sortByIcon: Int
+    sortByIcon: Int,
+    onResetClick: () -> Unit
 ) {
-    Row(
+    LazyRow(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        TodayTabListPanelButton(
-            text = "Order",
-            selected = orderBySelected,
-            icon = {
-                Icon(
-                    painter = painterResource(orderByIcon),
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
+
+        stickyHeader {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.background,
+                shape = CircleShape
+            ) {
+                AllTabListPanelButton(
+                    text = "Reset",
+                    icon = R.drawable.filled_refund,
+                    onClick = onResetClick
                 )
-            },
-            onClick = onOrderByClick
-        )
-        TodayTabListPanelButton(
-            text = "Sort",
-            selected = sortBySelected,
-            icon = {
-                Icon(
-                    painter = painterResource(sortByIcon),
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-            },
-            onClick = onSortByClick
-        )
-        TodayTabListPanelButton(
-            text = "Filter",
-            selected = filterSelected,
-            icon = {
-                Icon(
-                    painter = painterResource(filterIcon),
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-            },
-            onClick = onFilterClick
-        )
+            }
+        }
+
+        item(key = "Order By") {
+            AllTabListPanelButton(
+                text = "Order",
+                isSelect = orderBySelected,
+                icon = orderByIcon,
+                onClick = onOrderByClick
+            )
+        }
+        item(key = "Sort By") {
+            AllTabListPanelButton(
+                text = "Sort",
+                isSelect = sortBySelected,
+                icon = sortByIcon,
+                onClick = onSortByClick
+            )
+        }
+
+        item(key = "Filter") {
+            AllTabListPanelButton(
+                text = "Filter",
+                isSelect = filterSelected,
+                icon = filterIcon,
+                onClick = onFilterClick
+            )
+        }
+    }
+}
+
+@Composable
+fun AllTabListPanelButton(
+    text: String,
+    icon: Int,
+    isSelect: Boolean = false,
+    onClick: () -> Unit
+) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+
+    val selectedColor = remember(
+        isSelect,
+    ) { if (isSelect) primaryColor.copy(alpha = 0.2f) else Color.Transparent }
+
+    val borderColor = remember(
+        isSelect,
+    ) { if (isSelect) primaryColor else null }
+
+    val border = if (borderColor != null) {
+            BorderStroke(
+                width = 1.dp,
+                color = borderColor
+            )
+        } else {
+            null
+        }
+
+    OutlinedButton(
+        onClick = onClick,
+        colors = ButtonDefaults
+            .outlinedButtonColors()
+            .copy(
+                containerColor = selectedColor,
+            ),
+        border = border,
+        shape = MaterialTheme.shapes.large
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                painter = painterResource(id = icon),
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }
 

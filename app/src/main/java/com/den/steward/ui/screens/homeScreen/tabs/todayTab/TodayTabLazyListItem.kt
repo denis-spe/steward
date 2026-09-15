@@ -57,23 +57,24 @@ fun TodayTabLazyListItem(
 
     // Grouping UI properties that depend on 'transaction' into a single 'remember' block
     // to reduce overhead during scroll-driven recompositions.
+    // Note: 'status' and 'percentage' are now derived directly to ensure they reflect the latest data.
     val uiData = remember(transaction) {
         object {
             val amount = transaction.getFormattedAmountOrValue
             val paymentMethod = transaction.getPaymentMethodOrNull
-            val percentage = transaction.getPercentage
             val affectAmount = transaction.getAffectAmount
             val parent = transaction.getParentTransaction
-            val status = transaction.getStatus
-            val statusColorRes = transaction.getStatusColor
             val typeColorRes = transaction.type.color
         }
     }
 
     val typeColor = colorResource(id = uiData.typeColorRes)
+    val percentage = transaction.getPercentage
+    val status = transaction.getStatus
+    val statusColorRes = transaction.getStatusColor
 
     // Optimization: Ensure progress animation target is stable
-    val progressTarget = remember(uiData.percentage) { (uiData.percentage?.toFloat() ?: 0f) / 100f }
+    val progressTarget = remember(percentage) { (percentage?.toFloat() ?: 0f) / 100f }
     val animatedProgress by animateFloatAsState(
         targetValue = progressTarget,
         label = "ProgressAnimation"
@@ -175,13 +176,13 @@ fun TodayTabLazyListItem(
                                 }
                             }
 
-                            if (uiData.status != null) {
-                                val statusColor = colorResource(uiData.statusColorRes)
+                            if (status != null) {
+                                val sColor = colorResource(statusColorRes)
 
                                 Box(
                                     modifier = Modifier
                                         .clip(CircleShape)
-                                        .background(statusColor.copy(alpha = 0.1f))
+                                        .background(sColor.copy(alpha = 0.1f))
                                         .padding(horizontal = 6.dp, vertical = 2.dp)
                                 ) {
                                     Row(
@@ -192,12 +193,12 @@ fun TodayTabLazyListItem(
                                             modifier = Modifier
                                                 .size(6.dp)
                                                 .clip(CircleShape)
-                                                .background(statusColor)
+                                                .background(sColor)
                                         )
                                         Text(
-                                            text = uiData.status,
+                                            text = status,
                                             style = MaterialTheme.typography.labelSmall,
-                                            color = statusColor
+                                            color = sColor
                                         )
                                     }
                                 }
@@ -238,7 +239,7 @@ fun TodayTabLazyListItem(
                 }
 
                 // Progress Bar for Goals/Loans/Debts
-                if (uiData.percentage != null) {
+                if (percentage != null) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         LinearProgressIndicator(
                             progress = { animatedProgress },
@@ -260,7 +261,7 @@ fun TodayTabLazyListItem(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = "${uiData.percentage.toInt()}%",
+                                text = "${percentage.toInt()}%",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = typeColor

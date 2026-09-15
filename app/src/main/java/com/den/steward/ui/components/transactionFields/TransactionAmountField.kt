@@ -7,7 +7,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,6 +22,7 @@ import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -81,7 +81,7 @@ fun TransactionAmountField(
     clearOnCancel: Boolean = false,
     transactionName: String? = null,
     transactions: List<Transaction>? = null,
-    onSetItem: (transaction: Transaction) -> Unit = {}
+    onSetItem: (transaction: Transaction) -> Unit = {},
 ) {
     val isError = isAmountCorrect is TransactionFieldState.Error
     val color = if (isError)
@@ -157,7 +157,7 @@ fun TransactionAmountField(
                             transactionName = transactionName,
                             transaction = transactions,
                             selectedTransaction = selectedTransaction,
-                            onSetItem = onSetItem
+                            onSetItem = onSetItem,
                         )
                     }
 
@@ -259,9 +259,9 @@ fun TransactionAmountField(
         showCustomKeyboard = showCustomKeyboard,
         onDialogShow = onDialogShow,
         displayState = displayState,
-        color = color,
+        symbol = symbol,
         isError = isError,
-        symbol = symbol
+        isAmountCorrect = isAmountCorrect
     )
 
 }
@@ -285,147 +285,221 @@ fun TransactionAmountFieldFulfilment(
         else -> "attainment"
     }
 
-    Box(
-        modifier = Modifier.fillMaxWidth(),
-        contentAlignment = Alignment.Center
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        OutlinedCard(
+            onClick = { expand.value = true },
+            modifier = Modifier.fillMaxWidth(0.9f),
+            shape = MaterialTheme.shapes.medium,
+            colors = CardDefaults.outlinedCardColors(
+                containerColor = if (selectedTransaction.value != null)
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f)
+                else Color.Transparent
+            ),
+            border = BorderStroke(
+                width = 1.dp,
+                color = if (selectedTransaction.value != null)
+                    MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.outline
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    painter = painterResource(
+                        id = selectedTransaction.value?.type?.icon ?: R.drawable.ic_attain
+                    ),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = if (selectedTransaction.value != null)
+                        MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = selectedTransaction.value?.let { "Fulfill: ${it.getLabel}" }
+                        ?: "Select a $transactionName to add $fulfilmentName",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (selectedTransaction.value != null)
+                        MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
 
+        if (expand.value) {
+            FulfillmentList(
+                expand = expand,
+                transactionName = transactionName,
+                transaction = transaction,
+                state = state,
+                selectedTransaction = selectedTransaction,
+                onSetItem = onSetItem
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FulfillmentList(
+    expand: MutableState<Boolean>,
+    transactionName: String,
+    transaction: List<Transaction>,
+    state: TextFieldState,
+    selectedTransaction: MutableState<Transaction?>,
+    onSetItem: (transaction: Transaction) -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = {
+            expand.value = false
+        },
+        containerColor = MaterialTheme.colorScheme.surface,
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .padding(vertical = 12.dp)
+                    .size(width = 32.dp, height = 4.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                        shape = CircleShape
+                    )
+            )
+        }
+    ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .align(Alignment.Center),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .fillMaxWidth()
+                .padding(bottom = 24.dp, start = 16.dp, end = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            TextButton(
-                onClick = {
-                    expand.value = true
-                },
-                contentPadding = PaddingValues(10.dp),
-                content = {
-                    Text(
-                        text = selectedTransaction.value?.let { "Fulfill: ${it.getLabel}" }
-                            ?: "Select a $transactionName to add $fulfilmentName",
-                        fontWeight = FontWeight.Bold,
-                        style = if (selectedTransaction.value == null)
-                            MaterialTheme.typography.labelLarge
-                        else MaterialTheme.typography.titleMedium,
-                        textAlign = TextAlign.Center
-                    )
-                }
+            Text(
+                text = "Select ${transactionName.lowercase()} to fulfill",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center
             )
 
-            if (expand.value) {
-                ModalBottomSheet(
-                    onDismissRequest = {
+            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+
+            if (selectedTransaction.value != null) {
+                TextButton(
+                    onClick = {
+                        state.setTextAndPlaceCursorAtEnd("")
+                        selectedTransaction.value = null
                         expand.value = false
                     },
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    dragHandle = {
-                        Box(
-                            modifier = Modifier
-                                .padding(vertical = 12.dp)
-                                .size(width = 32.dp, height = 4.dp)
-                                .background(
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                                    shape = CircleShape
-                                )
-                        )
-                    }
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 24.dp, start = 16.dp, end = 16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "Select ${transactionName.lowercase()} to fulfill",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            textAlign = TextAlign.Center
-                        )
+                    Icon(Icons.Rounded.Close, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Clear Selection", fontWeight = FontWeight.Bold)
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (transaction.isNotEmpty()) {
+                    items(transaction.size) { index ->
+                        val item = transaction[index]
+                        val isSelected = selectedTransaction.value?.id == item.id
 
-                        if (selectedTransaction.value != null) {
-                            TextButton(
-                                onClick = {
-                                    state.setTextAndPlaceCursorAtEnd("")
-                                    selectedTransaction.value = null
-                                    expand.value = false
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("Clear Selection", color = MaterialTheme.colorScheme.error)
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
-
-                        LazyColumn(
+                        OutlinedCard(
+                            onClick = {
+                                state.setTextAndPlaceCursorAtEnd("")
+                                selectedTransaction.value = item
+                                onSetItem(item)
+                                expand.value = false
+                            },
                             modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            border = if (isSelected)
+                                BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                            else
+                                CardDefaults.outlinedCardBorder()
                         ) {
-                            items(transaction.size) { index ->
-                                val item = transaction[index]
-                                val isSelected = selectedTransaction.value?.id == item.id
-                                
-                                OutlinedCard(
-                                    onClick = {
-                                        state.setTextAndPlaceCursorAtEnd("")
-                                        selectedTransaction.value = item
-                                        onSetItem(item)
-                                        expand.value = false
-                                    },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    border = if (isSelected)
-                                        BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
-                                    else 
-                                        CardDefaults.outlinedCardBorder()
-                                ) {
-                                    ListItem(
-                                        headlineContent = { 
-                                            Text(
-                                                item.getLabel,
-                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                            ) 
-                                        },
-                                        supportingContent = {
-                                            val remaining = when (item) {
-                                                is Transaction.Lent -> item.remainingAmount
-                                                is Transaction.Debt -> item.remainingAmount
-                                                is Transaction.Goal -> item.remainingValue
-                                                else -> 0.0
-                                            }
-                                            Text("Remaining: ${remaining.formatToAmount()}")
-                                        },
-                                        leadingContent = {
-                                            item.getIcon?.let {
-                                                Icon(
-                                                    painter = painterResource(id = it),
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(24.dp),
-                                                    tint = Color.Unspecified
-                                                )
-                                            }
-                                        },
-                                        trailingContent = {
-                                            if (isSelected) {
-                                                Icon(
-                                                    imageVector = Icons.Rounded.Close, // Reusing close as a marker or check
-                                                    contentDescription = "Selected",
-                                                    tint = MaterialTheme.colorScheme.primary
-                                                )
-                                            }
-                                        },
-                                        colors = ListItemDefaults.colors(
-                                            containerColor = if (isSelected) 
-                                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                                            else 
-                                                Color.Transparent
-                                        )
+                            ListItem(
+                                headlineContent = {
+                                    Text(
+                                        item.getLabel,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                     )
-                                }
+                                },
+                                supportingContent = {
+                                    val remaining = when (item) {
+                                        is Transaction.Lent -> item.remainingAmount
+                                        is Transaction.Debt -> item.remainingAmount
+                                        is Transaction.Goal -> item.remainingValue
+                                        else -> 0.0
+                                    }
+                                    Text("Remaining: ${remaining.formatToAmount()}")
+                                },
+                                leadingContent = {
+                                    item.getIcon?.let {
+                                        Icon(
+                                            painter = painterResource(id = it),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(24.dp),
+                                            tint = Color.Unspecified
+                                        )
+                                    }
+                                },
+                                trailingContent = {
+                                    if (isSelected) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Close, // Reusing close as a marker or check
+                                            contentDescription = "Selected",
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                },
+                                colors = ListItemDefaults.colors(
+                                    containerColor = if (isSelected)
+                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                                    else
+                                        Color.Transparent
+                                )
+                            )
+                        }
+                    }
+                } else {
+                    item {
+                        Box(
+                            modifier = Modifier.fillMaxWidth()
+                                .padding(vertical = 24.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.ic_empty_transactions),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(100.dp)
+                                )
+                                Text(
+                                    "No ${transactionName.lowercase()} found",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
                         }
                     }
@@ -433,6 +507,7 @@ fun TransactionAmountFieldFulfilment(
             }
         }
     }
+
 }
 
 
@@ -443,13 +518,24 @@ private fun TransactionAmountFieldItem(
     onDialogShow: MutableState<Boolean>,
     displayState: String,
     symbol: String,
-    color: Color,
-    isError: Boolean
+    isError: Boolean,
+    isAmountCorrect: TransactionFieldState = TransactionFieldState.Initial
 ) {
 
     TransactionFieldCard(
         title = "Amount",
         modifier = modifier,
+        headlineContent = {
+            if (isAmountCorrect is TransactionFieldState.Error) {
+                Text(
+                    text = isAmountCorrect.message,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+        },
         leadingContent = {
             Image(
                 painter = painterResource(id = R.drawable.amount),
@@ -458,19 +544,25 @@ private fun TransactionAmountFieldItem(
             )
         },
         colors = ListItemDefaults.colors(
-            containerColor = color
+            headlineColor = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+            supportingColor = if (isError) MaterialTheme.colorScheme.error.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant
         ),
         trailingContent = {
             val amountText = try {
                 if (displayState.isEmpty()) "$symbol 0.0" else
                     displayState.toDouble().formatToAmount()
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 "$symbol 0.0"
             }
             Text(
-                if (isError) "Required" else amountText,
-                fontSize = FONT_SIZE,
-                color = if (isError) Color.Red else MaterialTheme.colorScheme.onBackground
+                text = if (isError) "Required" else amountText,
+                fontWeight = FontWeight.Bold,
+                color = if (isError)
+                    MaterialTheme.colorScheme.error
+                else MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontSize = FONT_SIZE
+                )
             )
         }
     ) {

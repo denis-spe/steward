@@ -25,8 +25,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.ListItemColors
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -61,14 +59,11 @@ import java.time.LocalDateTime
 @Composable
 fun TransactionRecurrenceField(
     colorResId: Int,
-    startedAt: LocalDateTime,
-    endAt: LocalDateTime,
     recurrence: RecurrencePattern,
     isStartNotEqualToEndDateTime: TransactionFieldState,
-    colors: ListItemColors = ListItemDefaults.colors(),
     onStartTimeChange: (LocalDateTime) -> Unit,
     onEndTimeChange: (LocalDateTime) -> Unit,
-    onRecurrenceChange: (RecurrencePattern) -> Unit,
+    onRecurrenceChange: ( RecurrencePattern) -> Unit,
     onIsStartNotEqualToEndDateTimeChange: (TransactionFieldState) -> Unit
 ) {
     val onDialogShow = remember { mutableStateOf(false) }
@@ -98,10 +93,6 @@ fun TransactionRecurrenceField(
     }
 
     TransactionRecurrenceFieldItem(
-        colors = if (isStartNotEqualToEndDateTime is TransactionFieldState.Error)
-            colors.copy(
-                containerColor = MaterialTheme.colorScheme.error
-            ) else colors,
         onDialogShow = onDialogShow,
         startedAt = selectedStartAt,
         endAt = selectedEndAt,
@@ -118,10 +109,10 @@ private fun TransactionRecurrenceFieldItem(
     startedAt: MutableState<LocalDateTime?>,
     endAt: MutableState<LocalDateTime?>,
     recurrence: RecurrencePattern,
-    colors: ListItemColors,
     isStartNotEqualToEndDateTime: TransactionFieldState,
     onIsStartNotEqualToEndDateTimeChange: (TransactionFieldState) -> Unit,
 ) {
+    val isError = isStartNotEqualToEndDateTime is TransactionFieldState.Error
 
     LaunchedEffect(
         endAt.value
@@ -139,17 +130,26 @@ private fun TransactionRecurrenceFieldItem(
             )
         },
         modifier = modifier,
-        colors = colors,
         headlineContent = {
             Column(
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.Center
             ) {
+                if (isStartNotEqualToEndDateTime is TransactionFieldState.Error) {
+                    Text(
+                        text = isStartNotEqualToEndDateTime.message,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = 2.dp),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
                 if (startedAt.value != null) {
                     Text(
                         text = "Starts: ${startedAt.value!!.formatedDateTime}",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (isError) MaterialTheme.colorScheme.error.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
@@ -157,13 +157,13 @@ private fun TransactionRecurrenceFieldItem(
                     Text(
                         text = "Ends: ${endAt.value!!.formatedDateTime}",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (isError) MaterialTheme.colorScheme.error.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
         },
         trailingContent = {
-            val text = if (isStartNotEqualToEndDateTime is TransactionFieldState.Error)
+            val text = if (isError)
                     "Required"
                 else when (recurrence) {
                 is RecurrencePattern.NONE -> "Not Repeatable"
@@ -175,10 +175,13 @@ private fun TransactionRecurrenceFieldItem(
             }
             Text(
                 text = text,
-                style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
-                color = if (isStartNotEqualToEndDateTime is TransactionFieldState.Error)
-                    Color.Red else MaterialTheme.colorScheme.onSurfaceVariant
+                color = if (isError)
+                    MaterialTheme.colorScheme.error
+                else MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontSize = FONT_SIZE
+                )
             )
         }
     ) {

@@ -4,6 +4,7 @@ package com.den.steward.backend.viewModels
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.den.steward.backend.entitles.GoalStatus
 import com.den.steward.backend.entitles.PaymentMethod
 import com.den.steward.backend.entitles.RecurrencePattern
 import com.den.steward.backend.entitles.Transaction
@@ -187,9 +188,19 @@ class DataAdditionViewModel @Inject constructor(
     fun reset() {
         _dataAdditionState.update {
             DataAdditionState(
-                showTransactionAdditionBottomSheet = false,
-                showTransactionTypeBottomSheet = false,
-                showMainBottomSheet = true
+                showMainBottomSheet = true,
+            )
+        }
+    }
+
+    fun updateShowFulfillmentTransactionTypeBottomSheet(expanded: Boolean) {
+        _dataAdditionState.update { it.copy(showFulfillmentTransactionTypeBottomSheet = expanded) }
+    }
+
+    fun updateIsFulfillmentValid(transactionFieldState: TransactionFieldState) {
+        _dataAdditionState.update {
+            it.copy(
+                isFulfillmentValid = transactionFieldState
             )
         }
     }
@@ -255,8 +266,19 @@ class DataAdditionViewModel @Inject constructor(
     }
 
     fun addFulfillmentTransaction() {
+        _dataAdditionState.update { it.copy(isFulfillmentValid = TransactionFieldState.Initial) }
+
         val currentState = _dataAdditionState.value
-        if (currentState.isSaving || currentState.selectedParentTransaction == null) return
+        if (currentState.isSaving || currentState.selectedParentTransaction == null) {
+            _dataAdditionState.update {
+                it.copy(
+                    isFulfillBtnClick = true,
+                    isSaving = false,
+                    isFulfillmentValid = TransactionFieldState.Error("Select transaction to fulfill")
+                )
+            }
+            return
+        }
 
         val amountValue = currentState.currentAmount.toDoubleOrNull()
         val isAmountInvalid = currentState.currentAmount.isEmpty() || amountValue == null || amountValue == 0.0
@@ -301,6 +323,10 @@ class DataAdditionViewModel @Inject constructor(
 
                 TransactionType.ATTAIN -> {
                     if (parent !is Transaction.Goal) throw IllegalArgumentException("Parent must be Goal")
+                    if (amountValue <= 0.0) throw IllegalArgumentException("Amount must be greater than 0")
+                    if (parent.status == GoalStatus.COMPLETED) throw IllegalArgumentException("Goal is already completed")
+                    if (parent.status == GoalStatus.FAILED) throw IllegalArgumentException("Goal is already failed")
+
                     Transaction.Attain(
                         value = amountValue,
                         createdAt = createdAt,
@@ -312,6 +338,12 @@ class DataAdditionViewModel @Inject constructor(
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error building fulfillment transaction", e)
+            _dataAdditionState.update {
+                it.copy(
+                    isSaving = false,
+                    isFulfillmentValid = TransactionFieldState.Error(e.message ?: "Invalid fulfillment")
+                )
+            }
             return
         }
 

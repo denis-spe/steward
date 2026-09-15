@@ -34,17 +34,19 @@ data class DataAdditionState(
 
     // Show transaction type bottom sheet
     val showTransactionTypeBottomSheet: Boolean = false,
+    val showFulfillmentTransactionTypeBottomSheet: Boolean = false,
 
     // Is saving transaction
     val isSaving: Boolean = false,
 
     // Core transaction types
-    val coreEntries: List<TransactionType> = listOf(TransactionType.EARNINGS,
-            TransactionType.EXPENSE,
-            TransactionType.LENT,
-            TransactionType.DEBT,
-            TransactionType.SAVINGS,
-            TransactionType.GOAL
+    val coreEntries: List<TransactionType> = listOf(
+        TransactionType.EARNINGS,
+        TransactionType.EXPENSE,
+        TransactionType.LENT,
+        TransactionType.DEBT,
+        TransactionType.SAVINGS,
+        TransactionType.GOAL
     ),
 
     // Adjustment transaction types
@@ -63,6 +65,8 @@ data class DataAdditionState(
     val amount: TextFieldState = TextFieldState(),
     val currentAmount: String = "",
     val isAmountCorrect: TransactionFieldState = TransactionFieldState.Initial,
+
+    val isFulfillmentValid: TransactionFieldState = TransactionFieldState.Initial,
 
     // Transaction note
     val note: TextFieldState = TextFieldState(),
@@ -84,4 +88,5 @@ data class DataAdditionState(
     val endAt: LocalDateTime = LocalDateTime.now(),
     val recurrence: RecurrencePattern = RecurrencePattern.NONE,
     val isStartNotEqualToEndDateTime: TransactionFieldState = TransactionFieldState.Initial,
+    val isFulfillBtnClick: Boolean = false,
 )

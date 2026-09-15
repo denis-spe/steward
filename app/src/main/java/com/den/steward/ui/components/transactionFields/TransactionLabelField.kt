@@ -223,11 +223,9 @@ fun TransactionLabelField(
     }
 
     TransactionLabelFieldItem(
-        title = "Label",
         optionsTitle = optionsTitle,
         modifier = modifier,
         onDialogShow = onDialogShow,
-        color = color,
         displayState = displayText,
         wasSuccess = wasSuccess
     )
@@ -235,20 +233,28 @@ fun TransactionLabelField(
 
 @Composable
 private fun TransactionLabelFieldItem(
-    title: String,
     optionsTitle: String,
     modifier: Modifier = Modifier,
     onDialogShow: MutableState<Boolean>,
     displayState: String,
-    color: Color,
     wasSuccess: TransactionFieldState,
 ) {
-    val textColor = if (wasSuccess is TransactionFieldState.Error)
-        Color.Red else Color.Unspecified
+    val isError = wasSuccess is TransactionFieldState.Error
 
     TransactionFieldCard(
-        title = title,
+        title = "Label",
         modifier = modifier,
+        headlineContent = {
+            if (wasSuccess is TransactionFieldState.Error) {
+                Text(
+                    text = wasSuccess.message,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 2.dp),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        },
         leadingContent = {
             Image(
                 painter = painterResource(R.drawable.label),
@@ -257,14 +263,24 @@ private fun TransactionLabelFieldItem(
             )
         },
         colors = ListItemDefaults.colors(
-            containerColor = color
+            headlineColor = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+            supportingColor = if (isError) MaterialTheme.colorScheme.error.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant
         ),
         trailingContent = {
             val textValue = if (displayState.length > MAX_LABEL_LENGTH)
                 displayState.take(MAX_LABEL_LENGTH) + "..." else
                 (displayState.ifEmpty { optionsTitle })
 
-            Text(textValue, fontSize = FONT_SIZE, color = textColor)
+            Text(
+                text = if (isError) "Required" else textValue,
+                fontWeight = FontWeight.Bold,
+                color = if (isError)
+                    MaterialTheme.colorScheme.error
+                else MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontSize = FONT_SIZE
+                )
+            )
         }
     ) {
         onDialogShow.value = true

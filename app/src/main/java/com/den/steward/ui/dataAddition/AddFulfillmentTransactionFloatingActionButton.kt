@@ -13,7 +13,6 @@ import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.FloatingActionButtonElevation
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
@@ -53,11 +52,10 @@ fun AddFulfillmentTransactionFloatingActionButton(
     elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
     dataAdditionViewModel: DataAdditionViewModel
 ) {
-    val onShow = remember { mutableStateOf(false) }
     val dataAdditionState by dataAdditionViewModel.dataAdditionState.collectAsStateWithLifecycle()
 
     FloatingActionButton(
-        onClick = { onShow.value = true },
+        onClick = { dataAdditionViewModel.updateShowFulfillmentTransactionTypeBottomSheet(true) },
         modifier = modifier,
         shape = shape,
         elevation = elevation,
@@ -73,8 +71,8 @@ fun AddFulfillmentTransactionFloatingActionButton(
     BottomDrawerSheet(
         title = "Fulfillment",
         description = "Choose the type of fulfillment you're adding",
-        show = onShow.value,
-        onDismissRequest = { onShow.value = false },
+        show = dataAdditionState.showFulfillmentTransactionTypeBottomSheet,
+        onDismissRequest = { dataAdditionViewModel.updateShowFulfillmentTransactionTypeBottomSheet(false) },
     ) {
         TransactionType.entries.filter {
             it == TransactionType.REPAYMENT ||
@@ -94,7 +92,7 @@ fun AddFulfillmentTransactionFloatingActionButton(
                 onClick = {
                     dataAdditionViewModel.updateSelectedFulfillmentTransactionType(type)
                     dataAdditionViewModel.updateShowFulfillmentTransactionAdditionBottomSheet(true)
-                    onShow.value = false
+                    dataAdditionViewModel.updateShowFulfillmentTransactionTypeBottomSheet(false)
                 },
             )
         }
@@ -130,6 +128,20 @@ fun FulfillmentTransactionBottomDrawerSheet(
         }
     }.collectAsStateWithLifecycle()
 
+    val transactionValidationState = when {
+        dataAdditionState.isFulfillmentValid is TransactionFieldState.Error -> {
+            dataAdditionState.isFulfillmentValid
+        }
+
+        dataAdditionState.isAmountCorrect is TransactionFieldState.Error -> {
+            dataAdditionState.isAmountCorrect
+        }
+
+        else -> {
+            TransactionFieldState.Initial
+        }
+    }
+
     BottomDrawerSheet(
         title = stringResource(id = selectedTransactionType.label),
         description = stringResource(id = selectedTransactionType.description),
@@ -145,7 +157,7 @@ fun FulfillmentTransactionBottomDrawerSheet(
             TransactionAmountField(
                 state = dataAdditionState.amount,
                 placeholder = "0.0",
-                isAmountCorrect = dataAdditionState.isAmountCorrect,
+                isAmountCorrect = transactionValidationState,
                 updateIsAmountCorrect = dataAdditionViewModel::updateIsAmountCorrect,
                 displayState = dataAdditionState.currentAmount,
                 updateDisplayState = dataAdditionViewModel::updateCorrectAmount,
@@ -156,7 +168,8 @@ fun FulfillmentTransactionBottomDrawerSheet(
                 },
                 onSetItem = { transaction ->
                     dataAdditionViewModel.updateSelectedParentTransaction(transaction)
-                }
+                    dataAdditionViewModel.updateIsFulfillmentValid(TransactionFieldState.Initial)
+                },
             )
 
             if (
@@ -207,7 +220,8 @@ fun FulfillmentTransactionBottomDrawerSheet(
                 modifier = Modifier.padding(vertical = 16.dp),
                 transactionType = selectedTransactionType,
                 isErrors = dataAdditionState.isAmountCorrect is TransactionFieldState.Error ||
-                        dataAdditionState.selectedParentTransaction == null ||
+                        dataAdditionState.isFulfillBtnClick && dataAdditionState.selectedParentTransaction == null ||
+                        dataAdditionState.isFulfillmentValid is TransactionFieldState.Error ||
                         (if (selectedTransactionType == TransactionType.GOAL)
                             dataAdditionState.isStartNotEqualToEndDateTime is TransactionFieldState.Error
                         else false),

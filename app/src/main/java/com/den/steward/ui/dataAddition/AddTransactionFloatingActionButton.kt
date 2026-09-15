@@ -3,10 +3,8 @@ package com.den.steward.ui.dataAddition
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ReceiptLong
@@ -16,7 +14,6 @@ import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.FloatingActionButtonElevation
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -25,7 +22,6 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.backend.entitles.TransactionType
@@ -139,7 +135,7 @@ fun TransactionBottomDrawerSheet(
                 isAmountCorrect = dataAdditionState.isAmountCorrect,
                 updateIsAmountCorrect = dataAdditionViewModel::updateIsAmountCorrect,
                 displayState = dataAdditionState.currentAmount,
-                updateDisplayState = dataAdditionViewModel::updateCorrectAmount
+                updateDisplayState = dataAdditionViewModel::updateCorrectAmount,
             )
 
             if (
@@ -194,8 +190,6 @@ fun TransactionBottomDrawerSheet(
             if (type == TransactionType.GOAL) {
                 TransactionRecurrenceField(
                     colorResId = type.color,
-                    startedAt = dataAdditionState.startAt,
-                    endAt = dataAdditionState.endAt,
                     recurrence = dataAdditionState.recurrence,
                     isStartNotEqualToEndDateTime = dataAdditionState.isStartNotEqualToEndDateTime,
                     onStartTimeChange = dataAdditionViewModel::updateStartAt,
