@@ -187,9 +187,7 @@ class DataAdditionViewModel @Inject constructor(
 
     fun reset() {
         _dataAdditionState.update {
-            DataAdditionState(
-                showMainBottomSheet = true,
-            )
+            DataAdditionState()
         }
     }
 
@@ -232,7 +230,8 @@ class DataAdditionViewModel @Inject constructor(
             // This provides instant feedback to the user and prevents double clicks
             _dataAdditionState.update { it.copy(
                 isSaving = true,
-                showTransactionAdditionBottomSheet = false
+                showTransactionAdditionBottomSheet = false,
+                showMainBottomSheet = false
             ) }
 
             val createdAt = currentState.localDateCreatedAt.atTime(currentState.localTimeCreatedAt).toEpochMillis()
@@ -350,7 +349,8 @@ class DataAdditionViewModel @Inject constructor(
         // Immediately update state to indicate saving and close the sheet
         _dataAdditionState.update { it.copy(
             isSaving = true,
-            showFulfillmentTransactionAdditionBottomSheet = false
+            showFulfillmentTransactionAdditionBottomSheet = false,
+            showMainBottomSheet = false
         ) }
 
         viewModelScope.launch {

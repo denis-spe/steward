@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
+import com.den.steward.backend.states.AllTransactionSummary
 import com.den.steward.backend.states.AllUiState
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.PeriodType
@@ -113,12 +114,12 @@ class AllViewModel @Inject constructor(
                 val amount = transaction.getAmountOrValue ?: 0.0
                 when (transaction.type) {
                     TransactionType.EARNINGS,
-                    TransactionType.SAVINGS,
                     TransactionType.DEBT,
                     TransactionType.REPAYMENT -> incoming += amount
 
                     TransactionType.EXPENSE,
                     TransactionType.LENT,
+                    TransactionType.SAVINGS,
                     TransactionType.SETTLEMENT -> outgoing += amount
                     else -> {}
                 }
@@ -128,34 +129,96 @@ class AllViewModel @Inject constructor(
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val transactions = allUiState.flatMapLatest { state ->
-        periodDataHandleUseCase.getTransactionsForPeriod(
-            date = state.selectedDate,
-            periodType = state.periodType,
-            orderBy = state.orderBy,
-            sortBy = state.sortBy,
-            filter = state.filter
-        )
-            .distinctUntilChanged() // Avoid re-mapping if data is identical
-            .map { stateResult ->
-                when(stateResult) {
-                    is DataState.Success -> {
-                        val grouped = stateResult.data
-                            .groupBy {
-                                it.createdAt
-                                    .toLocalDateTime()
-                                    .toLocalDate()
-                                    .formattedDate
-                            }
-                        DataState.Success(grouped)
+    val transactions = allUiState
+        .map { Triple(it.selectedDate, it.periodType, Triple(it.orderBy, it.sortBy, it.filter)) }
+        .distinctUntilChanged()
+        .flatMapLatest { (selectedDate, periodType, queryParams) ->
+            val (orderBy, sortBy, filter) = queryParams
+            periodDataHandleUseCase.getTransactionsForPeriod(
+                date = selectedDate,
+                periodType = periodType,
+                orderBy = orderBy,
+                sortBy = sortBy,
+                filter = filter
+            )
+                .distinctUntilChanged() // Avoid re-mapping if data is identical
+                .map { stateResult ->
+                    when(stateResult) {
+                        is DataState.Success -> {
+                            val grouped = stateResult.data
+                                .groupBy {
+                                    it.createdAt
+                                        .toLocalDateTime()
+                                        .toLocalDate()
+                                        .formattedDate
+                                }
+                            DataState.Success(grouped)
+                        }
+                        is DataState.Error -> DataState.Error(stateResult.message)
+                        is DataState.Loading -> DataState.Loading
                     }
-                    is DataState.Error -> DataState.Error(stateResult.message)
-                    is DataState.Loading -> DataState.Loading
                 }
-            }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = DataState.Loading
-    )
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = DataState.Loading
+        )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val transactionSummary = allUiState
+        .map { it.selectedDate to it.periodType }
+        .distinctUntilChanged()
+        .flatMapLatest { (date, periodType) ->
+            periodDataHandleUseCase.getTransactionsForPeriod(
+                date = date,
+                periodType = periodType,
+                orderBy = OrderBy.ASCENDING,
+                sortBy = SortBy.TIME,
+                filter = Filter.ALL
+            )
+                .distinctUntilChanged()
+                .map { stateResult ->
+                    when(stateResult) {
+                        is DataState.Success -> {
+                            val data = stateResult.data
+                            val flow = calculateFlow(data)
+                            val transactionSize = data.size
+                            var totalReceived = 0.0
+                            var totalSpent = 0.0
+                            var totalSavings = 0.0
+
+                            data.forEach {
+                                if (it.getAffectAmount == "Yes") {
+                                    when (it) {
+                                        is Transaction.Earnings -> totalReceived += it.amount
+                                        is Transaction.Savings -> totalSavings += it.amount
+                                        is Transaction.Debt -> totalReceived += it.amount
+                                        is Transaction.Repayment -> totalReceived += it.amount
+                                        is Transaction.Expense -> totalSpent += it.amount
+                                        is Transaction.Lent -> totalSpent += it.amount
+                                        is Transaction.Settlement -> totalSpent += it.amount
+                                        else -> {}
+                                    }
+                                }
+                            }
+
+                            val allTransactionSummary = AllTransactionSummary(
+                                flow = flow,
+                                transactionSize = transactionSize,
+                                totalReceived = totalReceived,
+                                totalSpent = totalSpent,
+                                totalSavings = totalSavings
+                            )
+
+                            DataState.Success(allTransactionSummary)
+                        }
+                        is DataState.Error -> DataState.Error(stateResult.message)
+                        is DataState.Loading -> DataState.Loading
+                    }
+                }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = DataState.Loading
+        )
 }

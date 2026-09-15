@@ -33,12 +33,16 @@ class TodayViewModel @Inject constructor(
     val todayUiState = _todayUiState.asStateFlow()
 
     val todayTransactions: StateFlow<DataState<List<Transaction>>> = dataFilterUseCase.todayTransactions
-        .combine(_todayUiState) { state, uiState ->
+        .combine(
+            _todayUiState
+                .map { Triple(it.filter, it.orderBy, it.sortBy) }
+                .distinctUntilChanged()
+        ) { state, (filter, orderBy, sortBy) ->
             when (state) {
                 is DataState.Success -> {
                     var transactions = state.data
 
-                    val comparator = when (uiState.sortBy) {
+                    val comparator = when (sortBy) {
                         SortBy.TIME -> compareBy<Transaction> { it.createdAt }
                         SortBy.AMOUNT -> compareBy { it.getAmountOrValue ?: 0.0 }
                         SortBy.LABEL -> compareBy { it.getLabel.lowercase() }
@@ -52,13 +56,13 @@ class TodayViewModel @Inject constructor(
                         }
                     }
 
-                    val finalComparator = if (uiState.orderBy == OrderBy.ASCENDING) {
+                    val finalComparator = if (orderBy == OrderBy.ASCENDING) {
                         comparator
                     } else {
                         comparator.reversed()
                     }
 
-                    val targetType = mapFilterToTransactionType(uiState.filter)
+                    val targetType = mapFilterToTransactionType(filter)
                     transactions = transactions.sortedWith(finalComparator)
                         .filter { targetType == null || it.type == targetType }
 
@@ -76,18 +80,6 @@ class TodayViewModel @Inject constructor(
         )
 
     val todaySummaryTransactions: StateFlow<DataState<List<Transaction>>> = dataFilterUseCase.todayTransactions
-        .combine(_todayUiState) { state, _ ->
-            when (state) {
-                is DataState.Success -> {
-                    var transactions = state.data
-
-                    DataState.Success(transactions)
-                }
-                is DataState.Error -> DataState.Error(state.message)
-                is DataState.Loading -> DataState.Loading
-            }
-        }
-        .distinctUntilChanged()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -211,12 +203,12 @@ class TodayViewModel @Inject constructor(
                 val amount = transaction.getAmountOrValue ?: 0.0
                 when (transaction.type) {
                     TransactionType.EARNINGS,
-                    TransactionType.SAVINGS,
                     TransactionType.DEBT,
                     TransactionType.REPAYMENT -> incoming += amount
 
                     TransactionType.EXPENSE,
                     TransactionType.LENT,
+                    TransactionType.SAVINGS,
                     TransactionType.SETTLEMENT -> outgoing += amount
                     else -> {}
                 }

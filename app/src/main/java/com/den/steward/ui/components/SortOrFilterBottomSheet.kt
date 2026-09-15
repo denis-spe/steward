@@ -26,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -53,9 +54,14 @@ private fun SortFilterBottomSheetLayout(
     onDismiss: () -> Unit,
     content: @Composable () -> Unit
 ) {
+    val state = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = Color.Transparent,
+        sheetState = state,
         dragHandle = { },
     ) {
         Box(
@@ -71,7 +77,7 @@ private fun SortFilterBottomSheetLayout(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(10.dp),
+                        .padding(20.dp),
                     horizontalAlignment = Alignment.Start,
                     verticalArrangement = Arrangement.Center
                 ) {
@@ -160,11 +166,11 @@ fun FilterBottomSheetContent(
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.3f)
+                .fillMaxHeight(0.4f)
         ) {
             items(
                 count = entries.size,
-                key = { index -> entries[index] }
+                key = { index -> entries[index].name }
             ) { index ->
                 val entry = entries[index]
                 FilterBottomSheetItem(
@@ -301,7 +307,7 @@ private fun OrderByBottomSheetContent(selected: OrderBy, onSortSelected: (OrderB
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.3f)
+                .fillMaxHeight(0.4f)
         ) {
             entries.forEach { entry ->
                 OrderByBottomSheetItem(
@@ -410,7 +416,7 @@ fun SortByBottomSheetContent(
         LazyColumn (
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.3f)
+                .fillMaxHeight(0.4f)
             ) {
             items(
                 count = entries.size,

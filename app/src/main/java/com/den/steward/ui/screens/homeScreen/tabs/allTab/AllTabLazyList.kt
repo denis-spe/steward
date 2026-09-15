@@ -5,21 +5,17 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,36 +25,39 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.R
 import com.den.steward.backend.entitles.Transaction
+import com.den.steward.backend.states.AllTransactionSummary
 import com.den.steward.backend.states.AllUiState
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.PeriodType
 import com.den.steward.backend.useCase.Filter
 import com.den.steward.backend.useCase.OrderBy
 import com.den.steward.backend.useCase.SortBy
-import com.den.steward.backend.viewModels.AllViewModel
+import com.den.steward.backend.viewModels.DataDeletionViewModel
 import com.den.steward.ui.components.FilterBottomSheet
 import com.den.steward.ui.components.OrderByBottomSheet
 import com.den.steward.ui.components.SortByBottomSheet
-import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabListPanelButton
+import com.den.steward.ui.components.TransactionViewDialog
+import com.den.steward.ui.dataDeletion.DataDeletionDialog
 import java.time.LocalDate
 
 @Composable
 fun AllTabLazyList(
     allUiState: AllUiState,
+    allTransactionSummary: DataState<AllTransactionSummary>,
     transactions: DataState<Map<String, List<Transaction>>>,
     selectedDate: LocalDate,
     periodType: PeriodType,
-    calculateFlow: (List<Transaction>) -> Double,
     updateFilter: (Filter) -> Unit,
     updateSort: (OrderBy) -> Unit,
     updateSortType: (SortBy) -> Unit,
     updateIsFilterExpanded: (Boolean) -> Unit,
     updateIsOrderByExpanded: (Boolean) -> Unit,
     updateIsSortByExpanded: (Boolean) -> Unit,
+    dataDeletionViewModel: DataDeletionViewModel
 ) {
+    val selectedTransactionForView = remember { mutableStateOf<Transaction?>(null) }
 
     Surface(
         color = MaterialTheme.colorScheme.background
@@ -73,38 +72,10 @@ fun AllTabLazyList(
                 key = "summary"
             ) {
                 AllTabSummaryCard(
-                    transactionsState = transactions,
+                    allTransactionSummary = allTransactionSummary,
                     selectedDate = selectedDate,
-                    periodType = periodType,
-                    calculateFlow = calculateFlow
+                    periodType = periodType
                 )
-            }
-
-            stickyHeader {
-                Surface(
-                    color = MaterialTheme.colorScheme.background,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Transactions",
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = FontWeight.Bold
-                                ),
-                            )
-                        }
-                    }
-                }
             }
 
             when (transactions) {
@@ -113,7 +84,7 @@ fun AllTabLazyList(
 
                     if (groupedTransactions.isNotEmpty()) {
                         groupedTransactions.forEach { (date, transactions) ->
-                            stickyHeader {
+                            stickyHeader(key = "date_header_$date") {
                                 AllTabLazyListStickyHeader(
                                     date = date
                                 )
@@ -145,13 +116,19 @@ fun AllTabLazyList(
                                         .padding(bottom = padding)
                                         .animateItem(),
                                     shape = shape,
-                                    transaction = transaction
+                                    transaction = transaction,
+                                    onClick = {
+                                        selectedTransactionForView.value = transaction
+                                    },
+                                    onDelete = {
+                                        dataDeletionViewModel.updateSelectedTransaction(transaction)
+                                    }
                                 )
                             }
                         }
                     }
                     else {
-                        item {
+                        item(key = "empty_state") {
                             AllTabLazyListEmpty()
                         }
                     }
@@ -159,13 +136,13 @@ fun AllTabLazyList(
 
 
                 is DataState.Loading -> {
-                    items(5) {
+                    items(5, key = { "shimmer_$it" }) {
                         AllTabLazyListItemShimmer()
                     }
                 }
 
                 is DataState.Error -> {
-                    item {
+                    item(key = "error_state") {
                         AllTabLazyListError(
                             message = transactions.message
                         )
@@ -175,7 +152,7 @@ fun AllTabLazyList(
         }
     }
 
-    // --- Bottom Sheets ---
+    // --- Bottom Sheets & Dialogs ---
     FilterBottomSheet(
         isExpanded = allUiState.isFilterExpanded,
         selected = allUiState.filter,
@@ -204,6 +181,21 @@ fun AllTabLazyList(
             updateIsSortByExpanded(false)
         },
         onDismiss = { updateIsSortByExpanded(false) }
+    )
+
+    selectedTransactionForView.value?.let { transaction ->
+        TransactionViewDialog(
+            transaction = transaction,
+            onShow = true,
+            onDismissRequest = { selectedTransactionForView.value = null }
+        )
+    }
+
+    DataDeletionDialog(
+        viewModel = dataDeletionViewModel,
+        onDismissRequest = {
+            dataDeletionViewModel.updateOnDialogShow(false)
+        }
     )
 }
 

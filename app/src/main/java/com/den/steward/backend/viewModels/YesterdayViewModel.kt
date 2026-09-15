@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
@@ -30,12 +31,16 @@ class YesterdayViewModel @Inject constructor(
     val yesterdayUiState = _yesterdayUiState.asStateFlow()
 
     val yesterdayTransactions: StateFlow<DataState<List<Transaction>>> = dataFilterUseCase.yesterdayTransactions
-        .combine(_yesterdayUiState) { state, uiState ->
+        .combine(
+            _yesterdayUiState
+                .map { Triple(it.filter, it.orderBy, it.sortBy) }
+                .distinctUntilChanged()
+        ) { state, (filter, orderBy, sortBy) ->
             when (state) {
                 is DataState.Success -> {
                     var transactions = state.data
 
-                    val comparator = when (uiState.sortBy) {
+                    val comparator = when (sortBy) {
                         SortBy.TIME -> compareBy<Transaction> { it.createdAt }
                         SortBy.AMOUNT -> compareBy { it.getAmountOrValue ?: 0.0 }
                         SortBy.LABEL -> compareBy { it.getLabel.lowercase() }
@@ -49,13 +54,13 @@ class YesterdayViewModel @Inject constructor(
                         }
                     }
 
-                    val finalComparator = if (uiState.orderBy == OrderBy.ASCENDING) {
+                    val finalComparator = if (orderBy == OrderBy.ASCENDING) {
                         comparator
                     } else {
                         comparator.reversed()
                     }
 
-                    val targetType = mapFilterToTransactionType(uiState.filter)
+                    val targetType = mapFilterToTransactionType(filter)
                     transactions = transactions.sortedWith(finalComparator)
                         .filter { targetType == null || it.type == targetType }
 
@@ -73,18 +78,6 @@ class YesterdayViewModel @Inject constructor(
         )
 
     val yesterdaySummaryTransactions: StateFlow<DataState<List<Transaction>>> = dataFilterUseCase.yesterdayTransactions
-        .combine(_yesterdayUiState) { state, _ ->
-            when (state) {
-                is DataState.Success -> {
-                    var transactions = state.data
-
-                    DataState.Success(transactions)
-                }
-                is DataState.Error -> DataState.Error(state.message)
-                is DataState.Loading -> DataState.Loading
-            }
-        }
-        .distinctUntilChanged()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),

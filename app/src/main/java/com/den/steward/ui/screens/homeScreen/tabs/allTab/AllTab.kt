@@ -26,22 +26,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -60,7 +56,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.R
-import com.den.steward.backend.entitles.Transaction
+import com.den.steward.backend.states.AllTransactionSummary
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.PeriodType
 import com.den.steward.backend.useCase.Filter
@@ -68,12 +64,11 @@ import com.den.steward.backend.useCase.OrderBy
 import com.den.steward.backend.useCase.PeriodDataHandleUseCase
 import com.den.steward.backend.useCase.SortBy
 import com.den.steward.backend.viewModels.AllViewModel
+import com.den.steward.backend.viewModels.DataDeletionViewModel
 import com.den.steward.backend.viewModels.HomeViewModel
 import com.den.steward.helper.formatToAmount
 import com.den.steward.helper.formattedDate
 import com.den.steward.ui.componentExtenison.shimmerEffect
-import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabListPanelButton
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -81,6 +76,7 @@ import java.time.LocalDate
 fun AllTab(
     padding: PaddingValues,
     allViewModel: AllViewModel = hiltViewModel(),
+    dataDeletionViewModel: DataDeletionViewModel = hiltViewModel(),
     homeViewModel: HomeViewModel
 ) {
     val pagerState = rememberPagerState(
@@ -99,6 +95,7 @@ fun AllTab(
     }
 
     val transactionsState by allViewModel.transactions.collectAsStateWithLifecycle()
+    val allTransactionSummary by allViewModel.transactionSummary.collectAsStateWithLifecycle()
 
     LaunchedEffect(pagerState.currentPage) {
         allViewModel.onPageChange(pagerState.currentPage)
@@ -203,26 +200,26 @@ fun AllTab(
 
         AllTabLazyList(
             transactions = transactionsState,
+            allTransactionSummary = allTransactionSummary,
             selectedDate = allUiState.selectedDate,
             periodType = allUiState.periodType,
             allUiState = allUiState,
-            calculateFlow = allViewModel::calculateFlow,
             updateFilter = allViewModel::updateFilter,
             updateSort = allViewModel::updateSort,
             updateSortType = allViewModel::updateSortType,
             updateIsFilterExpanded = allViewModel::updateIsFilterExpanded,
             updateIsOrderByExpanded = allViewModel::updateIsOrderByExpanded,
-            updateIsSortByExpanded = allViewModel::updateIsSortByExpanded
+            updateIsSortByExpanded = allViewModel::updateIsSortByExpanded,
+            dataDeletionViewModel = dataDeletionViewModel
         )
     }
 }
 
 @Composable
 fun AllTabSummaryCard(
-    transactionsState: DataState<Map<String, List<Transaction>>>,
+    allTransactionSummary: DataState<AllTransactionSummary>,
     selectedDate: LocalDate,
-    periodType: PeriodType,
-    calculateFlow: (List<Transaction>) -> Double
+    periodType: PeriodType
 ) {
     Card(
         modifier = Modifier
@@ -256,55 +253,16 @@ fun AllTabSummaryCard(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            when (transactionsState) {
+            when (allTransactionSummary) {
                 is DataState.Success -> {
-                    val allList = remember(transactionsState.data) {
-                        transactionsState.data.values.flatten()
-                    }
-                    val flow = remember(allList) { calculateFlow(allList) }
-                    val transactionSize = remember(allList) { allList.size }
-                    val totalReceived = remember(allList) {
-                        var received = 0.0
-                        allList.forEach { transaction ->
-                            when (transaction) {
-                                is Transaction.Earnings -> received += transaction.amount
-                                is Transaction.Savings -> received += transaction.amount
-                                is Transaction.Debt -> received += transaction.amount
-                                is Transaction.Repayment -> received += transaction.amount
-                                else -> {}
-                            }
-                        }
-                        received
-                    }
-                    val totalSpent = remember(allList) {
-                        var spent = 0.0
-                        allList.forEach { transaction ->
-                            when (transaction) {
-                                is Transaction.Expense -> spent += transaction.amount
-                                is Transaction.Lent -> spent += transaction.amount
-                                is Transaction.Settlement -> spent += transaction.amount
-                                else -> {}
-                            }
-                        }
-                        spent
-                    }
-                    val totalSavings = remember(allList) {
-                        var savings = 0.0
-                        allList.forEach { transaction ->
-                            when (transaction) {
-                                is Transaction.Savings -> savings += transaction.amount
-                                else -> {}
-                            }
-                        }
-                        savings
-                    }
+                    val allTransactionSummary = allTransactionSummary.data
 
                     AllTabSummaryCardContent(
-                        flow = flow,
-                        transactionSize = transactionSize,
-                        totalReceived = totalReceived,
-                        totalSpent = totalSpent,
-                        totalSavings = totalSavings
+                        flow = allTransactionSummary.flow,
+                        transactionSize = allTransactionSummary.transactionSize,
+                        totalReceived = allTransactionSummary.totalReceived,
+                        totalSpent = allTransactionSummary.totalSpent,
+                        totalSavings = allTransactionSummary.totalSavings
                     )
 
                 }
@@ -351,8 +309,9 @@ fun AllTabSummaryCardContent(
             verticalArrangement = Arrangement.spacedBy(5.dp)
         ) {
             Text(
-                text = "Flow",
-                style = MaterialTheme.typography.labelMedium,
+                text = "Net Flow",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
@@ -426,6 +385,10 @@ fun AllTabSummaryTransactionCard(
     color: Color,
     modifier: Modifier = Modifier,
 ) {
+    val amountState = remember(amount) {
+        amount.formatToAmount()
+    }
+
     Surface(
         modifier = Modifier
             .width(160.dp)
@@ -475,7 +438,7 @@ fun AllTabSummaryTransactionCard(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = amount.formatToAmount(),
+                text = amountState,
                 style = MaterialTheme.typography.labelMedium
                     .copy(
                         fontWeight = FontWeight.Bold,
@@ -541,7 +504,6 @@ fun AllTabListPanelButtons(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.background,
-                shape = CircleShape
             ) {
                 AllTabListPanelButton(
                     text = "Reset",
