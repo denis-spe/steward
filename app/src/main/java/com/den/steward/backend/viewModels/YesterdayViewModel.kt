@@ -5,12 +5,14 @@ import androidx.lifecycle.viewModelScope
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataState
+import com.den.steward.backend.states.YesterdayTransactionSummary
 import com.den.steward.backend.states.YesterdayUiState
-import com.den.steward.backend.useCase.DataFetchUseCase
+import com.den.steward.backend.useCase.ChartUseCase
 import com.den.steward.backend.useCase.DataFilterUseCase
 import com.den.steward.backend.useCase.Filter
 import com.den.steward.backend.useCase.OrderBy
 import com.den.steward.backend.useCase.SortBy
+import com.den.steward.ui.components.charts.collections.ChartDataCollection
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -25,10 +27,18 @@ import javax.inject.Inject
 @HiltViewModel
 class YesterdayViewModel @Inject constructor(
     dataFilterUseCase: DataFilterUseCase,
-    dataFetchUseCase: DataFetchUseCase
+    chartUseCase: ChartUseCase
 ) : ViewModel() {
     private val _yesterdayUiState = MutableStateFlow(YesterdayUiState())
     val yesterdayUiState = _yesterdayUiState.asStateFlow()
+
+    val chartDataCollection: StateFlow<DataState<ChartDataCollection>> = chartUseCase.chartDataCollection(dataFilterUseCase.yesterdayTransactions)
+        .distinctUntilChanged()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = DataState.Loading
+        )
 
     val yesterdayTransactions: StateFlow<DataState<List<Transaction>>> = dataFilterUseCase.yesterdayTransactions
         .combine(
@@ -77,7 +87,34 @@ class YesterdayViewModel @Inject constructor(
             initialValue = DataState.Loading
         )
 
-    val yesterdaySummaryTransactions: StateFlow<DataState<List<Transaction>>> = dataFilterUseCase.yesterdayTransactions
+    val yesterdaySummaryTransactions: StateFlow<DataState<YesterdayTransactionSummary>> = dataFilterUseCase.yesterdayTransactions
+        .distinctUntilChanged()
+        .map { state ->
+            when (state) {
+                is DataState.Success -> {
+                    val transactions = state.data
+                    val group = transactions.groupBy { it.type }
+                        .mapValues { (_, value) -> value.sumOf { it.getAmountOrValue ?: 0.0 } }
+
+                    val flow = calculateFlow(transactions)
+                    val highTransaction = group.maxBy { it.value }
+                    val lowTransaction = group.minBy { it.value }
+
+                    val yesterdayTransactionSummary = YesterdayTransactionSummary(
+                        flow = flow,
+                        transactionSize = transactions.size,
+                        highTransactionActivityAmount = highTransaction.value,
+                        highTransactionActivityLabel = highTransaction.key.name,
+                        lowTransactionActivityAmount = lowTransaction.value,
+                        lowTransactionActivityLabel = lowTransaction.key.name
+                    )
+
+                    DataState.Success(yesterdayTransactionSummary)
+                }
+                is DataState.Error -> DataState.Error(state.message)
+                is DataState.Loading -> DataState.Loading
+            }
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),

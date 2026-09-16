@@ -299,9 +299,9 @@ fun VicoBarChart(
     CartesianChartHost(
         chart = chart,
         modelProducer = modelProducer,
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()    // important for column size
-            .height(280.dp),
+            .then(modifier),
         zoomState = zoomState
     )
 }

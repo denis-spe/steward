@@ -33,7 +33,6 @@ import com.den.steward.backend.useCase.Filter
 import com.den.steward.backend.useCase.OrderBy
 import com.den.steward.backend.useCase.SortBy
 import com.den.steward.backend.viewModels.DataDeletionViewModel
-import com.den.steward.backend.viewModels.YesterdayChartViewModel
 import com.den.steward.backend.viewModels.YesterdayViewModel
 import com.den.steward.ui.componentExtenison.shimmerEffect
 import com.den.steward.ui.dataDeletion.DataDeletionDialog
@@ -46,18 +45,17 @@ import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabListPanelButt
 @Composable
 fun YesterdayTabList(
     modifier: Modifier = Modifier,
-    chartViewModel: YesterdayChartViewModel,
     yesterdayViewModel: YesterdayViewModel,
     dataDeletionViewModel: DataDeletionViewModel
 ) {
     val transactionsState by yesterdayViewModel.yesterdayTransactions.collectAsStateWithLifecycle()
-    val donutChartState by chartViewModel.donutChart.collectAsStateWithLifecycle()
+    val chartDataCollection by yesterdayViewModel.chartDataCollection.collectAsStateWithLifecycle()
 
-    val combinedState = remember(transactionsState, donutChartState) {
+    val combinedState = remember(transactionsState, chartDataCollection) {
         when {
-            transactionsState is DataState.Loading || donutChartState is DataState.Loading -> DataState.Loading
+            transactionsState is DataState.Loading || chartDataCollection is DataState.Loading -> DataState.Loading
             transactionsState is DataState.Error -> transactionsState
-            donutChartState is DataState.Error -> donutChartState
+            chartDataCollection is DataState.Error -> chartDataCollection
             else -> transactionsState // Both Success
         }
     }
@@ -82,7 +80,6 @@ fun YesterdayTabList(
 
                 YesterdayTabLazyList(
                     modifier = modifier,
-                    chartViewModel = chartViewModel,
                     yesterdayViewModel = yesterdayViewModel,
                     dataDeletionViewModel = dataDeletionViewModel,
                     transactions = transactions
@@ -118,7 +115,6 @@ fun YesterdayTabListHeader() {
 @Composable
 fun YesterdayTabLazyList(
     modifier: Modifier = Modifier,
-    chartViewModel: YesterdayChartViewModel,
     yesterdayViewModel: YesterdayViewModel,
     dataDeletionViewModel: DataDeletionViewModel,
     transactions: List<Transaction>,
@@ -133,7 +129,6 @@ fun YesterdayTabLazyList(
 
         item {
             YesterdayTabStatisticView(
-                chartViewModel = chartViewModel,
                 yesterdayViewModel = yesterdayViewModel
             )
         }

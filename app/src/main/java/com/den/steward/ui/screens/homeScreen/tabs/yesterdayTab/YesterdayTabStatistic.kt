@@ -1,19 +1,17 @@
 package com.den.steward.ui.screens.homeScreen.tabs.yesterdayTab
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -22,52 +20,51 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Balance
-import androidx.compose.material.icons.filled.DonutSmall
-import androidx.compose.material.icons.filled.PieChart
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material.icons.outlined.Balance
-import androidx.compose.material.icons.outlined.DonutSmall
+import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.PieChart
 import androidx.compose.material.icons.outlined.Wallet
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.backend.states.DataState
-import com.den.steward.backend.viewModels.YesterdayChartViewModel
 import com.den.steward.backend.viewModels.YesterdayViewModel
 import com.den.steward.helper.formatToAmount
 import com.den.steward.ui.componentExtenison.shimmerEffect
-import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayDonutChartEmptyView
+import com.den.steward.ui.components.charts.VicoBarChart
 import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayDonutChartErrorView
-import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayDonutChartShimmerView
-import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayDonutChartView
 import kotlinx.coroutines.launch
 
 @Composable
 fun YesterdayTabStatisticView(
-    chartViewModel: YesterdayChartViewModel,
     yesterdayViewModel: YesterdayViewModel
 ) {
     val tabs = listOf(
-        "Flow Chart",
+        "Trend Chart",
         "Balances",
         "Liabilities"
     )
@@ -81,11 +78,6 @@ fun YesterdayTabStatisticView(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        YesterdayTabStatisticPanel(
-            tabs = tabs,
-            pager = pager
-        )
-
         HorizontalPager(
             state = pager,
             modifier = Modifier.fillMaxWidth(),
@@ -98,11 +90,9 @@ fun YesterdayTabStatisticView(
                     .padding(horizontal = 16.dp)
             ) {
                 when (page) {
-                    0 -> YesterdayTabDonutChart(
-                        viewModel = chartViewModel,
-                        chartSize = 160.dp,
-                        strokeWidth = 18.dp,
-                        strokeCap = StrokeCap.Round
+                    0 -> YesterdayTabBarChart(
+                        viewModel = yesterdayViewModel,
+                        chartSize = 160.dp
                     )
 
                     1 -> YesterdaySummaryView(yesterdayViewModel = yesterdayViewModel)
@@ -111,6 +101,11 @@ fun YesterdayTabStatisticView(
                 }
             }
         }
+
+        YesterdayTabStatisticPanel(
+            tabs = tabs,
+            pager = pager
+        )
     }
 }
 
@@ -118,54 +113,62 @@ fun YesterdayTabStatisticView(
 fun YesterdayTabStatisticPanel(tabs: List<String>, pager: PagerState) {
     val scope = rememberCoroutineScope()
 
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row(
-            modifier = Modifier
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                .padding(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            tabs.forEachIndexed { index, title ->
-                val selected = pager.currentPage == index
-                val icon = when (title) {
-                    "Flow Chart" -> if (selected) Icons.Filled.DonutSmall else Icons.Outlined.DonutSmall
-                    "Balances" -> if (selected) Icons.Filled.Wallet else Icons.Outlined.Wallet
-                    "Liabilities" -> if (selected) Icons.Filled.Balance else Icons.Outlined.Balance
-                    else -> Icons.Outlined.PieChart
-                }
-
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent)
-                        .clickable {
-                            scope.launch { pager.animateScrollToPage(index) }
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = title,
-                        tint = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-        }
-
         Text(
             text = tabs[pager.currentPage],
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
         )
+
+        OutlinedCard(
+            shape = CircleShape,
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primary.copy(0.2f)
+            ),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+        ) {
+            Row(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                tabs.forEachIndexed { index, title ->
+                    val selected = pager.currentPage == index
+                    val icon = when (title) {
+                        "Trend Chart" -> if (selected) Icons.Filled.BarChart else Icons.Outlined.BarChart
+                        "Balances" -> if (selected) Icons.Filled.Wallet else Icons.Outlined.Wallet
+                        "Liabilities" -> if (selected) Icons.Filled.Balance else Icons.Outlined.Balance
+                        else -> Icons.Outlined.PieChart
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent)
+                            .clickable {
+                                scope.launch { pager.animateScrollToPage(index) }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = title,
+                            tint = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -195,63 +198,71 @@ fun YesterdayStatisticLayout(
 }
 
 @Composable
-fun YesterdayTabDonutChart(
-    viewModel: YesterdayChartViewModel,
-    chartSize: Dp = 160.dp,
-    strokeWidth: Dp = 18.dp,
-    strokeCap: StrokeCap = StrokeCap.Round
+fun YesterdayTabBarChart(
+    viewModel: YesterdayViewModel,
+    chartSize: Dp = 160.dp
 ) {
-    val donutChartState by viewModel.donutChart.collectAsStateWithLifecycle()
-    val donutChartCenterAmount by viewModel.donutChartCenterAmount.collectAsStateWithLifecycle()
-    val donutStatusSummary by viewModel.donutStatusSummary.collectAsStateWithLifecycle()
+    val chartDataCollection by viewModel.chartDataCollection.collectAsStateWithLifecycle()
 
     YesterdayStatisticLayout {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(24.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(modifier = Modifier.size(chartSize)) {
-                when (val currentState = donutChartState) {
-                    is DataState.Success -> {
-                        if (currentState.data.isEmpty()) {
-                            TodayDonutChartEmptyView(chartSize = chartSize, strokeWidth = strokeWidth)
-                        } else {
-                            TodayDonutChartView(
-                                donutChartData = currentState.data,
-                                donutChartCenterAmount = donutChartCenterAmount,
-                                chartSize = chartSize,
-                                strokeWidth = strokeWidth,
-                                strokeWidthSelected = 24.dp,
-                                strokeCap = strokeCap
-                            )
+        when (val currentState = chartDataCollection) {
+            is DataState.Success -> {
+                if (currentState.data.chartData.isEmpty()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(24.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(modifier = Modifier.size(chartSize)) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    verticalArrangement = Arrangement.Center,
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.PieChart,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(48.dp),
+                                        tint = Color.LightGray
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "No transactions available",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = Color.LightGray
+                                    )
+                                }
+                            }
                         }
                     }
-                    is DataState.Error -> TodayDonutChartErrorView(message = currentState.message)
-                    is DataState.Loading -> TodayDonutChartShimmerView(chartSize = chartSize, strokeWidth = strokeWidth)
+                } else {
+                    VicoBarChart(
+                        chartDataCollection = currentState.data,
+                        modifier = Modifier.fillMaxSize(),
+                        thickness = 3.dp,
+                        xValueFormatter = { value -> "${value.toInt()}hr" }
+                    )
                 }
             }
 
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = "Distribution",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                when (val state = donutStatusSummary) {
-                    is DataState.Success -> {
-                        Text(
-                            text = state.data,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.heightIn(min = 60.dp)
-                        )
-                    }
-                    is DataState.Loading -> Box(Modifier.fillMaxWidth().height(40.dp).shimmerEffect())
-                    is DataState.Error -> Text(text = state.message, color = MaterialTheme.colorScheme.error)
+            is DataState.Error -> TodayDonutChartErrorView(message = currentState.message)
+            is DataState.Loading -> {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(24.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(chartSize)
+                            .clip(MaterialTheme.shapes.large)
+                            .shimmerEffect()
+                    )
                 }
             }
         }
@@ -262,47 +273,180 @@ fun YesterdayTabDonutChart(
 fun YesterdaySummaryView(
     yesterdayViewModel: YesterdayViewModel
 ) {
-    val currentAmountMapState by yesterdayViewModel.yesterdaySummaryTransactions.collectAsStateWithLifecycle()
+    val yesterdaySummaryTransactions by yesterdayViewModel.yesterdaySummaryTransactions.collectAsStateWithLifecycle()
 
     YesterdayStatisticLayout {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Yesterday's Net",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            when (val state = currentAmountMapState) {
+            when (val state = yesterdaySummaryTransactions) {
                 is DataState.Success -> {
-                    val flow = remember(state.data) { yesterdayViewModel.calculateFlow(state.data) }
-                    Text(
-                        text = flow.formatToAmount(),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = if (flow >= 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                    YesterdaySummaryViewContent(
+                        flow = state.data.flow,
+                        transactionSize = state.data.transactionSize,
+                        highTransactionActivityAmount = state.data.highTransactionActivityAmount,
+                        highTransactionActivityLabel = state.data.highTransactionActivityLabel,
+                        lowTransactionActivityAmount = state.data.lowTransactionActivityAmount,
+                        lowTransactionActivityLabel = state.data.lowTransactionActivityLabel
                     )
                 }
-                is DataState.Loading -> Box(Modifier.fillMaxWidth().height(30.dp).shimmerEffect())
-                is DataState.Error -> Text(text = state.message, color = MaterialTheme.colorScheme.error)
-            }
-            
-            Spacer(Modifier.height(4.dp))
-            
-            Box(
-                modifier = Modifier
-                    .clip(MaterialTheme.shapes.small)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.05f))
-                    .padding(8.dp)
-            ) {
-                Text(
-                    text = "Yesterday's financial activities summarized.",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary
+
+                is DataState.Loading -> Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(80.dp)
+                        .clip(MaterialTheme.shapes.medium)
+                        .shimmerEffect()
+                )
+
+                is DataState.Error -> Text(
+                    text = state.message,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center
                 )
             }
         }
+    }
+}
+
+@Composable
+fun YesterdaySummaryViewContent(
+    flow: Double,
+    transactionSize: Int,
+    highTransactionActivityAmount: Double,
+    highTransactionActivityLabel: String,
+    lowTransactionActivityAmount: Double,
+    lowTransactionActivityLabel: String
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(20.dp)
+    ) {
+        // Main metrics row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Bottom
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Yesterday's Net Flow",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    val flowColor = if (flow >= 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                    val flowIcon = if (flow >= 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown
+                    
+                    Icon(
+                        imageVector = flowIcon,
+                        contentDescription = null,
+                        tint = flowColor,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        text = flow.formatToAmount(),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = flowColor
+                    )
+                }
+            }
+
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = "Activity",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = transactionSize.toString(),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = if (transactionSize == 1) "txn" else "txns",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        HorizontalDivider(
+            modifier = Modifier.fillMaxWidth(),
+            thickness = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        )
+
+        // Insight Section
+        if (highTransactionActivityLabel.isNotEmpty()) {
+            val highLabelFormatted = highTransactionActivityLabel.lowercase().replaceFirstChar { it.uppercase() }
+            val lowLabelFormatted = lowTransactionActivityLabel.lowercase().replaceFirstChar { it.uppercase() }
+
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Insights,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = "Daily Insight",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    val insightText = if (highTransactionActivityLabel != lowTransactionActivityLabel) {
+                        "Your highest activity was in $highLabelFormatted (${highTransactionActivityAmount.formatToAmount()}), while $lowLabelFormatted had the lowest (${lowTransactionActivityAmount.formatToAmount()})."
+                    } else {
+                        "All of your yesterday's activity was categorized as $highLabelFormatted (${highTransactionActivityAmount.formatToAmount()})."
+                    }
+
+                    Text(
+                        text = insightText,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = TextUnit.Unspecified // Default or set small sp
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun YesterdaySummaryActivityView(amount: Double, label: String) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+
     }
 }
 
@@ -338,31 +482,6 @@ fun YesterdayTabStatisticShimmer() {
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Panel Shimmer
-        Row(
-            modifier = Modifier
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                .padding(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            repeat(3) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .shimmerEffect()
-                )
-            }
-        }
-        
-        Box(
-            modifier = Modifier
-                .width(80.dp)
-                .height(16.dp)
-                .clip(MaterialTheme.shapes.small)
-                .shimmerEffect()
-        )
 
         // Main Card Shimmer
         YesterdayStatisticLayout {
@@ -371,6 +490,37 @@ fun YesterdayTabStatisticShimmer() {
                     .fillMaxSize()
                     .shimmerEffect()
             )
+        }
+
+        Box(
+            modifier = Modifier
+                .width(80.dp)
+                .height(16.dp)
+                .clip(MaterialTheme.shapes.small)
+                .shimmerEffect()
+        )
+
+        // Panel Shimmer
+        OutlinedCard(
+            shape = CircleShape,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(0.2f))
+        ) {
+            Row(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                repeat(3) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .shimmerEffect()
+                    )
+                }
+            }
         }
     }
 }
