@@ -18,9 +18,11 @@ package com.den.steward.ui.components.charts.marker
 
 
 import android.text.Layout
+import android.text.TextUtils
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisGuidelineComponent
 import com.patrykandpatrick.vico.compose.cartesian.marker.rememberDefaultCartesianMarker
 import com.patrykandpatrick.vico.compose.common.component.fixed
@@ -53,11 +55,13 @@ internal fun rememberMarker(
     val label =
         rememberTextComponent(
             color = MaterialTheme.colorScheme.onSurface,
-            textAlignment = Layout.Alignment.ALIGN_CENTER,
+            textAlignment = Layout.Alignment.ALIGN_OPPOSITE,
             padding = insets(8.dp, 4.dp),
             background = labelBackground,
-            minWidth = TextComponent.MinWidth.fixed(40.dp),
+            minWidth = TextComponent.MinWidth.fixed(30.dp),
         )
+
+
     val indicatorFrontComponent =
         rememberShapeComponent(fill(MaterialTheme.colorScheme.surface), CorneredShape.Pill)
     val guideline = rememberAxisGuidelineComponent()

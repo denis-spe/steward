@@ -51,33 +51,72 @@ fun VicoLineChart(
     lineType: LineCartesianLayer.PointConnector = LineCartesianLayer.PointConnector.cubic(),
     xValueFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
     yValueFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
-    markerFormatter: (x: Double, y: Double) -> CharSequence =
-        { x, y -> "$x, $y" },
+    markerFormatter: ((x: Double, y: Double) -> CharSequence)? = null,
+    horizontalItemPlacer: HorizontalAxis.ItemPlacer = remember { HorizontalAxis.ItemPlacer.aligned() },
 ) {
     val modelProducer = remember { CartesianChartModelProducer() }
     val zoomState = rememberVicoZoomState(initialZoom = Zoom.Content)
+    val chartData = chartDataCollection.chartData
 
-    val vicoMarkerFormatter = remember(markerFormatter) {
+    val vicoMarkerFormatter = remember(xValueFormatter, yValueFormatter, markerFormatter, chartData) {
         DefaultCartesianMarker.ValueFormatter { context, targets ->
-            // Get the first highlighted point's data
             val primaryTarget = targets.firstOrNull() as? LineCartesianLayerMarkerTarget
-            val entry = primaryTarget?.points?.firstOrNull()?.entry
+            val points = primaryTarget?.points ?: return@ValueFormatter ""
 
-            if (entry != null) {
-                // Format as "X: Value, Y: Value" or any layout you prefer
-                markerFormatter(entry.x, entry.y)
-            } else {
-                ""
+            if (points.isEmpty()) return@ValueFormatter ""
+
+            val sb = StringBuilder()
+
+            points.forEachIndexed { index, point ->
+                val entry = point.entry
+                val seriesLabel = chartData.find { it.color.toArgb() == point.color }?.label
+
+                val xStr = xValueFormatter(entry.x)
+                val yStr = yValueFormatter(entry.y)
+                val label = seriesLabel?.let { "$it: " } ?: ""
+
+                val formattedValue = markerFormatter?.invoke(entry.x, entry.y)
+                    ?: "$xStr | $label$yStr"
+
+                sb.append(formattedValue)
+                if (index < points.size - 1) sb.append("\n")
             }
+            sb
         }
     }
 
     val marker = rememberMarker(valueFormatter = vicoMarkerFormatter)
 
+    val lineLayer = rememberLineCartesianLayer(
+        lineProvider = remember(chartData, fillArea, lineType) {
+            LineCartesianLayer.LineProvider.series(
+                chartData.map { lineColor ->
+                    val gradientFill = LineCartesianLayer.AreaFill.single(
+                        Fill(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    lineColor.color.copy(alpha = 0.35f),
+                                    lineColor.color.copy(alpha = 0f)
+                                )
+                            ).toShaderProvider()
+                        )
+                    )
 
-    val chartData = chartDataCollection.chartData
-
-    var lineLayer = rememberLineCartesianLayer()
+                    LineCartesianLayer.Line(
+                        fill = LineCartesianLayer.LineFill.single(
+                            Fill(lineColor.color.toArgb())
+                        ),
+                        stroke = LineCartesianLayer.LineStroke.continuous(
+                            cap = StrokeCap.Round,
+                            thickness = 2.dp
+                        ),
+                        areaFill = if (fillArea) gradientFill else null,
+                        pointConnector = lineType,
+                    )
+                }
+            )
+        }
+    )
     val textComponent = rememberTextComponent(color = MaterialTheme.colorScheme.onSurface)
 
     val legend = rememberHorizontalLegend<CartesianMeasuringContext, CartesianDrawingContext>(
@@ -101,50 +140,22 @@ fun VicoLineChart(
         padding = Insets(topDp = 16f)
     )
 
-    // Create and configure the line layer only when we have data.
-    if (chartDataCollection.allAreNotEmpty()) {
-        lineLayer = rememberLineCartesianLayer(
-            lineProvider = { index, _ ->
-
-                val lineColor = chartData[index]
-
-                val gradientFill = LineCartesianLayer.AreaFill.single(
-                    Fill(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                lineColor.color.copy(alpha = 0.35f),
-                                lineColor.color.copy(alpha = 0f)
-                            )
-                        ).toShaderProvider()
-                    )
-                )
-
-                LineCartesianLayer.Line(
-                    fill = LineCartesianLayer.LineFill.single(
-                        Fill(lineColor.color.toArgb())
-                    ),
-                    stroke = LineCartesianLayer.LineStroke.continuous(
-                        cap = StrokeCap.Round,
-                        thickness = 2.dp
-                    ),
-                    areaFill = if (fillArea) gradientFill else null,
-                    pointConnector = lineType,
-                )
-            }
-        )
-    }
-
     val chart = rememberCartesianChart(
         lineLayer,
         marker = marker,
         bottomAxis = HorizontalAxis.rememberBottom(
             guideline = null,
-            valueFormatter = { _, value, _ -> xValueFormatter(value) }
+            itemPlacer = horizontalItemPlacer,
+            valueFormatter = { _, value, _ ->
+                xValueFormatter(value).let { if (it.isEmpty()) " " else it }
+            }
         ),
         startAxis = VerticalAxis.rememberStart(
             line = rememberLineComponent(Fill.Transparent),
-            title = "X",
-            valueFormatter = { _, value, _ -> yValueFormatter(value) },
+            title = "Y",
+            valueFormatter = { _, value, _ ->
+                yValueFormatter(value).let { if (it.isEmpty()) " " else it }
+            },
             itemPlacer = VerticalAxis.ItemPlacer.count({
                 chartDataCollection.chartData.size + 2
             }),

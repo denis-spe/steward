@@ -39,16 +39,19 @@ import com.den.steward.ui.components.FilterBottomSheet
 import com.den.steward.ui.components.OrderByBottomSheet
 import com.den.steward.ui.components.SortByBottomSheet
 import com.den.steward.ui.components.TransactionViewDialog
+import com.den.steward.ui.components.charts.collections.ChartDataCollection
 import com.den.steward.ui.dataDeletion.DataDeletionDialog
 import java.time.LocalDate
 
 @Composable
 fun AllTabLazyList(
     allUiState: AllUiState,
+    allTransactionChartData: DataState<ChartDataCollection>,
     allTransactionSummary: DataState<AllTransactionSummary>,
     transactions: DataState<Map<String, List<Transaction>>>,
     selectedDate: LocalDate,
     periodType: PeriodType,
+    updateSelectedTransactionForView: (Transaction?) -> Unit,
     updateFilter: (Filter) -> Unit,
     updateSort: (OrderBy) -> Unit,
     updateSortType: (SortBy) -> Unit,
@@ -57,7 +60,6 @@ fun AllTabLazyList(
     updateIsSortByExpanded: (Boolean) -> Unit,
     dataDeletionViewModel: DataDeletionViewModel
 ) {
-    val selectedTransactionForView = remember { mutableStateOf<Transaction?>(null) }
 
     Surface(
         color = MaterialTheme.colorScheme.background
@@ -69,9 +71,11 @@ fun AllTabLazyList(
             verticalArrangement = Arrangement.Top
         ) {
             item(
-                key = "summary"
+                key = "summary",
+                contentType = "summary_card" // FIX: distinct contentType for efficient recycling
             ) {
                 AllTabSummaryCard(
+                    allTransactionChartData = allTransactionChartData,
                     allTransactionSummary = allTransactionSummary,
                     selectedDate = selectedDate,
                     periodType = periodType
@@ -83,7 +87,12 @@ fun AllTabLazyList(
                     val groupedTransactions = transactions.data
 
                     if (groupedTransactions.isNotEmpty()) {
-                        groupedTransactions.forEach { (date, transactions) ->
+                        // FIX: renamed the inner destructured list from `transactions` to
+                        // `dayTransactions` — it was shadowing the outer function parameter
+                        // `transactions: DataState<Map<String, List<Transaction>>>`. It happened
+                        // to work because nothing in this block needed the outer value, but it's
+                        // a landmine for future edits that reference the wrong `transactions`.
+                        groupedTransactions.forEach { (date, dayTransactions) ->
                             stickyHeader(key = "date_header_$date") {
                                 AllTabLazyListStickyHeader(
                                     date = date
@@ -91,22 +100,28 @@ fun AllTabLazyList(
                             }
 
                             items(
-                                count = transactions.size,
-                                key = { index -> "all_${date}_${transactions[index].id}" }
+                                count = dayTransactions.size,
+                                key = { index -> "all_${date}_${dayTransactions[index].id}" },
+                                // FIX: contentType lets Compose's recycling pool distinguish
+                                // real transaction rows from shimmer/empty/error rows instead
+                                // of treating every slot as interchangeable. Cheap to add,
+                                // strictly improves recycling efficiency when the data state
+                                // changes (e.g. Loading -> Success) while the list is visible.
+                                contentType = { "transaction_row" }
                             ) { index ->
-                                val transaction = transactions[index]
+                                val transaction = dayTransactions[index]
 
-                                val shape = remember(index, transactions.size) {
+                                val shape = remember(index, dayTransactions.size) {
                                     when (index) {
-                                        0 -> if (transactions.size == 1) RoundedCornerShape(16.dp) else RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
-                                        transactions.lastIndex -> RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)
+                                        0 -> if (dayTransactions.size == 1) RoundedCornerShape(16.dp) else RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+                                        dayTransactions.lastIndex -> RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)
                                         else -> RectangleShape
                                     }
                                 }
 
-                                val padding = remember(index, transactions.size) {
+                                val padding = remember(index, dayTransactions.size) {
                                     when {
-                                        index == transactions.lastIndex -> 10.dp
+                                        index == dayTransactions.lastIndex -> 10.dp
                                         else -> 0.dp
                                     }
                                 }
@@ -118,7 +133,7 @@ fun AllTabLazyList(
                                     shape = shape,
                                     transaction = transaction,
                                     onClick = {
-                                        selectedTransactionForView.value = transaction
+                                        updateSelectedTransactionForView(transaction)
                                     },
                                     onDelete = {
                                         dataDeletionViewModel.updateSelectedTransaction(transaction)
@@ -128,7 +143,10 @@ fun AllTabLazyList(
                         }
                     }
                     else {
-                        item(key = "empty_state") {
+                        item(
+                            key = "empty_state",
+                            contentType = "empty_state" // FIX
+                        ) {
                             AllTabLazyListEmpty()
                         }
                     }
@@ -136,13 +154,20 @@ fun AllTabLazyList(
 
 
                 is DataState.Loading -> {
-                    items(5, key = { "shimmer_$it" }) {
+                    items(
+                        5,
+                        key = { "shimmer_$it" },
+                        contentType = { "shimmer_row" } // FIX
+                    ) {
                         AllTabLazyListItemShimmer()
                     }
                 }
 
                 is DataState.Error -> {
-                    item(key = "error_state") {
+                    item(
+                        key = "error_state",
+                        contentType = "error_state" // FIX
+                    ) {
                         AllTabLazyListError(
                             message = transactions.message
                         )
@@ -183,11 +208,11 @@ fun AllTabLazyList(
         onDismiss = { updateIsSortByExpanded(false) }
     )
 
-    selectedTransactionForView.value?.let { transaction ->
+    allUiState.selectedTransactionForView?.let { transaction ->
         TransactionViewDialog(
             transaction = transaction,
             onShow = true,
-            onDismissRequest = { selectedTransactionForView.value = null }
+            onDismissRequest = { updateSelectedTransactionForView(null) }
         )
     }
 

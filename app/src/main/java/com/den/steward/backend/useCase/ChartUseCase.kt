@@ -148,4 +148,161 @@ class ChartUseCase @Inject constructor (
         }.flowOn(Dispatchers.Default)
     }
 
+    fun chartDataCollectionByWeekDay(transactions: Flow<DataState<List<Transaction>>>): Flow<DataState<ChartDataCollection>> {
+        return transactions.map { state ->
+            when (state) {
+                is DataState.Success -> {
+                    val transactions = state.data
+
+                    // 1. Filter out GOAL and ATTAIN transactions and transactions that don't affect the amount
+                    val filterNoneAmount = transactions.filter {
+                        it.type != TransactionType.GOAL &&
+                                it.type != TransactionType.ATTAIN
+                    }.filter { (it.getAffectAmount?.lowercase() ?: "no") == "yes" }
+
+                    // 2. Find all unique hours that have any activity across any transaction type
+                    val allUniqueWeekDay = filterNoneAmount.map {
+                        it.createdAt.toLocalDateTime().dayOfWeek.value
+                    }.distinct().sorted()
+
+                    // 3. Group by type and create a ChartData for each group with aligned X values
+                    val chartData = filterNoneAmount.groupBy {
+                        it.type
+                    }
+                        .map { (type, groupedTransactions) ->
+                            val color = Color(ContextCompat.getColor(context, type.color))
+                            val label = ContextCompat.getString(context, type.label)
+
+                            val weekDayData = groupedTransactions.groupBy {
+                                it.createdAt.toLocalDateTime().dayOfWeek.value
+                            }
+
+                            val x = allUniqueWeekDay.map { it.toDouble() }
+                            val y = allUniqueWeekDay.map { hour ->
+                                weekDayData[hour]?.sumOf { it.getAmountOrValue ?: 0.0 } ?: 0.0
+                            }
+
+                            ChartData(
+                                x = x,
+                                y = y,
+                                label = label,
+                                color = color
+                            )
+                        }
+
+
+                    // 3. Create a ChartDataCollection with the list of ChartData
+                    val chartDataCollection = ChartDataCollection(
+                        chartData = chartData
+                    )
+
+                    DataState.Success(chartDataCollection)
+
+                }
+                is DataState.Loading -> DataState.Loading
+                is DataState.Error -> DataState.Error(state.message)
+            }
+        }.flowOn(Dispatchers.Default)
+    }
+
+    fun chartDataCollectionByMonthDay(transactions: Flow<DataState<List<Transaction>>>): Flow<DataState<ChartDataCollection>> {
+        return transactions.map { state ->
+            when (state) {
+                is DataState.Success -> {
+                    val transactions = state.data
+
+                    val filterNoneAmount = transactions.filter {
+                        it.type != TransactionType.GOAL &&
+                                it.type != TransactionType.ATTAIN
+                    }.filter { (it.getAffectAmount?.lowercase() ?: "no") == "yes" }
+
+                    val allUniqueMonthDays = filterNoneAmount.map {
+                        it.createdAt.toLocalDateTime().dayOfMonth
+                    }.distinct().sorted()
+
+                    val chartData = filterNoneAmount.groupBy {
+                        it.type
+                    }
+                        .map { (type, groupedTransactions) ->
+                            val color = Color(ContextCompat.getColor(context, type.color))
+                            val label = ContextCompat.getString(context, type.label)
+
+                            val monthDayData = groupedTransactions.groupBy {
+                                it.createdAt.toLocalDateTime().dayOfMonth
+                            }
+
+                            val x = allUniqueMonthDays.map { it.toDouble() }
+                            val y = allUniqueMonthDays.map { day ->
+                                monthDayData[day]?.sumOf { it.getAmountOrValue ?: 0.0 } ?: 0.0
+                            }
+
+                            ChartData(
+                                x = x,
+                                y = y,
+                                label = label,
+                                color = color
+                            )
+                        }
+
+                    val chartDataCollection = ChartDataCollection(
+                        chartData = chartData
+                    )
+                    DataState.Success(chartDataCollection)
+                }
+                is DataState.Loading -> DataState.Loading
+                is DataState.Error -> DataState.Error(state.message)
+            }
+        }.flowOn(Dispatchers.Default)
+    }
+
+    fun chartDataCollectionByMonth(transactions: Flow<DataState<List<Transaction>>>): Flow<DataState<ChartDataCollection>> {
+        return transactions.map { state ->
+            when (state) {
+                is DataState.Success -> {
+                    val transactions = state.data
+
+                    val filterNoneAmount = transactions.filter {
+                        it.type != TransactionType.GOAL &&
+                                it.type != TransactionType.ATTAIN
+                    }.filter { (it.getAffectAmount?.lowercase() ?: "no") == "yes" }
+
+                    val allUniqueMonths = filterNoneAmount.map {
+                        it.createdAt.toLocalDateTime().monthValue
+                    }.distinct().sorted()
+
+                    val chartData = filterNoneAmount.groupBy {
+                        it.type
+                    }
+                        .map { (type, groupedTransactions) ->
+                            val color = Color(ContextCompat.getColor(context, type.color))
+                            val label = ContextCompat.getString(context, type.label)
+
+                            val monthData = groupedTransactions.groupBy {
+                                it.createdAt.toLocalDateTime().monthValue
+                            }
+
+                            val x = allUniqueMonths.map { it.toDouble() }
+                            val y = allUniqueMonths.map { month ->
+                                monthData[month]?.sumOf { it.getAmountOrValue ?: 0.0 } ?: 0.0
+                            }
+
+                            ChartData(
+                                x = x,
+                                y = y,
+                                label = label,
+                                color = color
+                            )
+                        }
+
+                    val chartDataCollection = ChartDataCollection(
+                        chartData = chartData
+                    )
+                    DataState.Success(chartDataCollection)
+                }
+                is DataState.Loading -> DataState.Loading
+                is DataState.Error -> DataState.Error(state.message)
+            }
+        }.flowOn(Dispatchers.Default)
+    }
+
 }

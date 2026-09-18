@@ -40,12 +40,16 @@ fun VicoCandlestick(
         }),
         bottomAxis = HorizontalAxis.rememberBottom(
             guideline = null,
-            valueFormatter = { _, value, _ -> xValueFormatter(value) }
+            valueFormatter = { _, value, _ ->
+                xValueFormatter(value).let { if (it.isEmpty()) " " else it }
+            }
         ),
         startAxis = VerticalAxis.rememberStart(
             line = rememberLineComponent(Fill.Transparent),
-            title = "X",
-            valueFormatter = { _, value, _ -> yValueFormatter(value) }
+            title = "Y",
+            valueFormatter = { _, value, _ ->
+                yValueFormatter(value).let { if (it.isEmpty()) " " else it }
+            }
         )
     )
 

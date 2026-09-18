@@ -1,14 +1,12 @@
 // Grace and truth came through JESUS CHRIST
 package com.den.steward.ui.screens.homeScreen.tabs.allTab
 
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -21,7 +19,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -92,13 +89,18 @@ fun AllTabLazyListItem(
     }
 
     val typeColor = colorResource(id = uiData.typeColorRes)
-    
-    // Optimization: Ensure progress animation target is stable
+
+    // FIX: removed animateFloatAsState here. In a LazyColumn, animateFloatAsState
+    // restarts from its initial value every time this composable is bound to a
+    // freshly-recycled slot (i.e. every time a progress row scrolls into view),
+    // not just on genuine data changes. That caused a visible flicker/animation
+    // on every scroll pass AND cost extra animation frames competing with the
+    // scroll's own frame budget during a fling — a real jank source.
+    // Use the target value directly; only animate this if the SAME transaction's
+    // percentage changes while it's already on screen (e.g. wrap in a
+    // LaunchedEffect(transaction.id, uiData.percentage) if that live-update
+    // feel is actually wanted).
     val progressTarget = remember(uiData.percentage) { (uiData.percentage?.toFloat() ?: 0f) / 100f }
-    val animatedProgress by animateFloatAsState(
-        targetValue = progressTarget,
-        label = "ProgressAnimation"
-    )
 
     SwipeDismiss(
         shape = shape,
@@ -262,7 +264,7 @@ fun AllTabLazyListItem(
                 if (uiData.percentage != null) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         LinearProgressIndicator(
-                            progress = { animatedProgress },
+                            progress = { progressTarget }, // FIX: no animateFloatAsState in a recycled list row
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(6.dp)

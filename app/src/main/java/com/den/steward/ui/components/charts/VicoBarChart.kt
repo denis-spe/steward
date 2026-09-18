@@ -175,6 +175,7 @@ fun VicoBarChart(
     yValueFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
     markerFormatter: (value: Double) -> CharSequence =
         { value -> "$value" },
+    horizontalItemPlacer: HorizontalAxis.ItemPlacer = remember { HorizontalAxis.ItemPlacer.aligned() },
 ) {
 
     val modelProducer = remember { CartesianChartModelProducer() }
@@ -261,8 +262,9 @@ fun VicoBarChart(
         bottomAxis = HorizontalAxis.rememberBottom(
             guideline = null,
             tick = rememberAxisTickComponent(),
+            itemPlacer = horizontalItemPlacer,
             valueFormatter = { _, value, _ ->
-                xValueFormatter(value)
+                xValueFormatter(value).let { if (it.isEmpty()) " " else it }
             }
         ),
 
@@ -273,7 +275,9 @@ fun VicoBarChart(
                 strokeThickness = strokeThickness
             ),
             title = "Y",
-            valueFormatter = { _, value, _ -> yValueFormatter(value) },
+            valueFormatter = { _, value, _ ->
+                yValueFormatter(value).let { if (it.isEmpty()) " " else it }
+            },
         ),
 
         legend = if (showLegend) legend else null

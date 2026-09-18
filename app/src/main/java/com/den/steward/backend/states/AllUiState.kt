@@ -1,6 +1,7 @@
 package com.den.steward.backend.states
 
 import androidx.compose.runtime.Immutable
+import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.useCase.Filter
 import com.den.steward.backend.useCase.OrderBy
 import com.den.steward.backend.useCase.SortBy
@@ -17,5 +18,6 @@ data class AllUiState(
     val isFilterExpanded: Boolean = false,
     val isOrderByExpanded: Boolean = false,
     val isSortByExpanded: Boolean = false,
-    val weekNumber: Int? = selectedDate.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)
+    val weekNumber: Int? = selectedDate.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR),
+    val selectedTransactionForView: Transaction? = null
 )

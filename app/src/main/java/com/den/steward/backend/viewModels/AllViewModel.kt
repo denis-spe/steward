@@ -8,20 +8,26 @@ import com.den.steward.backend.states.AllTransactionSummary
 import com.den.steward.backend.states.AllUiState
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.PeriodType
+import com.den.steward.backend.useCase.ChartUseCase
 import com.den.steward.backend.useCase.Filter
 import com.den.steward.backend.useCase.PeriodDataHandleUseCase
 import com.den.steward.backend.useCase.OrderBy
 import com.den.steward.backend.useCase.SortBy
 import com.den.steward.helper.formattedDate
 import com.den.steward.helper.toLocalDateTime
+import com.den.steward.ui.components.charts.collections.ChartDataCollection
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import java.time.LocalDate
@@ -30,7 +36,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AllViewModel @Inject constructor(
-    private val periodDataHandleUseCase: PeriodDataHandleUseCase
+    private val periodDataHandleUseCase: PeriodDataHandleUseCase,
+    private val chartUseCase: ChartUseCase
 ) : ViewModel() {
     private val _allUiState = MutableStateFlow(AllUiState())
     val allUiState = _allUiState.asStateFlow()
@@ -93,6 +100,14 @@ class AllViewModel @Inject constructor(
         }
     }
 
+    fun updateSelectedTransactionForView(transaction: Transaction?) {
+        _allUiState.update {
+            it.copy(
+                selectedTransactionForView = transaction
+            )
+        }
+    }
+
     fun updateIsFilterExpanded(isExpanded: Boolean) {
         _allUiState.update { it.copy(isFilterExpanded = isExpanded) }
     }
@@ -143,7 +158,7 @@ class AllViewModel @Inject constructor(
             )
                 .distinctUntilChanged() // Avoid re-mapping if data is identical
                 .map { stateResult ->
-                    when(stateResult) {
+                    when (stateResult) {
                         is DataState.Success -> {
                             val grouped = stateResult.data
                                 .groupBy {
@@ -158,7 +173,46 @@ class AllViewModel @Inject constructor(
                         is DataState.Loading -> DataState.Loading
                     }
                 }
+                // FIX: ensures the toLocalDateTime()/groupBy work above never runs on Main,
+                // regardless of what dispatcher getTransactionsForPeriod() emits on internally.
+                // Defensive insurance against a main-thread stall coinciding with scroll,
+                // not a confirmed fix for the reported jank — this is data-layer logic and
+                // does not run on every scroll frame, only when the query params or
+                // underlying data change.
+                .flowOn(Dispatchers.Default)
         }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = DataState.Loading
+        )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val chartDataCollection: StateFlow<DataState<ChartDataCollection>> = allUiState
+        .map { Triple(it.selectedDate, it.periodType, Triple(it.orderBy, it.sortBy, it.filter)) }
+        .distinctUntilChanged()
+        .flatMapLatest { (selectedDate, periodType, queryParams) ->
+            val (orderBy, sortBy, filter) = queryParams
+            val transactionsFlow = periodDataHandleUseCase.getTransactionsForPeriod(
+                date = selectedDate,
+                periodType = periodType,
+                orderBy = orderBy,
+                sortBy = sortBy,
+                filter = filter
+            ).distinctUntilChanged()
+
+            val chartFlow = when (periodType) {
+                PeriodType.DAY -> chartUseCase.chartDataCollection(transactionsFlow)
+                PeriodType.WEEK -> chartUseCase.chartDataCollectionByWeekDay(transactionsFlow)
+                PeriodType.MONTH -> chartUseCase.chartDataCollectionByMonthDay(transactionsFlow)
+                PeriodType.YEAR -> chartUseCase.chartDataCollectionByMonth(transactionsFlow)
+            }
+
+            chartFlow
+                .onStart { emit(DataState.Loading) }
+                .flowOn(Dispatchers.Default)
+        }
+        .distinctUntilChanged()
+        .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = DataState.Loading
@@ -178,7 +232,7 @@ class AllViewModel @Inject constructor(
             )
                 .distinctUntilChanged()
                 .map { stateResult ->
-                    when(stateResult) {
+                    when (stateResult) {
                         is DataState.Success -> {
                             val data = stateResult.data
                             val flow = calculateFlow(data)
@@ -216,6 +270,9 @@ class AllViewModel @Inject constructor(
                         is DataState.Loading -> DataState.Loading
                     }
                 }
+                // FIX: same defensive dispatcher guarantee for the summary calculation path.
+                .flowOn(Dispatchers.Default)
+                .onStart { emit(DataState.Loading) }
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
