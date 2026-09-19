@@ -37,6 +37,7 @@ import com.den.steward.backend.useCase.SortBy
 import com.den.steward.backend.viewModels.DataDeletionViewModel
 import com.den.steward.ui.components.FilterBottomSheet
 import com.den.steward.ui.components.OrderByBottomSheet
+import com.den.steward.ui.components.PeriodTypeBottomSelector
 import com.den.steward.ui.components.SortByBottomSheet
 import com.den.steward.ui.components.TransactionViewDialog
 import com.den.steward.ui.components.charts.collections.ChartDataCollection
@@ -55,6 +56,8 @@ fun AllTabLazyList(
     updateFilter: (Filter) -> Unit,
     updateSort: (OrderBy) -> Unit,
     updateSortType: (SortBy) -> Unit,
+    updatePeriodType: (PeriodType) -> Unit,
+    updateIsPeriodTypeExpanded: (Boolean) -> Unit,
     updateIsFilterExpanded: (Boolean) -> Unit,
     updateIsOrderByExpanded: (Boolean) -> Unit,
     updateIsSortByExpanded: (Boolean) -> Unit,
@@ -206,6 +209,15 @@ fun AllTabLazyList(
             updateIsSortByExpanded(false)
         },
         onDismiss = { updateIsSortByExpanded(false) }
+    )
+
+    PeriodTypeBottomSelector(
+        isExpanded = allUiState.isPeriodTypeExpanded,
+        currentPeriodType = allUiState.periodType,
+        onPeriodTypeChange = updatePeriodType,
+        onDismiss = {
+            updateIsPeriodTypeExpanded(false)
+        }
     )
 
     allUiState.selectedTransactionForView?.let { transaction ->

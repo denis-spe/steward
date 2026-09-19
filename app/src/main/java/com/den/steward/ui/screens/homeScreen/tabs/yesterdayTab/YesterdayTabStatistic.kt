@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material.icons.outlined.Balance
 import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material.icons.outlined.PieChart
 import androidx.compose.material.icons.outlined.Wallet
 import androidx.compose.material3.Card
@@ -44,9 +45,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -66,7 +71,7 @@ fun YesterdayTabStatisticView(
     val tabs = listOf(
         "Trend Chart",
         "Balances",
-        "Liabilities"
+        "Stats"
     )
 
     val pager = rememberPagerState {
@@ -97,7 +102,7 @@ fun YesterdayTabStatisticView(
 
                     1 -> YesterdaySummaryView(yesterdayViewModel = yesterdayViewModel)
 
-                    2 -> YesterdayTabUnpaidLiabilitiesView()
+                    2 -> YesterdayTabStat(yesterdayViewModel = yesterdayViewModel)
                 }
             }
         }
@@ -145,7 +150,7 @@ fun YesterdayTabStatisticPanel(tabs: List<String>, pager: PagerState) {
                     val icon = when (title) {
                         "Trend Chart" -> if (selected) Icons.Filled.BarChart else Icons.Outlined.BarChart
                         "Balances" -> if (selected) Icons.Filled.Wallet else Icons.Outlined.Wallet
-                        "Liabilities" -> if (selected) Icons.Filled.Balance else Icons.Outlined.Balance
+                        "Stats" -> if (selected) Icons.Filled.Insights else Icons.Outlined.Insights
                         else -> Icons.Outlined.PieChart
                     }
 
@@ -196,6 +201,29 @@ fun YesterdayStatisticLayout(
         )
     }
 }
+@Composable
+fun YesterdayTabBarChartEmpty() {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            imageVector = Icons.Default.BarChart,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+            modifier = Modifier.size(48.dp)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "No transactions yet",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
 
 @Composable
 fun YesterdayTabBarChart(
@@ -208,38 +236,7 @@ fun YesterdayTabBarChart(
         when (val currentState = chartDataCollection) {
             is DataState.Success -> {
                 if (currentState.data.chartData.isEmpty()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(24.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(modifier = Modifier.size(chartSize)) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(
-                                    modifier = Modifier.fillMaxSize(),
-                                    verticalArrangement = Arrangement.Center,
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.PieChart,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(48.dp),
-                                        tint = Color.LightGray
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(
-                                        text = "No transactions available",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = Color.LightGray
-                                    )
-                                }
-                            }
-                        }
-                    }
+                   YesterdayTabBarChartEmpty()
                 } else {
                     VicoBarChart(
                         chartDataCollection = currentState.data,
@@ -289,7 +286,11 @@ fun YesterdaySummaryView(
                         highTransactionActivityAmount = state.data.highTransactionActivityAmount,
                         highTransactionActivityLabel = state.data.highTransactionActivityLabel,
                         lowTransactionActivityAmount = state.data.lowTransactionActivityAmount,
-                        lowTransactionActivityLabel = state.data.lowTransactionActivityLabel
+                        lowTransactionActivityLabel = state.data.lowTransactionActivityLabel,
+                        incoming = state.data.incoming,
+                        outgoing = state.data.outgoing,
+                        incomingPercentage = state.data.incomingPercentage,
+                        outgoingPercentage = state.data.outgoingPercentage
                     )
                 }
 
@@ -316,14 +317,21 @@ fun YesterdaySummaryView(
 fun YesterdaySummaryViewContent(
     flow: Double,
     transactionSize: Int,
+    incoming: Double,
+    outgoing: Double,
+    incomingPercentage: Int,
+    outgoingPercentage: Int,
     highTransactionActivityAmount: Double,
     highTransactionActivityLabel: String,
     lowTransactionActivityAmount: Double,
     lowTransactionActivityLabel: String
 ) {
+    val incomingAmount = incoming.formatToAmount()
+    val outgoingAmount = outgoing.formatToAmount()
+
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         // Main metrics row
         Row(
@@ -384,6 +392,38 @@ fun YesterdaySummaryViewContent(
             }
         }
 
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                buildAnnotatedString {
+                    append("Incoming: ")
+                    withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                        append("$incomingPercentage% ($incomingAmount)")
+                    }
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                lineHeight = TextUnit.Unspecified // Default or set small sp
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Text(
+                buildAnnotatedString {
+                    append("Outgoing: ")
+                    withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.error)) {
+                        append("$outgoingPercentage% ($outgoingAmount)")
+                    }
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                lineHeight = TextUnit.Unspecified // Default or set small sp
+            )
+        }
+
         HorizontalDivider(
             modifier = Modifier.fillMaxWidth(),
             thickness = 1.dp,
@@ -441,36 +481,34 @@ fun YesterdaySummaryViewContent(
 }
 
 @Composable
-fun YesterdaySummaryActivityView(amount: Double, label: String) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-
-    }
-}
-
-@Composable
-fun YesterdayTabUnpaidLiabilitiesView() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(
-                imageVector = Icons.Default.Balance,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Liabilities for yesterday are included in the overall overview status.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 32.dp)
-            )
+fun YesterdayTabStat(yesterdayViewModel: YesterdayViewModel) {
+    YesterdayStatisticLayout {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Default.Balance,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Liabilities for yesterday are included in the overall overview status.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 32.dp)
+                    )
+                }
+            }
         }
     }
 }

@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarViewWeek
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
@@ -37,6 +38,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.den.steward.R
+import com.den.steward.backend.states.PeriodType
 import com.den.steward.backend.useCase.Filter
 import com.den.steward.backend.useCase.OrderBy
 import com.den.steward.backend.useCase.SortBy
@@ -495,4 +497,106 @@ fun SortByBottomSheetItem(sortBy: SortBy, selected: Boolean, onSortSelected: (So
             )
         }
     }
+}
+
+
+@Composable
+fun PeriodTypeBottomSelector(
+    isExpanded: Boolean,
+    currentPeriodType: PeriodType,
+    onDismiss: () -> Unit,
+    onPeriodTypeChange: (PeriodType) -> Unit
+) {
+    if (isExpanded) {
+        SortFilterBottomSheetLayout(
+            title = "Transaction Period",
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.CalendarViewWeek,
+                    contentDescription = "Period Type Icon",
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+            },
+            onDismiss = onDismiss
+        ) {
+            PeriodType.entries.forEach {
+                PeriodTypeBottomSheetItem(
+                    periodType = it,
+                    selected = currentPeriodType == it,
+                    onPeriodTypeChange = { periodType ->
+                        onPeriodTypeChange(periodType)
+                        onDismiss()
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun PeriodTypeBottomSheetItem(
+    periodType: PeriodType,
+    selected: Boolean,
+    onPeriodTypeChange: (PeriodType) -> Unit
+) {
+    val primary = MaterialTheme.colorScheme.primary
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+
+    val selectedTextColor = remember(selected) {
+        if (selected) primary else onSurfaceColor
+    }
+
+    val name = remember(periodType) {
+        periodType.name.title
+    }
+
+    val desc = when (periodType) {
+        PeriodType.DAY -> "View transactions for today"
+        PeriodType.WEEK -> "View transactions for this week"
+        PeriodType.MONTH -> "View transactions for this month"
+        PeriodType.YEAR -> "View transactions for this year"
+    }
+
+    val icon = when (periodType) {
+        PeriodType.DAY -> R.drawable.ic_day
+        PeriodType.WEEK -> R.drawable.ic_week
+        PeriodType.MONTH -> R.drawable.ic_month
+        PeriodType.YEAR -> R.drawable.ic_year
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .selectable(
+                selected = selected,
+                onClick = { onPeriodTypeChange(periodType) },
+                role = Role.RadioButton
+            )
+        ) {
+            Image(
+                painter = painterResource(id = icon),
+                contentDescription = "$name filter icon",
+                colorFilter = ColorFilter.tint(selectedTextColor),
+                modifier = Modifier.size(ICON_SIZE)
+            )
+
+            Spacer(
+                modifier = Modifier.width(10.dp)
+            )
+
+            Column {
+                Text(
+                    name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = selectedTextColor
+                )
+
+                Text(
+                    desc,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
+
 }

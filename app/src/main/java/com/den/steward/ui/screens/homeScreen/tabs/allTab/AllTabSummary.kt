@@ -25,13 +25,8 @@ import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Savings
-import androidx.compose.material.icons.filled.Wallet
-import androidx.compose.material.icons.outlined.Balance
-import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.PieChart
-import androidx.compose.material.icons.outlined.Wallet
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -168,7 +163,7 @@ fun AllTabSummaryChart(
                 if (chartData.chartData.isEmpty()) {
                     AllTabSummaryChartEmptyView()
                 } else {
-                    VicoBarChart(
+                    VicoLineChart(
                         chartDataCollection = chartData,
                         modifier = Modifier.fillMaxSize(),
                         horizontalItemPlacer = remember {
@@ -362,8 +357,8 @@ private fun AllTabSummaryCardContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
-                    horizontal = 16.dp,
-                    vertical = 8.dp
+                    horizontal = 3.dp,
+                    vertical = 3.dp
                 ),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(5.dp)
@@ -461,7 +456,7 @@ private fun AllTabSummaryTransactionCard(
 
     Surface(
         modifier = Modifier
-            .width(160.dp)
+            .width(130.dp)
             .height(100.dp),
         shape = MaterialTheme.shapes.large,
         shadowElevation = 1.dp,
@@ -500,7 +495,7 @@ private fun AllTabSummaryTransactionCard(
                 }
                 Text(
                     text = text,
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -594,7 +589,7 @@ private fun AllTabSummaryTransactionCardShimmer(
 ) {
     Surface(
         modifier = Modifier
-            .width(160.dp)
+            .width(130.dp)
             .height(100.dp),
         shape = MaterialTheme.shapes.large,
         shadowElevation = 1.dp,

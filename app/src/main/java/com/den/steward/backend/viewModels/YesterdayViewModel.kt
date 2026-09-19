@@ -12,6 +12,7 @@ import com.den.steward.backend.useCase.DataFilterUseCase
 import com.den.steward.backend.useCase.Filter
 import com.den.steward.backend.useCase.OrderBy
 import com.den.steward.backend.useCase.SortBy
+import com.den.steward.helper.mean
 import com.den.steward.ui.components.charts.collections.ChartDataCollection
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -93,20 +94,46 @@ class YesterdayViewModel @Inject constructor(
             when (state) {
                 is DataState.Success -> {
                     val transactions = state.data
+                        .filter {
+                            it.type != TransactionType.GOAL ||
+                                    it.type != TransactionType.ATTAIN ||
+                                    it.type != TransactionType.ACHIEVEMENT
+                        }
+
                     val group = transactions.groupBy { it.type }
                         .mapValues { (_, value) -> value.sumOf { it.getAmountOrValue ?: 0.0 } }
 
                     val flow = calculateFlow(transactions)
-                    val highTransaction = group.maxBy { it.value }
-                    val lowTransaction = group.minBy { it.value }
+                    val highTransaction = group.maxByOrNull { it.value }
+                    val lowTransaction = group.minByOrNull { it.value }
+
+                    val totalTransactionAmount = transactions
+                        .sumOf { it.getAmountOrValue ?: 0.0 }
+
+                    val incoming = transactions.filter {
+                        it.type == TransactionType.EARNINGS ||
+                        it.type == TransactionType.DEBT ||
+                        it.type == TransactionType.REPAYMENT
+                    }.sumOf { it.getAmountOrValue ?: 0.0 }
+
+                    val outgoing = transactions.filter {
+                        it.type == TransactionType.EXPENSE ||
+                        it.type == TransactionType.LENT ||
+                        it.type == TransactionType.SAVINGS ||
+                        it.type == TransactionType.SETTLEMENT
+                    }.sumOf { it.getAmountOrValue ?: 0.0 }
 
                     val yesterdayTransactionSummary = YesterdayTransactionSummary(
                         flow = flow,
                         transactionSize = transactions.size,
-                        highTransactionActivityAmount = highTransaction.value,
-                        highTransactionActivityLabel = highTransaction.key.name,
-                        lowTransactionActivityAmount = lowTransaction.value,
-                        lowTransactionActivityLabel = lowTransaction.key.name
+                        highTransactionActivityAmount = highTransaction?.value ?: 0.0,
+                        highTransactionActivityLabel = highTransaction?.key?.name ?: "",
+                        lowTransactionActivityAmount = lowTransaction?.value ?: 0.0,
+                        lowTransactionActivityLabel = lowTransaction?.key?.name ?: "",
+                        incoming = incoming,
+                        outgoing = outgoing,
+                        incomingPercentage = ((incoming / totalTransactionAmount) * 100).toInt(),
+                        outgoingPercentage = ((outgoing / totalTransactionAmount) * 100).toInt()
                     )
 
                     DataState.Success(yesterdayTransactionSummary)
@@ -130,12 +157,12 @@ class YesterdayViewModel @Inject constructor(
                 val amount = transaction.getAmountOrValue ?: 0.0
                 when (transaction.type) {
                     TransactionType.EARNINGS,
-                    TransactionType.SAVINGS,
                     TransactionType.DEBT,
                     TransactionType.REPAYMENT -> incoming += amount
 
                     TransactionType.EXPENSE,
                     TransactionType.LENT,
+                    TransactionType.SAVINGS,
                     TransactionType.SETTLEMENT -> outgoing += amount
                     else -> {}
                 }

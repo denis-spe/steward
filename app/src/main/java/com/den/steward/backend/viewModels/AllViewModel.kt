@@ -27,7 +27,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import java.time.LocalDate
@@ -143,6 +142,29 @@ class AllViewModel @Inject constructor(
         return incoming - outgoing
     }
 
+    fun updateIsPeriodTypeExpanded(expend: Boolean) {
+        _allUiState.update { it.copy(isPeriodTypeExpanded = expend) }
+    }
+
+    val transactionCounts: StateFlow<DataState<Map<LocalDate, Int>>> = periodDataHandleUseCase.fetchAllTransactions
+        .map { state ->
+            when (state) {
+                is DataState.Success -> {
+                    val mapped = state.data.groupBy { it.createdAt.toLocalDateTime().toLocalDate() }
+                        .mapValues { it.value.size }
+                    DataState.Success(mapped)
+                }
+                is DataState.Error -> state
+                is DataState.Loading -> state
+            }
+        }
+        .flowOn(Dispatchers.Default)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = DataState.Loading
+        )
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val transactions = allUiState
         .map { Triple(it.selectedDate, it.periodType, Triple(it.orderBy, it.sortBy, it.filter)) }
@@ -208,7 +230,7 @@ class AllViewModel @Inject constructor(
             }
 
             chartFlow
-                .onStart { emit(DataState.Loading) }
+//                .onStart { emit(DataState.Loading) }
                 .flowOn(Dispatchers.Default)
         }
         .distinctUntilChanged()
@@ -272,7 +294,6 @@ class AllViewModel @Inject constructor(
                 }
                 // FIX: same defensive dispatcher guarantee for the summary calculation path.
                 .flowOn(Dispatchers.Default)
-                .onStart { emit(DataState.Loading) }
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),

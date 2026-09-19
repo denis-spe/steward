@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -22,6 +23,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -131,75 +133,83 @@ fun TodayTabLazyListItem(
                             maxLines = 1
                         )
 
-                        Row(
+                        LazyRow (
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text(
-                                text = time,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-
-                            if (uiData.affectAmount != null) {
-                                Box(
-                                    modifier = Modifier
-                                        .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                                ) {
-                                    Text(
-                                        text = if (uiData.affectAmount == "Yes") "Affected" else "Neutral",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = if (uiData.affectAmount == "Yes")
-                                            typeColor
-                                        else MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
+                            item(key = "time") {
+                                Text(
+                                    text = time,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
 
-                            uiData.parent?.let { parent ->
-                                val parentLabel = stringResource(id = parent.type.label)
-                                val parentColor = colorResource(parent.type.color)
-
-                                Box(
-                                    modifier = Modifier
-                                        .clip(CircleShape)
-                                        .background(parentColor.copy(alpha = 0.1f))
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                                ) {
-                                    Text(
-                                        text = parentLabel,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = parentColor,
-                                    )
-                                }
-                            }
-
-                            if (status != null) {
-                                val sColor = colorResource(statusColorRes)
-
-                                Box(
-                                    modifier = Modifier
-                                        .clip(CircleShape)
-                                        .background(sColor.copy(alpha = 0.1f))
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            item(key = "affectAmount") {
+                                if (uiData.affectAmount != null) {
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(CircleShape)
+                                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
                                     ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(6.dp)
-                                                .clip(CircleShape)
-                                                .background(sColor)
-                                        )
                                         Text(
-                                            text = status,
+                                            text = if (uiData.affectAmount == "Yes") "Affected" else "Neutral",
                                             style = MaterialTheme.typography.labelSmall,
-                                            color = sColor
+                                            color = if (uiData.affectAmount == "Yes")
+                                                typeColor
+                                            else MaterialTheme.colorScheme.onSurfaceVariant
                                         )
+                                    }
+                                }
+                            }
+
+                            item(key = "parent") {
+                                uiData.parent?.let { parent ->
+                                    val parentLabel = stringResource(id = parent.type.label)
+                                    val parentColor = colorResource(parent.type.color)
+
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(CircleShape)
+                                            .background(parentColor.copy(alpha = 0.1f))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = parentLabel,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = parentColor,
+                                        )
+                                    }
+                                }
+                            }
+
+                            item(key = "status") {
+                                if (status != null) {
+                                    val sColor = colorResource(statusColorRes)
+
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(CircleShape)
+                                            .background(sColor.copy(alpha = 0.1f))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(6.dp)
+                                                    .clip(CircleShape)
+                                                    .background(sColor)
+                                            )
+                                            Text(
+                                                text = status,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = sColor
+                                            )
+                                        }
                                     }
                                 }
                             }

@@ -10,5 +10,9 @@ data class YesterdayTransactionSummary(
     val highTransactionActivityAmount: Double = 0.0,
     val highTransactionActivityLabel: String = "",
     val lowTransactionActivityAmount: Double = 0.0,
-    val lowTransactionActivityLabel: String = ""
+    val lowTransactionActivityLabel: String = "",
+    val incoming: Double = 0.0,
+    val outgoing: Double = 0.0,
+    val incomingPercentage: Int = 0,
+    val outgoingPercentage: Int = 0
 )

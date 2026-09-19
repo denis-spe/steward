@@ -4,8 +4,11 @@ import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.PeriodType
+import com.den.steward.helper.toLocalDateTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.count
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import java.time.DayOfWeek
@@ -20,12 +23,28 @@ import javax.inject.Inject
 class PeriodDataHandleUseCase @Inject constructor(
     dataFetchUseCase: DataFetchUseCase
 ) {
-    private val fetchAllTransactions = dataFetchUseCase.fetchAllTransactions
+    val fetchAllTransactions = dataFetchUseCase.fetchAllTransactions
     private val zoneId = ZoneId.systemDefault()
 
     // Configuration
     private val firstDayOfWeek = DayOfWeek.SUNDAY
 
+    fun transactionDayCount(
+        date: LocalDate,
+    ): Flow<DataState<Int>> {
+        return fetchAllTransactions.map { state ->
+            when (state) {
+                is DataState.Success -> {
+                    val count = state.data.count {
+                        it.createdAt.toLocalDateTime().toLocalDate() == date
+                    }
+                    DataState.Success(count)
+                }
+                is DataState.Error -> DataState.Error(state.message)
+                is DataState.Loading -> DataState.Loading
+            }
+        }
+    }
 
     /**
      * Generates a list of dates representing a week for a specific pager page.

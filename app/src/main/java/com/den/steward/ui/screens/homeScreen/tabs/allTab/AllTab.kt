@@ -22,12 +22,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.R
+import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.PeriodType
 import com.den.steward.backend.useCase.Filter
 import com.den.steward.backend.useCase.OrderBy
@@ -87,6 +91,19 @@ fun AllTab(
     val getWeekDaysForPage = remember(pagerState.currentPage) {
         allViewModel.getWeekDaysForPage(pagerState.currentPage)
     }
+
+    val transactionCountsState by allViewModel.transactionCounts.collectAsStateWithLifecycle()
+
+    val countList = remember(transactionCountsState, pagerState.currentPage) {
+        val state = transactionCountsState
+        if (state is DataState.Success) {
+            val localDates = allViewModel.getWeekDaysForPage(pagerState.currentPage)
+            localDates.map { date -> state.data[date] ?: 0 }
+        } else {
+            emptyList()
+        }
+    }
+
     val coroutineScope = rememberCoroutineScope()
 
     val filterIcon = when (allUiState.filter) {
@@ -114,6 +131,13 @@ fun AllTab(
         SortBy.FULFILLED -> R.drawable.ic_refund
     }
 
+    val periodTypeIcon = when (allUiState.periodType) {
+        PeriodType.WEEK -> R.drawable.ic_week
+        PeriodType.MONTH -> R.drawable.ic_month
+        PeriodType.YEAR -> R.drawable.ic_year
+        PeriodType.DAY -> R.drawable.ic_day
+    }
+
 
     Column(
         modifier = Modifier
@@ -128,36 +152,29 @@ fun AllTab(
                 .fillMaxWidth()
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(5.dp)
         ) {
             WeekView(
                 pagerState = pagerState,
                 weekDaysForPage = getWeekDaysForPage,
                 selectedDate = allUiState.selectedDate,
-                isDaySelected = allUiState.selectedTransactionForView == null
+                weekNumber = allUiState.weekNumber,
+                counts = countList,
+                onResetClick = {
+                    coroutineScope.launch {
+                        pagerState.animateScrollToPage(PeriodDataHandleUseCase.INITIAL_PAGE)
+                    }
+                },
+
             ) {
                 allViewModel.updateSelectedDate(it)
             }
-
-            PeriodTypeSelector(
-                currentPeriodType = allUiState.periodType,
-                onPeriodTypeChange = allViewModel::updatePeriodType
-            )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Week ${allUiState.weekNumber ?: ""}",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(modifier = Modifier.width(4.dp))
-
                 AllTabListPanelButtons(
                     filterSelected = allUiState.filter != Filter.ALL,
                     orderBySelected = allUiState.orderBy != OrderBy.ASCENDING,
@@ -165,14 +182,13 @@ fun AllTab(
                     onFilterClick = { allViewModel.updateIsFilterExpanded(true) },
                     onSortByClick = { allViewModel.updateIsSortByExpanded(true) },
                     onOrderByClick = { allViewModel.updateIsOrderByExpanded(true) },
-                    onResetClick = {
-                        coroutineScope.launch {
-                            pagerState.animateScrollToPage(PeriodDataHandleUseCase.INITIAL_PAGE)
-                        }
-                    },
+                    periodType = allUiState.periodType,
                     filterIcon = filterIcon,
                     orderByIcon = orderByIcon,
-                    sortByIcon = sortByIcon
+                    sortByIcon = sortByIcon,
+                    onPeriodTypeClick = { allViewModel.updateIsPeriodTypeExpanded(true) },
+                    periodTypeIcon = periodTypeIcon,
+                    periodTypeSelected = allUiState.periodType != PeriodType.WEEK
                 )
             }
         }
@@ -196,38 +212,10 @@ fun AllTab(
             updateIsOrderByExpanded = allViewModel::updateIsOrderByExpanded,
             updateIsSortByExpanded = allViewModel::updateIsSortByExpanded,
             updateSelectedTransactionForView = allViewModel::updateSelectedTransactionForView,
+            updateIsPeriodTypeExpanded = allViewModel::updateIsPeriodTypeExpanded,
+            updatePeriodType = allViewModel::updatePeriodType,
             dataDeletionViewModel = dataDeletionViewModel
         )
-    }
-}
-
-
-
-@Composable
-fun PeriodTypeSelector(
-    currentPeriodType: PeriodType,
-    onPeriodTypeChange: (PeriodType) -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        PeriodType.entries.forEach { type ->
-            val isSelected = currentPeriodType == type
-            AssistChip(
-                onClick = { onPeriodTypeChange(type) },
-                label = { Text(type.name.lowercase().replaceFirstChar { it.uppercase() }) },
-                colors = AssistChipDefaults.assistChipColors(
-                    containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
-                    labelColor = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-                ),
-                border = AssistChipDefaults.assistChipBorder(
-                    enabled = true,
-                    borderColor = if (isSelected) Color.Transparent else MaterialTheme.colorScheme.outlineVariant
-                )
-            )
-        }
     }
 }
 
@@ -237,13 +225,16 @@ fun AllTabListPanelButtons(
     filterSelected: Boolean,
     orderBySelected: Boolean,
     sortBySelected: Boolean,
+    periodTypeSelected: Boolean,
     onFilterClick: () -> Unit,
     onSortByClick: () -> Unit,
     onOrderByClick: () -> Unit,
+    onPeriodTypeClick: () -> Unit,
+    periodType: PeriodType,
     filterIcon: Int,
     orderByIcon: Int,
     sortByIcon: Int,
-    onResetClick: () -> Unit
+    periodTypeIcon: Int
 ) {
     LazyRow(
         modifier = Modifier
@@ -252,18 +243,13 @@ fun AllTabListPanelButtons(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-
-        stickyHeader {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.background,
-            ) {
-                AllTabListPanelButton(
-                    text = "Reset",
-                    icon = R.drawable.filled_refund,
-                    onClick = onResetClick
-                )
-            }
+        item(key = "Period Type") {
+            AllTabListPanelButton(
+                text = periodType.name.lowercase().replaceFirstChar { it.uppercase() },
+                isSelect = periodTypeSelected,
+                icon = periodTypeIcon,
+                onClick = onPeriodTypeClick
+            )
         }
 
         item(key = "Order By") {
@@ -335,7 +321,8 @@ fun AllTabListPanelButton(
                 containerColor = selectedColor,
             ),
         border = border,
-        shape = MaterialTheme.shapes.large
+        shape = MaterialTheme.shapes.medium,
+        contentPadding = PaddingValues(vertical = 2.dp, horizontal = 8.dp)
     ) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -358,81 +345,3 @@ fun AllTabListPanelButton(
 }
 
 
-@Composable
-fun WeekView(
-    pagerState: PagerState,
-    weekDaysForPage: List<LocalDate>,
-    selectedDate: LocalDate,
-    isDaySelected: Boolean,
-    onDayClick: (LocalDate) -> Unit,
-) {
-    HorizontalPager(
-        modifier = Modifier.fillMaxWidth(0.95f),
-        state = pagerState
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                weekDaysForPage.forEach { day ->
-                    WeekDayView(
-                        day = day,
-                        isSelected = day == selectedDate && isDaySelected
-                    ) {
-                        onDayClick(day)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun WeekDayView(
-    day: LocalDate,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    val materialTheme = MaterialTheme.colorScheme
-    val isToday = remember(day) { day == LocalDate.now() }
-
-    val textColor = when {
-        isSelected -> materialTheme.onPrimary
-        isToday -> materialTheme.secondary
-        else -> materialTheme.onSurfaceVariant
-    }
-
-    val backgroundColor = if (isSelected) materialTheme.primary else Color.Transparent
-
-    Column(
-        modifier = Modifier
-            .width(40.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(backgroundColor)
-            .clickable { onClick() }
-            .padding(vertical = 8.dp, horizontal = 4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Text(
-            text = day.dayOfWeek.name.take(3),
-            style = MaterialTheme.typography.labelMedium,
-            color = textColor,
-        )
-
-        HorizontalDivider(
-            color = textColor,
-        )
-
-        Text(
-            text = day.dayOfMonth.toString().padStart(2, '0'),
-            style = MaterialTheme.typography.titleMedium,
-            color = textColor,
-        )
-    }
-}

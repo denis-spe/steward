@@ -18,6 +18,7 @@ data class AllUiState(
     val isFilterExpanded: Boolean = false,
     val isOrderByExpanded: Boolean = false,
     val isSortByExpanded: Boolean = false,
+    val isPeriodTypeExpanded: Boolean = false,
     val weekNumber: Int? = selectedDate.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR),
     val selectedTransactionForView: Transaction? = null
 )
