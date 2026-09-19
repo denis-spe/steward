@@ -41,12 +41,13 @@ data class DataAdditionState(
 
     // Core transaction types
     val coreEntries: List<TransactionType> = listOf(
+        TransactionType.GOAL,
+        TransactionType.PLAN,
         TransactionType.EARNINGS,
         TransactionType.EXPENSE,
         TransactionType.LENT,
         TransactionType.DEBT,
         TransactionType.SAVINGS,
-        TransactionType.GOAL
     ),
 
     // Adjustment transaction types

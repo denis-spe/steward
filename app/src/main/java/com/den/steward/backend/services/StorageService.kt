@@ -1,6 +1,7 @@
 package com.den.steward.backend.services
 
 import android.util.Log
+import com.den.steward.backend.entitles.GoalStatus
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.services.service.Storage
 import com.den.steward.helper.toMap
@@ -33,6 +34,7 @@ class StorageService @Inject constructor(
         private const val SETTLEMENT_COLLECTION = "Settlements"
         private const val ATTAIN_COLLECTION = "Attain"
         private const val ACHIEVEMENT_COLLECTION = "Achievement"
+        private const val PLAN_COLLECTION = "Plans"
         private const val TAG = "StorageService"
         private const val SERVER_ACK_TIMEOUT_MS = 5_000L
     }
@@ -81,7 +83,10 @@ class StorageService @Inject constructor(
                 .collection(ACHIEVEMENT_COLLECTION)
                 .document()
 
-            val finalGoal = transaction
+            val status = when {
+                transaction.attain.sumOf { it.value } >= transaction.value -> GoalStatus.COMPLETED
+                else -> GoalStatus.FAILED
+            }
 
             val achievement = Transaction.Achievement(
                 id = achievedRef.id,
@@ -90,7 +95,7 @@ class StorageService @Inject constructor(
                 startAt = transaction.startedAt,
                 endAt = transaction.endAt,
                 goal = transaction,
-                status = finalGoal.status
+                status = status
             )
 
             val achievedData = achievement.toMap
@@ -137,6 +142,30 @@ class StorageService @Inject constructor(
         }
     }
 
+    override suspend fun addPlanFulfillment(
+        userId: String,
+        transactionId: String,
+        fulfillment: Transaction
+    ): Result<Unit> {
+
+        return try {
+            val transactionRef = docRef.document(userId)
+                .collection(TRANSACTION_COLLECTION)
+                .document(transactionId)
+
+            val fulfillmentData = fulfillment.toMap
+            withTimeoutOrNull(SERVER_ACK_TIMEOUT_MS.milliseconds) {
+                transactionRef.collection(PLAN_COLLECTION)
+                    .add(fulfillmentData)
+                    .await()
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to add fulfillment for transaction $transactionId (user $userId)", e)
+            Result.failure(e)
+        }
+    }
+
     // ============================= Updating the transaction ===================================
     override suspend fun resetGoalAttain(userId: String, transaction: Transaction.Goal): Result<Transaction.Goal> {
         return try {
@@ -145,6 +174,8 @@ class StorageService @Inject constructor(
                 .document(transaction.id)
 
             val attainRef = transactionRef.collection(ATTAIN_COLLECTION)
+            val achievementRef = transactionRef.collection(ACHIEVEMENT_COLLECTION)
+
             // Cache-first read: works offline if previously synced, may be empty if never cached.
             val snapshots = try {
                 attainRef.get().await()
@@ -167,6 +198,7 @@ class StorageService @Inject constructor(
             for (doc in snapshots.documents) {
                 batch.delete(doc.reference)
             }
+
             batch.update(transactionRef, updates)
 
             // Commit is applied to local cache immediately regardless of connectivity.
@@ -263,36 +295,43 @@ class StorageService @Inject constructor(
                 transactionRef.get(Source.CACHE).await()
             }.toTransaction ?: return Result.success(null)
 
-            val fulfillmentCollection = when (transaction) {
-                is Transaction.Lent -> REPAYMENT_COLLECTION
-                is Transaction.Debt -> SETTLEMENT_COLLECTION
-                is Transaction.Goal -> ATTAIN_COLLECTION
-                else -> null
+            val collectionsToFetch = when (transaction) {
+                is Transaction.Lent -> listOf(REPAYMENT_COLLECTION)
+                is Transaction.Debt -> listOf(SETTLEMENT_COLLECTION)
+                is Transaction.Goal -> listOf(ATTAIN_COLLECTION, ACHIEVEMENT_COLLECTION)
+                else -> emptyList()
             }
 
-            if (fulfillmentCollection != null) {
-                val subItems = try {
-                    withTimeoutOrNull(SERVER_ACK_TIMEOUT_MS.milliseconds) {
+            if (collectionsToFetch.isNotEmpty()) {
+                val subItems = mutableListOf<Transaction>()
+                for (collectionName in collectionsToFetch) {
+                    val fetchedItems = try {
+                        withTimeoutOrNull(SERVER_ACK_TIMEOUT_MS.milliseconds) {
+                            transactionRef
+                                .collection(collectionName)
+                                .get().await()
+                        } ?: run {
+                            Log.w(TAG, "Remote fetch timed out for fulfillment $collectionName of $transactionId, trying CACHE")
+                            transactionRef
+                                .collection(collectionName)
+                                .get(Source.CACHE).await()
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Remote fetch failed for fulfillment $collectionName of $transactionId, trying CACHE", e)
                         transactionRef
-                            .collection(fulfillmentCollection)
-                            .get().await()
-                    } ?: run {
-                        Log.w(TAG, "Remote fetch timed out for fulfillment of $transactionId, trying CACHE")
-                        transactionRef
-                            .collection(fulfillmentCollection)
+                            .collection(collectionName)
                             .get(Source.CACHE).await()
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Remote fetch failed for fulfillment of $transactionId, trying CACHE", e)
-                    transactionRef
-                        .collection(fulfillmentCollection)
-                        .get(Source.CACHE).await()
-                }.documents.mapNotNull { it.toTransaction }
+                    }.documents.mapNotNull { it.toTransaction }
+                    subItems.addAll(fetchedItems)
+                }
                 
                 val updatedTransaction = when (transaction) {
                     is Transaction.Lent -> transaction.copy(repayment = subItems.filterIsInstance<Transaction.Repayment>())
                     is Transaction.Debt -> transaction.copy(settlement = subItems.filterIsInstance<Transaction.Settlement>())
-                    is Transaction.Goal -> transaction.copy(attain = subItems.filterIsInstance<Transaction.Attain>())
+                    is Transaction.Goal -> transaction.copy(
+                        attain = subItems.filterIsInstance<Transaction.Attain>(),
+                        achievement = subItems.filterIsInstance<Transaction.Achievement>()
+                    )
                     else -> transaction
                 }
                 Result.success(updatedTransaction)
@@ -428,13 +467,14 @@ class StorageService @Inject constructor(
     override fun fetchAllTransactions(userId: String): Flow<Result<List<Transaction>>> {
         return callbackFlow {
             val transactionsCollection = docRef.document(userId).collection(TRANSACTION_COLLECTION)
-            val subListeners = mutableMapOf<String, ListenerRegistration>()
-            val fulfillmentMap = mutableMapOf<String, List<Transaction>>()
+            val subListeners = mutableMapOf<String, List<ListenerRegistration>>()
+            val fulfillmentMap = mutableMapOf<String, MutableMap<String, List<Transaction>>>()
             var latestTransactions = emptyList<Transaction>()
 
             fun emitMerged() {
                 val merged = latestTransactions.map { transaction ->
-                    val subItems = fulfillmentMap[transaction.id] ?: emptyList()
+                    val collectionsMap = fulfillmentMap[transaction.id]
+                    val subItems = collectionsMap?.values?.flatten() ?: emptyList()
                     when (transaction) {
                         is Transaction.Lent -> {
                             val repayment = subItems.filterIsInstance<Transaction.Repayment>()
@@ -452,8 +492,10 @@ class StorageService @Inject constructor(
                         is Transaction.Goal -> {
                             val attain = subItems.filterIsInstance<Transaction.Attain>()
                                 .map { it.copy(goal = transaction) }
+                            val achievement = subItems.filterIsInstance<Transaction.Achievement>()
+                                .map { it.copy(goal = transaction) }
 
-                            transaction.copy(attain = attain)
+                            transaction.copy(attain = attain, achievement = achievement)
                         }
                         else -> transaction
                     }
@@ -473,34 +515,34 @@ class StorageService @Inject constructor(
                 // Clean up stale listeners
                 val removedIds = subListeners.keys - newIds
                 removedIds.forEach { id ->
-                    subListeners.remove(id)?.remove()
+                    subListeners.remove(id)?.forEach { it.remove() }
                     fulfillmentMap.remove(id)
                 }
 
                 // Add new listeners for added transactions
                 newTransactions.forEach { transaction ->
                     if (!subListeners.containsKey(transaction.id)) {
-                        // Initialize fulfillment entry immediately to prevent it being missing during first merge
-                        fulfillmentMap[transaction.id] = emptyList()
+                        val collectionsMap = mutableMapOf<String, List<Transaction>>()
+                        fulfillmentMap[transaction.id] = collectionsMap
 
-                        val subCollection = when (transaction) {
-                            is Transaction.Lent -> transactionsCollection.document(transaction.id).collection(REPAYMENT_COLLECTION)
-                            is Transaction.Debt -> transactionsCollection.document(transaction.id).collection(SETTLEMENT_COLLECTION)
-                            is Transaction.Goal -> transactionsCollection.document(transaction.id).collection(ATTAIN_COLLECTION)
-                            is Transaction.Achievement -> transactionsCollection.document(transaction.id).collection(ACHIEVEMENT_COLLECTION)
-                            else -> null
+                        val collectionsToListen = when (transaction) {
+                            is Transaction.Lent -> listOf(REPAYMENT_COLLECTION)
+                            is Transaction.Debt -> listOf(SETTLEMENT_COLLECTION)
+                            is Transaction.Goal -> listOf(ATTAIN_COLLECTION, ACHIEVEMENT_COLLECTION)
+                            else -> emptyList()
                         }
 
-                        if (subCollection != null) {
-                            subListeners[transaction.id] = subCollection.addSnapshotListener { subSnapshot, subError ->
+                        val listeners = collectionsToListen.map { collectionName ->
+                            collectionsMap[collectionName] = emptyList()
+                            val subCollection = transactionsCollection.document(transaction.id).collection(collectionName)
+                            subCollection.addSnapshotListener { subSnapshot, subError ->
                                 if (subError == null) {
-                                    fulfillmentMap[transaction.id] = subSnapshot?.documents?.mapNotNull { it.toTransaction } ?: emptyList()
+                                    collectionsMap[collectionName] = subSnapshot?.documents?.mapNotNull { it.toTransaction } ?: emptyList()
                                     emitMerged()
                                 }
                             }
-                        } else {
-                            fulfillmentMap[transaction.id] = emptyList()
                         }
+                        subListeners[transaction.id] = listeners
                     }
                 }
 
@@ -510,7 +552,7 @@ class StorageService @Inject constructor(
 
             awaitClose {
                 topListener.remove()
-                subListeners.values.forEach { it.remove() }
+                subListeners.values.flatten().forEach { it.remove() }
             }
         }.flowOn(Dispatchers.IO).distinctUntilChanged()
     }

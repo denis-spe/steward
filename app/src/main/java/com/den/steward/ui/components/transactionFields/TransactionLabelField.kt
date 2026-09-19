@@ -68,7 +68,7 @@ fun TransactionLabelField(
     val isError = state.text.isEmpty() && wasSuccess is TransactionFieldState.Error
     val color = if (isError)
         MaterialTheme.colorScheme.error else
-        Color.Unspecified
+        colorResource(colorResId)
     val modifiedPlaceholder = if (isError)
         "Fill the Label" else placeholder
 
@@ -196,7 +196,7 @@ fun TransactionLabelField(
                         Text(
                             "|",
                             modifier = Modifier.padding(horizontal = 2.dp),
-                            color = colorResource(colorResId)
+                            color = color
                         )
 
                         TextButton(
@@ -227,7 +227,8 @@ fun TransactionLabelField(
         modifier = modifier,
         onDialogShow = onDialogShow,
         displayState = displayText,
-        wasSuccess = wasSuccess
+        wasSuccess = wasSuccess,
+        color = color
     )
 }
 
@@ -238,6 +239,7 @@ private fun TransactionLabelFieldItem(
     onDialogShow: MutableState<Boolean>,
     displayState: String,
     wasSuccess: TransactionFieldState,
+    color: Color,
 ) {
     val isError = wasSuccess is TransactionFieldState.Error
 
@@ -274,9 +276,7 @@ private fun TransactionLabelFieldItem(
             Text(
                 text = if (isError) "Required" else textValue,
                 fontWeight = FontWeight.Bold,
-                color = if (isError)
-                    MaterialTheme.colorScheme.error
-                else MaterialTheme.colorScheme.primary,
+                color = color,
                 style = MaterialTheme.typography.labelMedium.copy(
                     fontSize = FONT_SIZE
                 )

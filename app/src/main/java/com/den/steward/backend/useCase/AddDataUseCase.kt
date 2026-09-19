@@ -81,6 +81,13 @@ class AddDataUseCase @Inject constructor(
                     endAt = dataTransferToViewModel.endAt,
                     repeatable = dataTransferToViewModel.repeatable,
                 )
+                TransactionType.PLAN -> Transaction.Plan(
+                    label = dataTransferToViewModel.label,
+                    initialValue = amount,
+                    note = dataTransferToViewModel.note,
+                    createdAt = dataTransferToViewModel.createdAt,
+                    selectedIcon = TransactionType.PLAN.icon
+                )
 
                 else -> throw IllegalArgumentException("Invalid transaction type: ${dataTransferToViewModel.transactionType}")
             }
@@ -108,5 +115,9 @@ class AddDataUseCase @Inject constructor(
         } else {
             Log.e(TAG, "Failed to save transaction: ${result.exceptionOrNull()?.message}")
         }
+    }
+
+    suspend fun addPlanFulfillment(transactionId: String, fulfillment: Transaction) {
+        storageService.addPlanFulfillment(userId, transactionId, fulfillment)
     }
 }

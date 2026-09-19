@@ -10,6 +10,7 @@
     <string name="attain">Attain</string>
     <string name="achievement">Achievement</string>
     <string name="savings">Savings</string>
+    <string name="plan">plan</string>
 
 
     <string name="earning_desc">Record money you\'ve received, like a salary or side income</string>
@@ -22,6 +23,7 @@
     <string name="attain_desc">Log progress made toward one of your savings goals</string>
     <string name="achievement_desc">Record a milestone you\'ve reached</string>
     <string name="savings_desc">Record money you\'ve saved</string>
+    <string name="plan_desc">Plan for your financial future</string>
 
     <!-- Distinct, colorblind-friendlier palette — no two types share a hue -->
     <color name="earnings">#2E7D32</color>
@@ -34,5 +36,5 @@
     <color name="attain">#9E9D24</color>
     <color name="achievement">#F9A825</color>
     <color name="savings">#616161</color>
-
+    <color name="plan">#00BCD4</color>"
 </resources>

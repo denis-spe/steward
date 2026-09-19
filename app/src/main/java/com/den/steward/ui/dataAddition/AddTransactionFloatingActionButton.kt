@@ -71,7 +71,7 @@ fun AddTransactionFloatingActionButton(
         title = "Transactions",
         description = "Select the type of transaction you're adding",
         show = dataAdditionState.showTransactionTypeBottomSheet,
-        onDismissRequest = dataAdditionViewModel::reset,
+        onDismissRequest = {dataAdditionViewModel.updateShowTransactionTypeBottomSheet(false)},
     ) {
         dataAdditionState.coreEntries.forEach { type ->
             BottomDrawerSheetItem(
@@ -135,14 +135,14 @@ fun TransactionBottomDrawerSheet(
                 isAmountCorrect = dataAdditionState.isAmountCorrect,
                 updateIsAmountCorrect = dataAdditionViewModel::updateIsAmountCorrect,
                 displayState = dataAdditionState.currentAmount,
+                colorResId = type.color,
                 updateDisplayState = dataAdditionViewModel::updateCorrectAmount,
             )
 
             if (
                 type !in listOf(
                     TransactionType.GOAL,
-                    TransactionType.ATTAIN,
-                    TransactionType.ACHIEVEMENT
+                    TransactionType.PLAN,
                 )
             ) {
                 TransactionAffectAmount(
@@ -177,7 +177,7 @@ fun TransactionBottomDrawerSheet(
             )
 
             // Only show payment method field for non-goal transactions
-            if (type != TransactionType.GOAL) {
+            if (type != TransactionType.GOAL && type != TransactionType.PLAN) {
                 TransactionPaymentMethodField(
                     colorResId = type.color,
                     selectedPaymentMethod = dataAdditionState.paymentMethod,

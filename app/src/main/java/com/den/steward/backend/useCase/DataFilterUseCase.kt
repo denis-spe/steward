@@ -51,4 +51,16 @@ class DataFilterUseCase @Inject constructor(
             else -> state
         }
     }.flowOn(Dispatchers.Default)
+
+    val planTransactions: Flow<DataState<List<Transaction>>> = fetchAllTransactions.map { state ->
+        when (state) {
+            is DataState.Success -> {
+                val filtered = state.data.filter { transaction ->
+                    transaction.type == TransactionType.PLAN
+                }
+                DataState.Success(filtered)
+            }
+            else -> state
+        }
+    }.flowOn(Dispatchers.Default)
 }

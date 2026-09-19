@@ -38,6 +38,7 @@ fun TransactionButtons(
         TransactionType.REPAYMENT -> "Make a repayment"
         TransactionType.SETTLEMENT -> "Submit a settlement"
         TransactionType.SAVINGS -> "Record your money"
+        TransactionType.PLAN -> "Plan for your future"
         else -> ""
     }
 
@@ -51,6 +52,7 @@ fun TransactionButtons(
         TransactionType.REPAYMENT -> "Repayment"
         TransactionType.SETTLEMENT -> "Settlement"
         TransactionType.SAVINGS -> "Save"
+        TransactionType.PLAN -> "Plan"
         else -> ""
     }
 

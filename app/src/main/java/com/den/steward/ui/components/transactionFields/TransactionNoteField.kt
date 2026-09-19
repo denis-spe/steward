@@ -207,7 +207,8 @@ fun TransactionNoteField(
         title = title,
         modifier = modifier,
         onDialogShow = onDialogShow,
-        displayState = displayText
+        displayState = displayText,
+        color = color
     )
 }
 
@@ -217,6 +218,7 @@ private fun TransactionNoteFieldItem(
     modifier: Modifier = Modifier,
     onDialogShow: MutableState<Boolean>,
     displayState: String,
+    color: Color,
 ) {
 
     TransactionFieldCard(
@@ -238,7 +240,7 @@ private fun TransactionNoteFieldItem(
                 text = textValue,
                 fontSize = FONT_SIZE,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                color = color
             )
         }
     ) {

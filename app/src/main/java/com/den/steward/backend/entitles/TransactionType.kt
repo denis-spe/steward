@@ -75,5 +75,12 @@ enum class TransactionType(
         R.string.savings_desc,
         R.drawable.ic_savings,
         R.color.savings
+    ),
+
+    PLAN(
+        R.string.plan,
+        R.string.plan_desc,
+        R.drawable.ic_plan,
+        R.color.plan
     )
 }

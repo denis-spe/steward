@@ -43,4 +43,10 @@ interface Storage {
         oldFulfillmentId: String,
         newFulfillment: Transaction
     ): Result<Unit>
+
+    suspend fun addPlanFulfillment(
+        userId: String,
+        transactionId: String,
+        fulfillment: Transaction
+    ): Result<Unit>
 }

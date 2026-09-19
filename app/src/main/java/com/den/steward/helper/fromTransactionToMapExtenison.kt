@@ -12,6 +12,7 @@ import com.den.steward.backend.entitles.Transaction.Lent
 import com.den.steward.backend.entitles.Transaction.Repayment
 import com.den.steward.backend.entitles.Transaction.Settlement
 import com.den.steward.backend.entitles.Transaction.Savings
+import com.den.steward.backend.entitles.Transaction.Plan
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 
@@ -113,6 +114,16 @@ val Transaction.toMap: MutableMap<String, Any>
                 mapping["status"] = this.status.name
                 mapping["startAt"] = Timestamp(java.util.Date(this.startAt))
                 mapping["endAt"] = Timestamp(java.util.Date(this.endAt))
+            }
+
+            is Plan -> {
+                mapping["initialValue"] = this.initialValue
+                mapping["label"] = this.label
+                mapping["note"] = this.note
+                mapping["plannedAt"] = Timestamp(java.util.Date(this.plannedAt))
+                mapping["endAt"] = Timestamp(java.util.Date(this.endAt))
+                mapping["status"] = this.status.name
+                mapping["selectedIcon"] = this.selectedIcon
             }
         }
         return mapping

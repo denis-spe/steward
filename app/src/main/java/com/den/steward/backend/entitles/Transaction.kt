@@ -10,6 +10,22 @@ sealed class Transaction {
     abstract val id: String
     abstract val type: TransactionType
     abstract val createdAt: Long
+
+    @Stable
+    data class Plan(
+        override val id: String = "",
+        val label: String = "",
+        val note: String = "",
+        val initialValue: Double = 0.0,
+        override val type: TransactionType = TransactionType.PLAN,
+        override val createdAt: Long = System.currentTimeMillis(),
+        val selectedIcon: Int = R.drawable.ic_plan,
+        val transactions: List<Transaction> = emptyList(),
+        val plannedAt: Long = System.currentTimeMillis(),
+        val endAt: Long = System.currentTimeMillis(),
+        val status: PlanStatus = PlanStatus.NOT_YET,
+    ) : Transaction()
+
     @Stable
     data class Earnings(
         override val id: String = "",
@@ -21,9 +37,7 @@ sealed class Transaction {
         val selectedIcon: Int = R.drawable.earnings,
         val paymentMethod: PaymentMethod = PaymentMethod.CASH,
         val affectAmount: Boolean = false,
-    ) : Transaction() {
-
-    }
+    ) : Transaction()
 
     @Stable
     data class Expense(
@@ -214,6 +228,7 @@ sealed class Transaction {
                 is Attain -> "${this.goal.label.title} Attainment"
                 is Achievement -> "${this.goal.label.title} Achievement"
                 is Savings -> this.label.title
+                is Plan -> this.label.title
             }
         }
 
@@ -228,6 +243,7 @@ sealed class Transaction {
                 is Settlement -> this.paymentMethod
                 is Repayment -> this.paymentMethod
                 is Savings -> this.paymentMethod
+                is Plan -> null
                 is Attain -> null
                 is Achievement -> null
             }
@@ -244,6 +260,7 @@ sealed class Transaction {
                 is Settlement -> this.note
                 is Repayment -> this.note
                 is Savings -> this.note
+                is Plan -> this.note
                 is Attain -> "Attained ${this.value} of ${this.goal.value}"
                 is Achievement -> "Achieved ${this.value} of ${this.goal.value}"
             }
@@ -260,6 +277,7 @@ sealed class Transaction {
                 is Settlement -> this.amount
                 is Repayment -> this.amount
                 is Attain -> this.value
+                is Plan -> this.initialValue
                 is Achievement -> this.value
             }
         }
@@ -288,6 +306,8 @@ sealed class Transaction {
                     if (this.goal.goalType == GoalType.AMOUNT) this.value.formatToAmount()
                     else this.value.toString()
                 }
+
+                is Plan -> this.initialValue.formatToAmount()
             }
         }
 
@@ -302,6 +322,7 @@ sealed class Transaction {
                 is Goal -> null
                 is Settlement -> this.affectAmount
                 is Repayment -> this.affectAmount
+                is Plan -> null
                 is Attain -> null
                 is Achievement -> null
             }
@@ -319,6 +340,7 @@ sealed class Transaction {
                 is Debt -> this.selectedIcon
                 is Goal -> this.selectedIcon
                 is Savings -> this.selectedIcon
+                is Plan -> this.selectedIcon
                 else -> null
             }
         }
@@ -328,6 +350,7 @@ sealed class Transaction {
         is Lent -> this.status.label
         is Goal -> this.status.label
         is Debt -> this.status.label
+        is Plan -> this.status.label
         else -> null
     }
 
@@ -337,6 +360,7 @@ sealed class Transaction {
             is Lent -> this.status.color
             is Debt -> this.status.color
             is Goal -> this.status.color
+            is Plan -> this.status.color
             else -> this.type.color
         }
     }

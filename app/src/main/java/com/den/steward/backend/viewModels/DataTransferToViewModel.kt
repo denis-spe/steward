@@ -10,9 +10,9 @@ import java.time.LocalDateTime
 @Immutable
 data class DataTransferToViewModel(
     val transactionType: TransactionType,
-    val label: String,
-    val amount: String,
-    val note: String,
+    val label: String = "",
+    val amount: String = "0.0",
+    val note: String = "",
     val createdAt: Long,
     val paymentMethod: PaymentMethod = PaymentMethod.CASH,
     val endAt: Long = LocalDateTime.now().toEpochMillis(),

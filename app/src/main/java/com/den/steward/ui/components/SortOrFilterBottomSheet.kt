@@ -202,6 +202,7 @@ fun FilterBottomSheetItem(
         Filter.ATTAIN -> R.drawable.ic_attain
         Filter.LENT -> R.drawable.ic_loan
         Filter.DEBT -> R.drawable.ic_debt
+        Filter.PLAN -> R.drawable.ic_plan
     }
 
     val desc = when (filter) {
@@ -215,6 +216,7 @@ fun FilterBottomSheetItem(
         Filter.ATTAIN -> "Track progress towards your goals"
         Filter.LENT -> "Manage money lent out to others"
         Filter.DEBT -> "Track your outstanding liabilities"
+        Filter.PLAN -> "Plan for your future financial targets"
     }
 
     val filterName = remember(filter) {

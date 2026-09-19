@@ -11,4 +11,5 @@ enum class Filter {
     ATTAIN,
     LENT,
     DEBT,
+    PLAN,
 }

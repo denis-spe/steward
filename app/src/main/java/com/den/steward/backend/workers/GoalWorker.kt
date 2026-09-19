@@ -51,9 +51,11 @@ class GoalWorker @AssistedInject constructor(
             val updatedGoal = goalToolUseCase.resetGoalAttain(goal).getOrThrow()
 
             // 3. Re-schedule if repeatable
-            if (goal.repeatable != com.den.steward.backend.entitles.RecurrencePattern.NONE) {
-                goalToolUseCase.schedule(transactionId, updatedGoal)
-            }
+//            if (goal.repeatable != com.den.steward.backend.entitles.RecurrencePattern.NONE) {
+//                goalToolUseCase.schedule(transactionId, updatedGoal)
+//            }
+
+            goalToolUseCase.schedule(transactionId, updatedGoal)
 
              // 4. Display the notification
             notificationSource.showNotification(

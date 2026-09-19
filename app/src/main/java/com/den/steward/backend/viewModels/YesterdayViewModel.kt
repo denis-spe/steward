@@ -182,6 +182,7 @@ class YesterdayViewModel @Inject constructor(
             Filter.ATTAIN -> TransactionType.ATTAIN
             Filter.LENT -> TransactionType.LENT
             Filter.DEBT -> TransactionType.DEBT
+            Filter.PLAN -> TransactionType.PLAN
             Filter.ALL -> null
         }
     }

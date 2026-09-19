@@ -212,6 +212,7 @@ fun YesterdayTabListPanelButtons(
         Filter.ATTAIN -> R.drawable.ic_attain
         Filter.LENT -> R.drawable.ic_loan
         Filter.DEBT -> R.drawable.ic_debt
+        Filter.PLAN -> R.drawable.ic_plan
     }
 
     val orderByIcon = when (orderBy) {

@@ -15,13 +15,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.den.steward.backend.entitles.GoalStatus
@@ -199,6 +203,13 @@ private fun TransactionGoalCard(
     val transactionTypeIcon = painterResource(TransactionType.GOAL.icon)
     val transactionTypeColor = colorResource(TransactionType.GOAL.color)
 
+    val counts = remember (achievement) {
+        object {
+            val completedAchievementSize = achievement.filter { it.status == GoalStatus.COMPLETED }.size
+            val failedAchievementSize = achievement.filter { it.status == GoalStatus.FAILED }.size
+        }
+    }
+
     Column(
         modifier = Modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(5.dp)
@@ -241,6 +252,29 @@ private fun TransactionGoalCard(
             key = "Status",
             value = status.label
         )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                buildAnnotatedString {
+                    append("Completed ")
+                    withStyle(style = SpanStyle(color = Color(0xFF4CAF50))) {
+                        append(counts.completedAchievementSize.toString())
+                    }
+                    append(" - ")
+                    withStyle(style = SpanStyle(color = Color(0xFFF44336))) {
+                        append(counts.failedAchievementSize.toString())
+                    }
+                    append(" Failed")
+
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = MaterialTheme.typography.bodyMedium.fontWeight
+            )
+        }
 
         if (note.isNotBlank()) {
             TransactionNoteView(

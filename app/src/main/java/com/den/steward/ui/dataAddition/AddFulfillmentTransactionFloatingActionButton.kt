@@ -166,6 +166,7 @@ fun FulfillmentTransactionBottomDrawerSheet(
                     is DataState.Success -> state.data
                     else -> emptyList()
                 },
+                colorResId = selectedTransactionType.color,
                 onSetItem = { transaction ->
                     dataAdditionViewModel.updateSelectedParentTransaction(transaction)
                     dataAdditionViewModel.updateIsFulfillmentValid(TransactionFieldState.Initial)

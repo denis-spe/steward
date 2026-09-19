@@ -51,6 +51,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -82,11 +83,12 @@ fun TransactionAmountField(
     transactionName: String? = null,
     transactions: List<Transaction>? = null,
     onSetItem: (transaction: Transaction) -> Unit = {},
+    colorResId: Int,
 ) {
     val isError = isAmountCorrect is TransactionFieldState.Error
     val color = if (isError)
         MaterialTheme.colorScheme.error else
-        Color.Unspecified
+        colorResource(id = colorResId)
 
     val symbol = getCurrencySymbol()
     val onDialogShow = remember { mutableStateOf(false) }
@@ -261,7 +263,8 @@ fun TransactionAmountField(
         displayState = displayState,
         symbol = symbol,
         isError = isError,
-        isAmountCorrect = isAmountCorrect
+        isAmountCorrect = isAmountCorrect,
+        color = color
     )
 
 }
@@ -518,6 +521,7 @@ private fun TransactionAmountFieldItem(
     onDialogShow: MutableState<Boolean>,
     displayState: String,
     symbol: String,
+    color: Color,
     isError: Boolean,
     isAmountCorrect: TransactionFieldState = TransactionFieldState.Initial
 ) {
@@ -557,9 +561,7 @@ private fun TransactionAmountFieldItem(
             Text(
                 text = if (isError) "Required" else amountText,
                 fontWeight = FontWeight.Bold,
-                color = if (isError)
-                    MaterialTheme.colorScheme.error
-                else MaterialTheme.colorScheme.primary,
+                color = color,
                 style = MaterialTheme.typography.labelMedium.copy(
                     fontSize = FONT_SIZE
                 )

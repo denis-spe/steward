@@ -11,6 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -48,6 +49,8 @@ fun BottomDrawerSheet(
             onDismissRequest = onDismissRequest,
             sheetState = sheetState,
             dragHandle = null,
+            containerColor = BottomSheetDefaults.ContainerColor.copy(0.9f),
+            contentColor = MaterialTheme.colorScheme.onSurface
         ) {
             BottomDrawerSheetDesc(
                 title = title,

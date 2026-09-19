@@ -212,14 +212,21 @@ class DataAdditionViewModel @Inject constructor(
 
         val isLabelEmpty = currentState.currentLabel.isEmpty()
         val amountValue = currentState.currentAmount.toDoubleOrNull()
-        val isAmountInvalid = currentState.currentAmount.isEmpty() || amountValue == null || amountValue == 0.0
+        val isAmountInvalid = currentState.currentAmount.isEmpty() ||
+                amountValue == null ||
+                (amountValue == 0.0)
         val isGoalInvalid = currentState.selectedTransactionType == TransactionType.GOAL &&
                 currentState.endAt.toEpochMillis() <= currentState.startAt.toEpochMillis()
+        val isPlanType = currentState.selectedTransactionType == TransactionType.PLAN
 
-        if (isLabelEmpty || isAmountInvalid || isGoalInvalid) {
+        if (isLabelEmpty || (!isPlanType && isAmountInvalid) || isGoalInvalid) {
             _dataAdditionState.update { it.copy(
                 isLabelCorrect = if (isLabelEmpty) TransactionFieldState.Error("Label cannot be empty") else TransactionFieldState.Success,
-                isAmountCorrect = if (isAmountInvalid) TransactionFieldState.Error("Amount cannot be empty or 0") else TransactionFieldState.Success,
+                isAmountCorrect = when {
+                    isPlanType -> TransactionFieldState.Success
+                    isAmountInvalid -> TransactionFieldState.Error("Amount cannot be empty or 0")
+                    else -> TransactionFieldState.Success
+                },
                 isStartNotEqualToEndDateTime = if (isGoalInvalid) TransactionFieldState.Error("End time must be after start time") else TransactionFieldState.Success
             ) }
             return
