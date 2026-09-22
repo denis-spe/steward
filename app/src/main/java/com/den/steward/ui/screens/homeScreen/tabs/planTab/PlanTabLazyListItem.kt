@@ -26,12 +26,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.den.steward.backend.entitles.Transaction
+import com.den.steward.backend.viewModels.DataAdditionViewModel
+import com.den.steward.backend.viewModels.PlanTabViewModel
 import com.den.steward.helper.formatedDateTime
 import com.den.steward.helper.toLocalDateTime
+import com.den.steward.ui.dataAddition.AddPlanFulfillment
 
 @Composable
 fun PlanTabLazyListItem(
-    transaction: Transaction
+    transaction: Transaction,
+    dataAdditionViewModel: DataAdditionViewModel,
+    planTabViewModel: PlanTabViewModel
 ) {
     if (transaction !is Transaction.Plan) return
 
@@ -102,15 +107,26 @@ fun PlanTabLazyListItem(
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.Gray
                 )
-                Text(
-                    text = transaction.getFormattedAmountOrValue,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = typeColor
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = transaction.getFormattedAmountOrValue,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = typeColor
+                    )
+
+                    AddPlanFulfillment(
+                        transaction = transaction,
+                        dataAdditionViewModel = dataAdditionViewModel
+                    ) {
+                        planTabViewModel.setSelectedTransaction(transaction)
+                    }
+                }
             }
-
-
         }
     }
 }

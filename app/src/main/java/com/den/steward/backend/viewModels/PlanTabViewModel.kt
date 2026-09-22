@@ -6,19 +6,45 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.states.DataState
+import com.den.steward.backend.useCase.DataFetchUseCase
 import com.den.steward.backend.useCase.DataFilterUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class PlanTabViewModel @Inject constructor(
+    private val dataFetchUseCase: DataFetchUseCase,
     dataFilterUseCase: DataFilterUseCase
 ) : ViewModel() {
     val planTransactions: StateFlow<DataState<List<Transaction>>> = dataFilterUseCase.planTransactions
+        .distinctUntilChanged()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = DataState.Loading
+        )
+
+    private val _selectedTransaction = MutableStateFlow<Transaction?>(null)
+    val selectedTransaction: StateFlow<Transaction?> = _selectedTransaction
+
+    fun setSelectedTransaction(transaction: Transaction?) {
+        _selectedTransaction.value = transaction
+    }
+
+    val planFulfillmentTransactions: StateFlow<DataState<List<Transaction>>> = _selectedTransaction
+        .flatMapLatest { transaction ->
+            if (transaction == null) flowOf(DataState.Success(emptyList()))
+            else dataFetchUseCase.fetchAllFulfillment(transaction)
+        }
         .distinctUntilChanged()
         .stateIn(
             scope = viewModelScope,

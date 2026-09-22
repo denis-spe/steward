@@ -2,6 +2,7 @@
 package com.den.steward.backend.viewModels
 
 import android.util.Log
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.den.steward.backend.entitles.GoalStatus
@@ -155,11 +156,11 @@ class DataAdditionViewModel @Inject constructor(
         ) }
     }
 
-    fun updateSelectedFulfillmentTransactionType(transactionType: TransactionType) {
+    fun updateSelectedFulfillmentTransactionType(transactionType: TransactionType?) {
         _dataAdditionState.update { it.copy(selectedFulfillmentTransactionType = transactionType) }
     }
 
-    fun updateSelectedParentTransaction(transaction: Transaction) {
+    fun updateSelectedParentTransaction(transaction: Transaction?) {
         _dataAdditionState.update { it.copy(selectedParentTransaction = transaction) }
     }
 
@@ -275,6 +276,10 @@ class DataAdditionViewModel @Inject constructor(
         _dataAdditionState.update { it.copy(isFulfillmentValid = TransactionFieldState.Initial) }
 
         val currentState = _dataAdditionState.value
+        val labelText = currentState.label.text.toString()
+        val amountText = currentState.amount.text.toString()
+        val noteText = currentState.note.text.toString()
+
         if (currentState.isSaving || currentState.selectedParentTransaction == null) {
             _dataAdditionState.update {
                 it.copy(
@@ -286,8 +291,8 @@ class DataAdditionViewModel @Inject constructor(
             return
         }
 
-        val amountValue = currentState.currentAmount.toDoubleOrNull()
-        val isAmountInvalid = currentState.currentAmount.isEmpty() || amountValue == null || amountValue == 0.0
+        val amountValue = amountText.toDoubleOrNull()
+        val isAmountInvalid = amountText.isEmpty() || amountValue == null || amountValue == 0.0
 
         if (isAmountInvalid) {
             _dataAdditionState.update { it.copy(
@@ -310,7 +315,7 @@ class DataAdditionViewModel @Inject constructor(
                         paymentMethod = currentState.paymentMethod,
                         affectAmount = currentState.isAffectingAmount,
                         label = "${parent.label} repayment",
-                        note = currentState.currentNote
+                        note = noteText
                     )
                 }
 
@@ -323,7 +328,7 @@ class DataAdditionViewModel @Inject constructor(
                         paymentMethod = currentState.paymentMethod,
                         affectAmount = currentState.isAffectingAmount,
                         label = "${parent.label} settlement",
-                        note = currentState.currentNote
+                        note = noteText
                     )
                 }
 
@@ -339,7 +344,6 @@ class DataAdditionViewModel @Inject constructor(
                         goal = parent
                     )
                 }
-
                 else -> throw IllegalArgumentException("Invalid fulfillment type")
             }
         } catch (e: Exception) {
@@ -369,6 +373,95 @@ class DataAdditionViewModel @Inject constructor(
                 )
                 // Reset the state after adding
                 reset()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error adding fulfillment transaction", e)
+                _dataAdditionState.update { it.copy(isSaving = false) }
+            }
+        }
+    }
+
+    fun addPlanFulfillment() {
+        _dataAdditionState.update { it.copy(isFulfillmentValid = TransactionFieldState.Initial) }
+
+        val currentState = _dataAdditionState.value
+        val labelText = currentState.label.text.toString()
+        val amountText = currentState.amount.text.toString()
+        val noteText = currentState.note.text.toString()
+
+        if (currentState.isSaving || currentState.selectedParentTransaction == null) {
+            _dataAdditionState.update {
+                it.copy(
+                    isFulfillBtnClick = true,
+                    isSaving = false,
+                    isFulfillmentValid = TransactionFieldState.Error("Select transaction to fulfill")
+                )
+            }
+            return
+        }
+
+        val amountValue = amountText.toDoubleOrNull()
+        val isAmountInvalid = amountText.isEmpty() || amountValue == null || amountValue == 0.0
+
+        if (isAmountInvalid) {
+            _dataAdditionState.update { it.copy(
+                isAmountCorrect = TransactionFieldState.Error("Amount cannot be empty or 0")
+            ) }
+            return
+        }
+
+        val parent = currentState.selectedParentTransaction
+        val createdAt = currentState.localDateCreatedAt.atTime(currentState.localTimeCreatedAt).toEpochMillis()
+
+        val fulfillment = try {
+            when (currentState.selectedFulfillmentTransactionType) {
+                TransactionType.PLAN_FULFILLMENT -> {
+                    if (parent !is Transaction.Plan) throw IllegalArgumentException("Parent must be Plan")
+                    Transaction.PlanFulfillment(
+                        value = amountValue,
+                        createdAt = createdAt,
+                        plan = parent,
+                        label = labelText,
+                        note = noteText,
+                        status = currentState.planStatus,
+                        fulfillmentType = currentState.selectedFulfillmentTransactionType
+                    )
+                }
+
+                else -> throw IllegalArgumentException("Invalid fulfillment type")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error building fulfillment transaction", e)
+            _dataAdditionState.update {
+                it.copy(
+                    isSaving = false,
+                    isFulfillmentValid = TransactionFieldState.Error(e.message ?: "Invalid fulfillment")
+                )
+            }
+            return
+        }
+
+        // Immediately update state to indicate saving and close the sheet
+        _dataAdditionState.update { it.copy(
+            isSaving = true,
+        ) }
+
+        viewModelScope.launch {
+            try {
+                // Perform the database operation
+                addDataUseCase.addFulfillment(
+                    parent.id,
+                    fulfillment
+                )
+
+                _dataAdditionState.update {
+                    it.copy(
+                        isSaving = true,
+                        amount = TextFieldState(),
+                        label = TextFieldState(),
+                        note = TextFieldState(),
+                    )
+                }
+
             } catch (e: Exception) {
                 Log.e(TAG, "Error adding fulfillment transaction", e)
                 _dataAdditionState.update { it.copy(isSaving = false) }

@@ -79,7 +79,8 @@ fun HomeScreen(
 
                 HomeTab.PLAN -> {
                     PlanTab(
-                        padding = padding
+                        padding = padding,
+                        dataAdditionViewModel = dataAdditionViewModel
                     )
                 }
             }

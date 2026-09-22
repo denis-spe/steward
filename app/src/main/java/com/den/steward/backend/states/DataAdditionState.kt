@@ -4,6 +4,7 @@ package com.den.steward.backend.states
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.Immutable
 import com.den.steward.backend.entitles.PaymentMethod
+import com.den.steward.backend.entitles.PlanStatus
 import com.den.steward.backend.entitles.RecurrencePattern
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
@@ -90,4 +91,7 @@ data class DataAdditionState(
     val recurrence: RecurrencePattern = RecurrencePattern.NONE,
     val isStartNotEqualToEndDateTime: TransactionFieldState = TransactionFieldState.Initial,
     val isFulfillBtnClick: Boolean = false,
+
+    // Plan fulfillment
+    val planStatus: PlanStatus = PlanStatus.NOT_YET,
 )

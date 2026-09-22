@@ -116,8 +116,4 @@ class AddDataUseCase @Inject constructor(
             Log.e(TAG, "Failed to save transaction: ${result.exceptionOrNull()?.message}")
         }
     }
-
-    suspend fun addPlanFulfillment(transactionId: String, fulfillment: Transaction) {
-        storageService.addPlanFulfillment(userId, transactionId, fulfillment)
-    }
 }

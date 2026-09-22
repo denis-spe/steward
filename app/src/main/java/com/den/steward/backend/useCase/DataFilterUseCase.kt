@@ -63,4 +63,5 @@ class DataFilterUseCase @Inject constructor(
             else -> state
         }
     }.flowOn(Dispatchers.Default)
+
 }

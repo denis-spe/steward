@@ -120,6 +120,7 @@ class StorageService @Inject constructor(
             is Transaction.Repayment -> REPAYMENT_COLLECTION
             is Transaction.Attain -> ATTAIN_COLLECTION
             is Transaction.Achievement -> ACHIEVEMENT_COLLECTION
+            is Transaction.PlanFulfillment -> PLAN_COLLECTION
             else -> return Result.failure(
                 IllegalArgumentException("Invalid fulfillment type " +
                         "${fulfillment.javaClass.simpleName}"))
@@ -132,30 +133,6 @@ class StorageService @Inject constructor(
             val fulfillmentData = fulfillment.toMap
             withTimeoutOrNull(SERVER_ACK_TIMEOUT_MS.milliseconds) {
                 transactionRef.collection(collection)
-                    .add(fulfillmentData)
-                    .await()
-            }
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to add fulfillment for transaction $transactionId (user $userId)", e)
-            Result.failure(e)
-        }
-    }
-
-    override suspend fun addPlanFulfillment(
-        userId: String,
-        transactionId: String,
-        fulfillment: Transaction
-    ): Result<Unit> {
-
-        return try {
-            val transactionRef = docRef.document(userId)
-                .collection(TRANSACTION_COLLECTION)
-                .document(transactionId)
-
-            val fulfillmentData = fulfillment.toMap
-            withTimeoutOrNull(SERVER_ACK_TIMEOUT_MS.milliseconds) {
-                transactionRef.collection(PLAN_COLLECTION)
                     .add(fulfillmentData)
                     .await()
             }
@@ -359,6 +336,8 @@ class StorageService @Inject constructor(
             is Transaction.Lent -> REPAYMENT_COLLECTION
             is Transaction.Debt -> SETTLEMENT_COLLECTION
             is Transaction.Goal -> ATTAIN_COLLECTION
+            is Transaction.Achievement -> ACHIEVEMENT_COLLECTION
+            is Transaction.PlanFulfillment -> PLAN_COLLECTION
             else -> null
         }
 
@@ -439,10 +418,36 @@ class StorageService @Inject constructor(
                 .document(transaction.id)
                 .collection(ATTAIN_COLLECTION)
 
+            is Transaction.Repayment -> docRef.document(userId)
+                .collection(TRANSACTION_COLLECTION)
+                .document(transaction.id)
+                .collection(REPAYMENT_COLLECTION)
+
+            is Transaction.Settlement -> docRef.document(userId)
+                .collection(TRANSACTION_COLLECTION)
+                .document(transaction.id)
+                .collection(SETTLEMENT_COLLECTION)
+
+
             is Transaction.Achievement -> docRef.document(userId)
                 .collection(TRANSACTION_COLLECTION)
                 .document(transaction.id)
                 .collection(ACHIEVEMENT_COLLECTION)
+
+            is Transaction.Attain -> docRef.document(userId)
+                .collection(TRANSACTION_COLLECTION)
+                .document(transaction.id)
+                .collection(ATTAIN_COLLECTION)
+
+            is Transaction.PlanFulfillment -> docRef.document(userId)
+                .collection(TRANSACTION_COLLECTION)
+                .document(transaction.id)
+                .collection(PLAN_COLLECTION)
+
+            is Transaction.Plan -> docRef.document(userId)
+                .collection(TRANSACTION_COLLECTION)
+                .document(transaction.id)
+                .collection(PLAN_COLLECTION)
 
 
             else -> return flowOf(Result.success(emptyList()))
@@ -456,7 +461,15 @@ class StorageService @Inject constructor(
                         trySend(Result.failure(error))
                         return@addSnapshotListener
                     }
-                    val subItems = subSnapshot?.documents?.mapNotNull { it.toTransaction } ?: emptyList()
+                    val subItems = (subSnapshot?.documents?.mapNotNull { it.toTransaction } ?: emptyList())
+                        .map { fulfillment ->
+                            when (fulfillment) {
+                                is Transaction.Achievement -> fulfillment.copy(goal = transaction as Transaction.Goal)
+                                is Transaction.Attain -> fulfillment.copy(goal = transaction as Transaction.Goal)
+                                is Transaction.PlanFulfillment -> fulfillment.copy(plan = transaction as Transaction.Plan)
+                                else -> fulfillment
+                            }
+                        }
                     trySend(Result.success(subItems))
                 }
             awaitClose { subListener.remove() }

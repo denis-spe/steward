@@ -38,12 +38,18 @@ fun BottomDrawerSheet(
     description: String,
     show: Boolean,
     transactionType: TransactionType? = null,
+    isScrollable: Boolean = true,
     onDismissRequest: () -> Unit,
     content: @Composable (ColumnScope.() -> Unit),
 ) {
     if (show) {
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        val scrollState = rememberScrollState()
+        val modifier = if (isScrollable) {
+            val scrollState = rememberScrollState()
+            Modifier.verticalScroll(scrollState)
+        } else {
+            Modifier
+        }
 
         ModalBottomSheet(
             onDismissRequest = onDismissRequest,
@@ -68,7 +74,7 @@ fun BottomDrawerSheet(
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth()
-                        .verticalScroll(scrollState),
+                        .then(modifier),
                     content = content
                 )
             }

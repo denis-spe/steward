@@ -16,6 +16,7 @@ import com.google.firebase.firestore.DocumentSnapshot
 private val paymentMethodMap = PaymentMethod.entries.associateBy { it.name }
 private val goalTypeMap = GoalType.entries.associateBy { it.name }
 private val goalStatusMap = GoalStatus.entries.associateBy { it.name }
+private val transactionTypeMap = TransactionType.entries.associateBy { it.name }
 private val recurrencePatternMap = RecurrencePattern.entries.associateBy { it.name }
 private val liabilitiesStatusMap = LiabilitiesStatus.entries.associateBy { it.name }
 private val planStatusMap = PlanStatus.entries.associateBy { it.name }
@@ -40,9 +41,6 @@ val DocumentSnapshot.toTransaction: Transaction?
             val goalType = getString("goalType")?.let { name ->
                 goalTypeMap[name]
             } ?: GoalType.AMOUNT
-            val status = getString("status")?.let { name ->
-                goalStatusMap[name]
-            } ?: GoalStatus.NOT_STARTED
             val startedAt = getTimestamp("startedAt")?.toDate()?.time ?: createdAt
             val endAt = getTimestamp("endAt")?.toDate()?.time ?: createdAt
             val repeatable = when (val repeatableName = getString("repeatable")) {
@@ -137,10 +135,6 @@ val DocumentSnapshot.toTransaction: Transaction?
         }
 
         TransactionType.LENT.name -> {
-            val liabilitiesStatus = getString("liabilitiesStatus")?.let { name ->
-                liabilitiesStatusMap[name]
-            } ?: LiabilitiesStatus.UNPAID
-
             Transaction.Lent(
                 id = id,
                 label = label,
@@ -154,10 +148,6 @@ val DocumentSnapshot.toTransaction: Transaction?
         }
 
         TransactionType.DEBT.name -> {
-            val liabilitiesStatus = getString("liabilitiesStatus")?.let { name ->
-                liabilitiesStatusMap[name]
-            } ?: LiabilitiesStatus.UNPAID
-
             Transaction.Debt(
                 id = id,
                 label = label,
@@ -216,6 +206,28 @@ val DocumentSnapshot.toTransaction: Transaction?
                 endAt = endAt,
                 status = status,
                 selectedIcon = selectedIcon.toInt()
+            )
+        }
+
+        TransactionType.PLAN_FULFILLMENT.name -> {
+            val planId = reference.parent.parent?.id ?: ""
+            val fulfillmentType = getString("fulfillmentType")?.let { name ->
+                transactionTypeMap[name]
+            } ?: TransactionType.EARNINGS
+            val value = getDouble("value") ?: 0.0
+            val status = getString("status")?.let { name ->
+                planStatusMap[name]
+            } ?: PlanStatus.NOT_YET
+
+            Transaction.PlanFulfillment(
+                id = id,
+                label = label,
+                value = value,
+                note = note,
+                createdAt = createdAt,
+                fulfillmentType = fulfillmentType,
+                plan = Transaction.Plan(id = planId),
+                status = status
             )
         }
 

@@ -82,5 +82,12 @@ enum class TransactionType(
         R.string.plan_desc,
         R.drawable.ic_plan,
         R.color.plan
+    ),
+
+    PLAN_FULFILLMENT(
+        R.string.plan_fulfillment,
+        R.string.plan_fulfillment_desc,
+        R.drawable.ic_plan,
+        R.color.plan_fulfillment
     )
 }
