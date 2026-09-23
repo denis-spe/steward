@@ -20,6 +20,7 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import com.den.steward.backend.states.HomeTab
 import com.den.steward.backend.viewModels.DataAdditionViewModel
+import com.den.steward.backend.viewModels.DataUpdateViewModel
 import com.den.steward.backend.viewModels.HomeViewModel
 import com.den.steward.ui.dataAddition.MainFloatingActionButton
 import com.den.steward.ui.screens.homeScreen.tabs.allTab.AllTab
@@ -32,7 +33,8 @@ import com.den.steward.ui.screens.homeScreen.tabs.yesterdayTab.YesterdayTab
 fun HomeScreen(
     backStack: NavBackStack<NavKey>,
     homeViewModel: HomeViewModel,
-    dataAdditionViewModel: DataAdditionViewModel
+    dataAdditionViewModel: DataAdditionViewModel,
+    dataUpdateViewModel: DataUpdateViewModel
 ) {
 
     val homeUiState by homeViewModel.homeUiState.collectAsStateWithLifecycle()
@@ -80,7 +82,8 @@ fun HomeScreen(
                 HomeTab.PLAN -> {
                     PlanTab(
                         padding = padding,
-                        dataAdditionViewModel = dataAdditionViewModel
+                        dataAdditionViewModel = dataAdditionViewModel,
+                        dataUpdateViewModel = dataUpdateViewModel
                     )
                 }
             }

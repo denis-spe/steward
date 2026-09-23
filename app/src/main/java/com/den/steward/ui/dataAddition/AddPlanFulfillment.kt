@@ -22,7 +22,10 @@ import androidx.compose.material.icons.filled.CheckCircleOutline
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.RemoveCircleOutline
+import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledIconButton
@@ -32,7 +35,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -41,13 +43,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.backend.entitles.PlanStatus
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
+import com.den.steward.backend.states.DataAdditionState
 import com.den.steward.backend.states.DataState
-import com.den.steward.backend.viewModels.DataAdditionViewModel
-import com.den.steward.backend.viewModels.PlanTabViewModel
 import com.den.steward.ui.components.bottomDrawerSheet.BottomDrawerSheet
 import com.den.steward.ui.components.transactionFields.PlanFulfillmentAmountField
 import com.den.steward.ui.components.transactionFields.PlanFulfillmentLabelField
@@ -57,15 +57,17 @@ import com.den.steward.ui.components.transactionFields.TransactionFieldState
 fun AddPlanFulfillment(
     transaction: Transaction,
     modifier: Modifier = Modifier,
-    dataAdditionViewModel: DataAdditionViewModel,
-    onClick: () -> Unit = {}
+    updateSelectedFulfillmentTransactionType: (TransactionType) -> Unit,
+    updateSelectedParentTransaction: (Transaction?) -> Unit,
+    updateShowFulfillmentTransactionTypeBottomSheet: (Boolean) -> Unit,
+    onClick: () -> Unit = {},
 ) {
     Button(
         onClick = {
             onClick()
-            dataAdditionViewModel.updateSelectedFulfillmentTransactionType(TransactionType.PLAN_FULFILLMENT)
-            dataAdditionViewModel.updateSelectedParentTransaction(transaction)
-            dataAdditionViewModel.updateShowFulfillmentTransactionTypeBottomSheet(true)
+            updateSelectedFulfillmentTransactionType(TransactionType.PLAN_FULFILLMENT)
+            updateSelectedParentTransaction(transaction)
+            updateShowFulfillmentTransactionTypeBottomSheet(true)
         },
         modifier = modifier,
     ) {
@@ -78,11 +80,18 @@ fun AddPlanFulfillment(
 
 @Composable
 fun PlanFulfillmentBottomDrawerSheet(
-    planTabViewModel: PlanTabViewModel,
-    dataAdditionViewModel: DataAdditionViewModel
+    dataAdditionState: DataAdditionState,
+    planFulfillmentState: DataState<List<Transaction>>,
+    setSelectedTransaction: (transaction: Transaction?) -> Unit,
+    updateSelectedParentTransaction: (transaction: Transaction?) -> Unit,
+    updateShowFulfillmentTransactionTypeBottomSheet: (Boolean) -> Unit,
+    addPlanFulfillment: () -> Unit,
+    updatePlanFulfillmentStatus: (
+        transactionId: String,
+        status: PlanStatus,
+        planFulfillment: Transaction.PlanFulfillment) -> Unit
 ) {
-    val dataAdditionState by dataAdditionViewModel.dataAdditionState.collectAsStateWithLifecycle()
-    val planFulfillmentState by planTabViewModel.planFulfillmentTransactions.collectAsStateWithLifecycle()
+
 
     BottomDrawerSheet(
         title = "Plan fulfillment",
@@ -90,9 +99,9 @@ fun PlanFulfillmentBottomDrawerSheet(
         show = dataAdditionState.showFulfillmentTransactionTypeBottomSheet,
         isScrollable = false,
         onDismissRequest = {
-            dataAdditionViewModel.updateSelectedParentTransaction(null)
-            planTabViewModel.setSelectedTransaction(null)
-            dataAdditionViewModel.updateShowFulfillmentTransactionTypeBottomSheet(false)
+            updateSelectedParentTransaction(null)
+            setSelectedTransaction(null)
+            updateShowFulfillmentTransactionTypeBottomSheet(false)
         },
     ) {
         Column(
@@ -107,7 +116,7 @@ fun PlanFulfillmentBottomDrawerSheet(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
             ) {
-                when (val state = planFulfillmentState) {
+                when (planFulfillmentState) {
                     is DataState.Loading -> {
                         item(
                             key = "loading",
@@ -125,7 +134,7 @@ fun PlanFulfillmentBottomDrawerSheet(
                             contentType = "error"
                         ) {
                             Text(
-                                text = "Error: ${state.message}",
+                                text = "Error: ${planFulfillmentState.message}",
                                 modifier = Modifier.padding(16.dp),
                                 color = MaterialTheme.colorScheme.error
                             )
@@ -133,7 +142,7 @@ fun PlanFulfillmentBottomDrawerSheet(
                     }
 
                     is DataState.Success -> {
-                        val transactions = state.data
+                        val transactions = planFulfillmentState.data
 
                         if (transactions.isNotEmpty()) {
                             items(
@@ -143,14 +152,8 @@ fun PlanFulfillmentBottomDrawerSheet(
                             ) { index ->
                                 val item = transactions[index] as Transaction.PlanFulfillment
                                 PlanFulfillmentBottomDrawerSheetItem(
-                                    label = item.getLabel,
-                                    amount = item.getFormattedAmountOrValue,
-                                    statusName = item.getStatus,
-                                    fulfillmentType = item.fulfillmentType,
-                                    note = item.getNote,
-                                    onStatusChange = {
-
-                                    },
+                                    planFulfillment = item,
+                                    onStatusChange = updatePlanFulfillmentStatus,
                                     onDelete = {
 
                                     },
@@ -179,7 +182,8 @@ fun PlanFulfillmentBottomDrawerSheet(
                     contentType = "add"
                 ) {
                     PlanFulfillmentForm(
-                        dataAdditionViewModel = dataAdditionViewModel
+                        dataAdditionState = dataAdditionState,
+                        addPlanFulfillment = addPlanFulfillment
                     )
                 }
             }
@@ -192,188 +196,197 @@ fun PlanFulfillmentBottomDrawerSheet(
 @Composable
 fun PlanFulfillmentBottomDrawerSheetItem(
     modifier: Modifier = Modifier,
-    label: String,
-    amount: String,
-    statusName: String?,
-    fulfillmentType: TransactionType,
-    note: String? = null,
-    onStatusChange: () -> Unit,
+    planFulfillment: Transaction.PlanFulfillment,
+    onStatusChange: (
+        planId: String,
+        status: PlanStatus,
+        fulfillment: Transaction.PlanFulfillment) -> Unit,
     onDelete: () -> Unit,
-    onEdit: () -> Unit
+    onEdit: () -> Unit,
 ) {
 
-    val status = when (statusName) {
-        "PENDING" -> PlanStatus.PENDING
-        "ACHIEVED" -> PlanStatus.ACHIEVED
-        "FAILED" -> PlanStatus.FAILED
-        else -> PlanStatus.NOT_YET
-    }
+    val status = planFulfillment.status
 
-    val statusIcon = remember {
-        when (status) {
-            PlanStatus.PENDING -> Icons.Default.RemoveCircleOutline
-            PlanStatus.ACHIEVED -> Icons.Default.CheckCircleOutline
-            PlanStatus.FAILED -> Icons.Default.Cancel
-            PlanStatus.NOT_YET -> Icons.Default.RemoveCircleOutline
-        }
+    val statusIcon = when (status) {
+        PlanStatus.PENDING -> Icons.Default.Restore
+        PlanStatus.ACHIEVED -> Icons.Default.CheckCircleOutline
+        PlanStatus.FAILED -> Icons.Default.Cancel
+        PlanStatus.NOT_YET -> Icons.Default.RemoveCircleOutline
     }
 
     val material = MaterialTheme.colorScheme
 
-    val statusColor = remember {
-        when (status) {
-            PlanStatus.NOT_YET -> material.onSurface
-            PlanStatus.ACHIEVED -> Color(0xFF16C210)
-            PlanStatus.FAILED -> Color(0xFFD00000)
-            PlanStatus.PENDING -> Color(0xFFF5A623)
-        }
+    val statusColor = when (status) {
+        PlanStatus.NOT_YET -> material.onSurface
+        PlanStatus.ACHIEVED -> Color(0xFF16C210)
+        PlanStatus.FAILED -> Color(0xFFD00000)
+        PlanStatus.PENDING -> Color(0xFFF5A623)
     }
 
     val onExpand = remember {
         mutableStateOf(false)
     }
 
-    val transactionTypeColor = colorResource(TransactionType.PLAN_FULFILLMENT.color)
-    val fulfillmentTypeColor = colorResource(fulfillmentType.color)
+    val expandIcon = if (onExpand.value) Icons.Default.KeyboardArrowUp
+    else Icons.Default.KeyboardArrowDown
 
+    val fulfillmentTypeColor = colorResource(planFulfillment.fulfillmentType.color)
+    val label = planFulfillment.label
+    val amount = planFulfillment.getFormattedAmountOrValue
+    val note = planFulfillment.note
+    val planId = planFulfillment.plan.id
 
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.Start
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Start
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .background(fulfillmentTypeColor),
+                )
+
+                Spacer(modifier = Modifier.width(4.dp))
+
+                Text(
+                    label,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.End
+            ) {
+                Text(
+                    amount,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = fulfillmentTypeColor
+                )
+
+                Spacer(modifier = Modifier.width(2.dp))
+
+                IconButton(
+                    onClick = {
+
+                        val planStatusState = when (status) {
+                            PlanStatus.PENDING -> PlanStatus.ACHIEVED
+                            PlanStatus.ACHIEVED -> PlanStatus.FAILED
+                            PlanStatus.FAILED -> PlanStatus.PENDING
+                            PlanStatus.NOT_YET -> PlanStatus.PENDING
+                        }
+
+                        onStatusChange(
+                            planId,
+                            planStatusState,
+                            planFulfillment
+                        )
+                    },
+                    modifier = Modifier.size(22.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(12.dp)
-                            .background(fulfillmentTypeColor),
-                    )
-
-                    Spacer(modifier = Modifier.width(4.dp))
-
-                    Text(
-                        label,
-                        style = MaterialTheme.typography.bodyLarge
+                    Icon(
+                        imageVector = statusIcon,
+                        contentDescription = "status",
+                        tint = statusColor,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.End
+
+                Spacer(modifier = Modifier.width(2.dp))
+
+                IconButton(
+                    onClick = {
+                        onExpand.value = !onExpand.value
+                    },
+                    modifier = Modifier.size(22.dp)
                 ) {
-                    Text(
-                        amount,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = fulfillmentTypeColor
+                    Icon(
+                        imageVector = expandIcon,
+                        contentDescription = "extend",
+                        modifier = Modifier.size(20.dp)
                     )
-
-                    Spacer(modifier = Modifier.width(2.dp))
-
-                    IconButton(
-                        onClick = onStatusChange,
-                        modifier = Modifier.size(22.dp)
-                    ) {
-                        Icon(
-                            imageVector = statusIcon,
-                            contentDescription = "status",
-                            tint = statusColor,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(2.dp))
-
-                    IconButton(
-                        onClick = {
-                            onExpand.value = !onExpand.value
-                        },
-                        modifier = Modifier.size(22.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.KeyboardArrowDown,
-                            contentDescription = "extend",
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
                 }
             }
+        }
 
-            AnimatedVisibility(
-                visible = onExpand.value,
-                modifier = Modifier.fillMaxWidth()
+        AnimatedVisibility(
+            visible = onExpand.value,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    if (note != null) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                note,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
-                    }
-
+                if (note.isNotEmpty()) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
-                        TextButton(
-                            onClick = onEdit,
+                        Text(
+                            note,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    TextButton(
+                        onClick = onEdit,
+                        modifier = Modifier
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "edit",
                             modifier = Modifier
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = "edit",
-                                modifier = Modifier
-                                    .size(20.dp)
-                                    .padding(end = 4.dp)
-                            )
+                                .size(20.dp)
+                                .padding(end = 4.dp)
+                        )
 
-                            Text(
-                                "Edit",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
+                        Text(
+                            "Edit",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
 
-                        TextButton(
-                            onClick = onDelete,
+                    TextButton(
+                        onClick = onDelete,
+                        modifier = Modifier
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DeleteOutline,
+                            contentDescription = "delete",
                             modifier = Modifier
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.DeleteOutline,
-                                contentDescription = "delete",
-                                modifier = Modifier
-                                    .size(20.dp)
-                                    .padding(end = 4.dp)
-                            )
+                                .size(20.dp)
+                                .padding(end = 4.dp)
+                        )
 
-                            Text(
-                                "Delete",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
+                        Text(
+                            "Delete",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
                 }
             }
         }
+    }
 }
 
 
@@ -412,9 +425,9 @@ fun AddPlanFulfillmentBtn(
 
 @Composable
 fun PlanFulfillmentForm(
-    dataAdditionViewModel: DataAdditionViewModel
+    dataAdditionState: DataAdditionState,
+    addPlanFulfillment: () -> Unit
 ) {
-    val dataAdditionState by dataAdditionViewModel.dataAdditionState.collectAsStateWithLifecycle()
 
     Row(
         modifier = Modifier
@@ -438,7 +451,7 @@ fun PlanFulfillmentForm(
         )
 
         AddPlanFulfillmentBtn(
-            onClick = dataAdditionViewModel::addPlanFulfillment
+            onClick = addPlanFulfillment
         )
     }
 }

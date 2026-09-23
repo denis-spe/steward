@@ -10,9 +10,9 @@ import com.den.steward.backend.states.LiabilitiesPaymentStatsState
 import com.den.steward.backend.states.TodayUiState
 import com.den.steward.backend.useCase.DataFetchUseCase
 import com.den.steward.backend.useCase.DataFilterUseCase
-import com.den.steward.backend.useCase.Filter
-import com.den.steward.backend.useCase.OrderBy
-import com.den.steward.backend.useCase.SortBy
+import com.den.steward.backend.states.Filter
+import com.den.steward.backend.states.OrderBy
+import com.den.steward.backend.states.SortBy
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted

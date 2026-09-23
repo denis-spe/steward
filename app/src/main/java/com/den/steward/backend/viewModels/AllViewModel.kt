@@ -9,10 +9,10 @@ import com.den.steward.backend.states.AllUiState
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.PeriodType
 import com.den.steward.backend.useCase.ChartUseCase
-import com.den.steward.backend.useCase.Filter
+import com.den.steward.backend.states.Filter
 import com.den.steward.backend.useCase.PeriodDataHandleUseCase
-import com.den.steward.backend.useCase.OrderBy
-import com.den.steward.backend.useCase.SortBy
+import com.den.steward.backend.states.OrderBy
+import com.den.steward.backend.states.SortBy
 import com.den.steward.helper.formattedDate
 import com.den.steward.helper.toLocalDateTime
 import com.den.steward.ui.components.charts.collections.ChartDataCollection

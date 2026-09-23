@@ -2,9 +2,6 @@ package com.den.steward.backend.states
 
 import androidx.compose.runtime.Immutable
 import com.den.steward.backend.entitles.Transaction
-import com.den.steward.backend.useCase.Filter
-import com.den.steward.backend.useCase.OrderBy
-import com.den.steward.backend.useCase.SortBy
 import java.time.LocalDate
 import java.time.temporal.IsoFields
 

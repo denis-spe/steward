@@ -23,6 +23,7 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.den.steward.backend.states.AuthState
 import com.den.steward.backend.viewModels.DataAdditionViewModel
+import com.den.steward.backend.viewModels.DataUpdateViewModel
 import com.den.steward.backend.viewModels.ForgotPasswordViewModel
 import com.den.steward.backend.viewModels.HomeViewModel
 import com.den.steward.backend.viewModels.LoginViewModel
@@ -91,11 +92,13 @@ fun EntryProviderScope<NavKey>.featureAEntryBuilder(
     entry<HomeRouter> {
         val homeViewModel: HomeViewModel = hiltViewModel()
         val dataAdditionViewModel: DataAdditionViewModel = hiltViewModel()
+        val dataUpdateViewModel: DataUpdateViewModel = hiltViewModel()
 
         HomeScreen(
             backStack = backStack,
             homeViewModel = homeViewModel,
-            dataAdditionViewModel = dataAdditionViewModel
+            dataAdditionViewModel = dataAdditionViewModel,
+            dataUpdateViewModel = dataUpdateViewModel
         )
     }
 

@@ -39,9 +39,9 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.den.steward.R
 import com.den.steward.backend.states.PeriodType
-import com.den.steward.backend.useCase.Filter
-import com.den.steward.backend.useCase.OrderBy
-import com.den.steward.backend.useCase.SortBy
+import com.den.steward.backend.states.Filter
+import com.den.steward.backend.states.OrderBy
+import com.den.steward.backend.states.SortBy
 import com.den.steward.helper.title
 import com.den.steward.ui.theme.ExtendedTheme
 

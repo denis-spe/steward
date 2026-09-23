@@ -3,12 +3,13 @@ package com.den.steward.backend.useCase
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataState
+import com.den.steward.backend.states.Filter
+import com.den.steward.backend.states.OrderBy
 import com.den.steward.backend.states.PeriodType
+import com.den.steward.backend.states.SortBy
 import com.den.steward.helper.toLocalDateTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.count
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import java.time.DayOfWeek

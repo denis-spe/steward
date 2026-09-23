@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.den.steward.backend.entitles.GoalStatus
 import com.den.steward.backend.entitles.PaymentMethod
+import com.den.steward.backend.entitles.PlanStatus
 import com.den.steward.backend.entitles.RecurrencePattern
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
@@ -158,6 +159,10 @@ class DataAdditionViewModel @Inject constructor(
 
     fun updateSelectedFulfillmentTransactionType(transactionType: TransactionType?) {
         _dataAdditionState.update { it.copy(selectedFulfillmentTransactionType = transactionType) }
+    }
+
+    fun updateSelectedPlanFulfillmentType(transactionType: TransactionType) {
+        _dataAdditionState.update { it.copy(selectedPlanFulfillmentType = transactionType) }
     }
 
     fun updateSelectedParentTransaction(transaction: Transaction?) {
@@ -422,8 +427,8 @@ class DataAdditionViewModel @Inject constructor(
                         plan = parent,
                         label = labelText,
                         note = noteText,
-                        status = currentState.planStatus,
-                        fulfillmentType = currentState.selectedFulfillmentTransactionType
+                        status = PlanStatus.PENDING,
+                        fulfillmentType = currentState.selectedPlanFulfillmentType
                     )
                 }
 

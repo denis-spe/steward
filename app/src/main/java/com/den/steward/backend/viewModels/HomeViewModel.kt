@@ -5,7 +5,7 @@ import com.den.steward.backend.states.AuthState
 import com.den.steward.backend.states.HomeTab
 import com.den.steward.backend.states.HomeUiState
 import com.den.steward.backend.useCase.AuthorizationUseCase
-import com.den.steward.backend.useCase.Filter
+import com.den.steward.backend.states.Filter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

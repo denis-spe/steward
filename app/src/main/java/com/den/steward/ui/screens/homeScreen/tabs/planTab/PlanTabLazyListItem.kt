@@ -25,9 +25,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.den.steward.backend.entitles.PlanStatus
 import com.den.steward.backend.entitles.Transaction
-import com.den.steward.backend.viewModels.DataAdditionViewModel
-import com.den.steward.backend.viewModels.PlanTabViewModel
+import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.helper.formatedDateTime
 import com.den.steward.helper.toLocalDateTime
 import com.den.steward.ui.dataAddition.AddPlanFulfillment
@@ -35,8 +35,10 @@ import com.den.steward.ui.dataAddition.AddPlanFulfillment
 @Composable
 fun PlanTabLazyListItem(
     transaction: Transaction,
-    dataAdditionViewModel: DataAdditionViewModel,
-    planTabViewModel: PlanTabViewModel
+    updateSelectedParentTransaction: (Transaction?) -> Unit,
+    updateSelectedFulfillmentTransactionType: (TransactionType) -> Unit,
+    updateShowFulfillmentTransactionTypeBottomSheet: (Boolean) -> Unit,
+    setSelectedTransaction: (Transaction) -> Unit,
 ) {
     if (transaction !is Transaction.Plan) return
 
@@ -121,9 +123,11 @@ fun PlanTabLazyListItem(
 
                     AddPlanFulfillment(
                         transaction = transaction,
-                        dataAdditionViewModel = dataAdditionViewModel
+                        updateSelectedParentTransaction = updateSelectedParentTransaction,
+                        updateSelectedFulfillmentTransactionType = updateSelectedFulfillmentTransactionType,
+                        updateShowFulfillmentTransactionTypeBottomSheet = updateShowFulfillmentTransactionTypeBottomSheet,
                     ) {
-                        planTabViewModel.setSelectedTransaction(transaction)
+                        setSelectedTransaction(transaction)
                     }
                 }
             }

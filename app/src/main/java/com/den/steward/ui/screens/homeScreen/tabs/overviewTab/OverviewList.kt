@@ -36,7 +36,7 @@ import com.den.steward.helper.formatToAmount
 import com.den.steward.ui.componentExtenison.shimmerEffect
 
 import com.den.steward.backend.states.HomeTab
-import com.den.steward.backend.useCase.Filter
+import com.den.steward.backend.states.Filter
 
 @Composable
 internal fun OverviewList(

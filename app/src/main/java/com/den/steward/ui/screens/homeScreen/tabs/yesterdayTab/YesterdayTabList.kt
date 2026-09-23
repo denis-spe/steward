@@ -29,9 +29,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.R
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.states.DataState
-import com.den.steward.backend.useCase.Filter
-import com.den.steward.backend.useCase.OrderBy
-import com.den.steward.backend.useCase.SortBy
+import com.den.steward.backend.states.Filter
+import com.den.steward.backend.states.OrderBy
+import com.den.steward.backend.states.SortBy
 import com.den.steward.backend.viewModels.DataDeletionViewModel
 import com.den.steward.backend.viewModels.YesterdayViewModel
 import com.den.steward.ui.componentExtenison.shimmerEffect

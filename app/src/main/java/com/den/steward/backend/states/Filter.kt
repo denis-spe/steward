@@ -1,4 +1,4 @@
-package com.den.steward.backend.useCase
+package com.den.steward.backend.states
 
 enum class Filter {
     ALL,

@@ -9,8 +9,8 @@ import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.OverviewUiState
 import com.den.steward.backend.useCase.DataFetchUseCase
-import com.den.steward.backend.useCase.OrderBy
-import com.den.steward.backend.useCase.SortBy
+import com.den.steward.backend.states.OrderBy
+import com.den.steward.backend.states.SortBy
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted

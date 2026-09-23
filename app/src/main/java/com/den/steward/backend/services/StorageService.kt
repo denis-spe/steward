@@ -232,6 +232,7 @@ class StorageService @Inject constructor(
             is Transaction.Repayment -> REPAYMENT_COLLECTION
             is Transaction.Attain -> ATTAIN_COLLECTION
             is Transaction.Achievement -> ACHIEVEMENT_COLLECTION
+            is Transaction.PlanFulfillment -> PLAN_COLLECTION
             else -> return Result.failure(
                 IllegalArgumentException("Invalid fulfillment type " +
                         "${newFulfillment.javaClass.simpleName}"))
@@ -510,6 +511,11 @@ class StorageService @Inject constructor(
 
                             transaction.copy(attain = attain, achievement = achievement)
                         }
+                        is Transaction.Plan -> {
+                            val transactions = subItems.filterIsInstance<Transaction.PlanFulfillment>()
+                                .map { it.copy(plan = transaction) }
+                            transaction.copy(transactions = transactions)
+                        }
                         else -> transaction
                     }
                 }
@@ -542,6 +548,7 @@ class StorageService @Inject constructor(
                             is Transaction.Lent -> listOf(REPAYMENT_COLLECTION)
                             is Transaction.Debt -> listOf(SETTLEMENT_COLLECTION)
                             is Transaction.Goal -> listOf(ATTAIN_COLLECTION, ACHIEVEMENT_COLLECTION)
+                            is Transaction.Plan -> listOf(PLAN_COLLECTION)
                             else -> emptyList()
                         }
 

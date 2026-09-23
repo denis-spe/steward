@@ -94,4 +94,5 @@ data class DataAdditionState(
 
     // Plan fulfillment
     val planStatus: PlanStatus = PlanStatus.NOT_YET,
+    val selectedPlanFulfillmentType: TransactionType = TransactionType.EARNINGS,
 )

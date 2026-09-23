@@ -9,10 +9,9 @@ import com.den.steward.backend.states.YesterdayTransactionSummary
 import com.den.steward.backend.states.YesterdayUiState
 import com.den.steward.backend.useCase.ChartUseCase
 import com.den.steward.backend.useCase.DataFilterUseCase
-import com.den.steward.backend.useCase.Filter
-import com.den.steward.backend.useCase.OrderBy
-import com.den.steward.backend.useCase.SortBy
-import com.den.steward.helper.mean
+import com.den.steward.backend.states.Filter
+import com.den.steward.backend.states.OrderBy
+import com.den.steward.backend.states.SortBy
 import com.den.steward.ui.components.charts.collections.ChartDataCollection
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

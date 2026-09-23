@@ -13,14 +13,20 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.backend.viewModels.DataAdditionViewModel
+import com.den.steward.backend.viewModels.DataUpdateViewModel
 import com.den.steward.backend.viewModels.PlanTabViewModel
 
 @Composable
 fun PlanTab(
     padding: PaddingValues,
     dataAdditionViewModel: DataAdditionViewModel,
+    dataUpdateViewModel: DataUpdateViewModel,
     planTabViewModel: PlanTabViewModel = hiltViewModel()
 ) {
+    val planTransactionsState by planTabViewModel.planTransactions.collectAsStateWithLifecycle()
+    val dataAdditionState by dataAdditionViewModel.dataAdditionState.collectAsStateWithLifecycle()
+    val planFulfillmentState by planTabViewModel.planFulfillmentTransactions.collectAsStateWithLifecycle()
+
     Column(
         modifier = Modifier.fillMaxSize()
             .padding(padding),
@@ -28,8 +34,15 @@ fun PlanTab(
         verticalArrangement = Arrangement.Top
     ) {
         PlanTabLazyList(
-            dataAdditionViewModel = dataAdditionViewModel,
-            planTabViewModel = planTabViewModel,
+            dataAdditionState = dataAdditionState,
+            planTransactionsState = planTransactionsState,
+            planFulfillmentState = planFulfillmentState,
+            updateSelectedParentTransaction = dataAdditionViewModel::updateSelectedParentTransaction,
+            updateSelectedFulfillmentTransactionType = dataAdditionViewModel::updateSelectedFulfillmentTransactionType,
+            updateShowFulfillmentTransactionTypeBottomSheet = dataAdditionViewModel::updateShowFulfillmentTransactionTypeBottomSheet,
+            updatePlanFulfillmentStatus = dataUpdateViewModel::updatePlanFulfillmentStatus,
+            setSelectedTransaction = planTabViewModel::setSelectedTransaction,
+            addPlanFulfillment = dataAdditionViewModel::addPlanFulfillment
         )
     }
 }
