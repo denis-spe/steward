@@ -25,8 +25,8 @@ class DataDeletionUseCase @Inject constructor(
     suspend fun deleteFulfillment(
         transactionId: String,
         fulfillmentId: String,
-        fulfillmentType: Transaction
+        transaction: Transaction
     ) {
-        storageService.deleteFulfillment(userId, transactionId, fulfillmentId, fulfillmentType)
+        storageService.deleteFulfillment(userId, transactionId, fulfillmentId, transaction)
     }
 }

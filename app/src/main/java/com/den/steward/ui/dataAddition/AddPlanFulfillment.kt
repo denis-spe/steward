@@ -3,6 +3,8 @@
 package com.den.steward.ui.dataAddition
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateBounds
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,7 +42,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.den.steward.backend.entitles.PlanStatus
@@ -48,10 +52,12 @@ import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataAdditionState
 import com.den.steward.backend.states.DataState
+import com.den.steward.backend.states.PlanTabUiState
 import com.den.steward.ui.components.bottomDrawerSheet.BottomDrawerSheet
 import com.den.steward.ui.components.transactionFields.PlanFulfillmentAmountField
 import com.den.steward.ui.components.transactionFields.PlanFulfillmentLabelField
 import com.den.steward.ui.components.transactionFields.TransactionFieldState
+import com.den.steward.ui.components.transactionFields.TransactionTypeSelector
 
 @Composable
 fun AddPlanFulfillment(
@@ -80,26 +86,26 @@ fun AddPlanFulfillment(
 
 @Composable
 fun PlanFulfillmentBottomDrawerSheet(
-    dataAdditionState: DataAdditionState,
+    planTabUiState: PlanTabUiState,
     planFulfillmentState: DataState<List<Transaction>>,
     setSelectedTransaction: (transaction: Transaction?) -> Unit,
-    updateSelectedParentTransaction: (transaction: Transaction?) -> Unit,
     updateShowFulfillmentTransactionTypeBottomSheet: (Boolean) -> Unit,
     addPlanFulfillment: () -> Unit,
+    onTypeChange: (TransactionType) -> Unit,
     updatePlanFulfillmentStatus: (
         transactionId: String,
         status: PlanStatus,
-        planFulfillment: Transaction.PlanFulfillment) -> Unit
+        planFulfillment: Transaction.PlanFulfillment) -> Unit,
+    deleteFulfillmentPlan: (transactionId: String, transaction: Transaction) -> Unit
 ) {
 
 
     BottomDrawerSheet(
         title = "Plan fulfillment",
         description = "Add, update or delete plan fulfillment",
-        show = dataAdditionState.showFulfillmentTransactionTypeBottomSheet,
+        show = planTabUiState.showFulfillmentTransactionTypeBottomSheet,
         isScrollable = false,
         onDismissRequest = {
-            updateSelectedParentTransaction(null)
             setSelectedTransaction(null)
             updateShowFulfillmentTransactionTypeBottomSheet(false)
         },
@@ -152,10 +158,14 @@ fun PlanFulfillmentBottomDrawerSheet(
                             ) { index ->
                                 val item = transactions[index] as Transaction.PlanFulfillment
                                 PlanFulfillmentBottomDrawerSheetItem(
+                                    modifier = Modifier.animateItem(),
                                     planFulfillment = item,
                                     onStatusChange = updatePlanFulfillmentStatus,
                                     onDelete = {
-
+                                        deleteFulfillmentPlan(
+                                            item.plan.id,
+                                            item
+                                        )
                                     },
                                     onEdit = {
 
@@ -182,8 +192,9 @@ fun PlanFulfillmentBottomDrawerSheet(
                     contentType = "add"
                 ) {
                     PlanFulfillmentForm(
-                        dataAdditionState = dataAdditionState,
-                        addPlanFulfillment = addPlanFulfillment
+                        planTabUiState = planTabUiState,
+                        addPlanFulfillment = addPlanFulfillment,
+                        onTypeChange = onTypeChange
                     )
                 }
             }
@@ -230,19 +241,20 @@ fun PlanFulfillmentBottomDrawerSheetItem(
     val expandIcon = if (onExpand.value) Icons.Default.KeyboardArrowUp
     else Icons.Default.KeyboardArrowDown
 
-    val fulfillmentTypeColor = colorResource(planFulfillment.fulfillmentType.color)
+    val fulfillmentType = planFulfillment.fulfillmentType
+    val fulfillmentTypeColor = colorResource(fulfillmentType.color)
     val label = planFulfillment.label
     val amount = planFulfillment.getFormattedAmountOrValue
     val note = planFulfillment.note
     val planId = planFulfillment.plan.id
 
     Column(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -252,10 +264,11 @@ fun PlanFulfillmentBottomDrawerSheetItem(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Start
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(12.dp)
-                        .background(fulfillmentTypeColor),
+                Image(
+                    painter = painterResource(fulfillmentType.icon),
+                    contentDescription = "fulfillment type",
+                    modifier = Modifier.size(20.dp),
+                    colorFilter = ColorFilter.tint(fulfillmentTypeColor)
                 )
 
                 Spacer(modifier = Modifier.width(4.dp))
@@ -425,33 +438,45 @@ fun AddPlanFulfillmentBtn(
 
 @Composable
 fun PlanFulfillmentForm(
-    dataAdditionState: DataAdditionState,
-    addPlanFulfillment: () -> Unit
+    planTabUiState: PlanTabUiState,
+    addPlanFulfillment: () -> Unit,
+    onTypeChange: (TransactionType) -> Unit
 ) {
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
+    Column(
+        modifier = Modifier.fillMaxWidth()
             .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        PlanFulfillmentLabelField(
-            state = dataAdditionState.label,
-            placeholder = "Label",
-            isError = dataAdditionState.isLabelCorrect is TransactionFieldState.Error,
-            modifier = Modifier.weight(1f)
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            PlanFulfillmentLabelField(
+                state = planTabUiState.label,
+                placeholder = "Label",
+                isError = planTabUiState.isLabelCorrect is TransactionFieldState.Error,
+                modifier = Modifier.weight(1f)
+            )
 
-        PlanFulfillmentAmountField(
-            state = dataAdditionState.amount,
-            placeholder = "0.0",
-            isError = dataAdditionState.isAmountCorrect is TransactionFieldState.Error,
-            modifier = Modifier.weight(0.6f)
-        )
+            PlanFulfillmentAmountField(
+                state = planTabUiState.amount,
+                placeholder = "0.0",
+                isError = planTabUiState.isAmountCorrect is TransactionFieldState.Error,
+                modifier = Modifier.weight(0.6f)
+            )
 
-        AddPlanFulfillmentBtn(
-            onClick = addPlanFulfillment
+            AddPlanFulfillmentBtn(
+                onClick = addPlanFulfillment
+            )
+        }
+
+        TransactionTypeSelector(
+            selectedType = planTabUiState.selectedPlanFulfillmentType,
+            onTypeChange = onTypeChange,
         )
     }
 }

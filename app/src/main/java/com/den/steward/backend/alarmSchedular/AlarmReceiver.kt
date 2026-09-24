@@ -8,8 +8,8 @@ import android.os.PowerManager
 import android.util.Log
 import android.widget.Toast
 import com.den.steward.R
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class AlarmReceiver : BroadcastReceiver() {
@@ -20,7 +20,6 @@ class AlarmReceiver : BroadcastReceiver() {
         const val EXTRA_TASK = "extra_task_id"
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
     override fun onReceive(context: Context?, intent: Intent?) {
         Log.d(TAG, "onReceive: ${intent?.action}")
         
@@ -37,8 +36,13 @@ class AlarmReceiver : BroadcastReceiver() {
             wakelock?.acquire(3000L)
         }
         
-        GlobalScope.launch {
-            handleIntent(intent)
+        val pendingResult = goAsync()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                handleIntent(intent)
+            } finally {
+                pendingResult.finish()
+            }
         }
     }
 

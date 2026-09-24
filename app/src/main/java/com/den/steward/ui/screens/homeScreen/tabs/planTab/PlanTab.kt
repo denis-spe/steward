@@ -12,20 +12,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.den.steward.backend.viewModels.DataAdditionViewModel
-import com.den.steward.backend.viewModels.DataUpdateViewModel
 import com.den.steward.backend.viewModels.PlanTabViewModel
 
 @Composable
 fun PlanTab(
     padding: PaddingValues,
-    dataAdditionViewModel: DataAdditionViewModel,
-    dataUpdateViewModel: DataUpdateViewModel,
     planTabViewModel: PlanTabViewModel = hiltViewModel()
 ) {
     val planTransactionsState by planTabViewModel.planTransactions.collectAsStateWithLifecycle()
-    val dataAdditionState by dataAdditionViewModel.dataAdditionState.collectAsStateWithLifecycle()
     val planFulfillmentState by planTabViewModel.planFulfillmentTransactions.collectAsStateWithLifecycle()
+    val planTabUiState by planTabViewModel.planTabUiState.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -34,15 +30,16 @@ fun PlanTab(
         verticalArrangement = Arrangement.Top
     ) {
         PlanTabLazyList(
-            dataAdditionState = dataAdditionState,
+            planTabUiState = planTabUiState,
             planTransactionsState = planTransactionsState,
             planFulfillmentState = planFulfillmentState,
-            updateSelectedParentTransaction = dataAdditionViewModel::updateSelectedParentTransaction,
-            updateSelectedFulfillmentTransactionType = dataAdditionViewModel::updateSelectedFulfillmentTransactionType,
-            updateShowFulfillmentTransactionTypeBottomSheet = dataAdditionViewModel::updateShowFulfillmentTransactionTypeBottomSheet,
-            updatePlanFulfillmentStatus = dataUpdateViewModel::updatePlanFulfillmentStatus,
+            updateSelectedFulfillmentTransactionType = planTabViewModel::updateSelectedFulfillmentTransactionType,
+            updateShowFulfillmentTransactionTypeBottomSheet = planTabViewModel::updateShowFulfillmentTransactionTypeBottomSheet,
+            updatePlanFulfillmentStatus = planTabViewModel::updatePlanFulfillmentStatus,
             setSelectedTransaction = planTabViewModel::setSelectedTransaction,
-            addPlanFulfillment = dataAdditionViewModel::addPlanFulfillment
+            addPlanFulfillment = planTabViewModel::addPlanFulfillment,
+            onTypeChange = planTabViewModel::updateSelectedPlanFulfillmentType,
+            deleteFulfillmentPlan = planTabViewModel::deleteFulfillmentPlan
         )
     }
 }

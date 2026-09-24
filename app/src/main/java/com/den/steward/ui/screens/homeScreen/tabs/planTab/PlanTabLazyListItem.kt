@@ -35,10 +35,9 @@ import com.den.steward.ui.dataAddition.AddPlanFulfillment
 @Composable
 fun PlanTabLazyListItem(
     transaction: Transaction,
-    updateSelectedParentTransaction: (Transaction?) -> Unit,
     updateSelectedFulfillmentTransactionType: (TransactionType) -> Unit,
     updateShowFulfillmentTransactionTypeBottomSheet: (Boolean) -> Unit,
-    setSelectedTransaction: (Transaction) -> Unit,
+    setSelectedTransaction: (Transaction?) -> Unit,
 ) {
     if (transaction !is Transaction.Plan) return
 
@@ -123,7 +122,7 @@ fun PlanTabLazyListItem(
 
                     AddPlanFulfillment(
                         transaction = transaction,
-                        updateSelectedParentTransaction = updateSelectedParentTransaction,
+                        updateSelectedParentTransaction = setSelectedTransaction,
                         updateSelectedFulfillmentTransactionType = updateSelectedFulfillmentTransactionType,
                         updateShowFulfillmentTransactionTypeBottomSheet = updateShowFulfillmentTransactionTypeBottomSheet,
                     ) {

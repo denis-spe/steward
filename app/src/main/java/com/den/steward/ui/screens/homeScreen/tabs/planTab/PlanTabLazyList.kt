@@ -18,21 +18,22 @@ import androidx.compose.ui.unit.dp
 import com.den.steward.backend.entitles.PlanStatus
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
-import com.den.steward.backend.states.DataAdditionState
 import com.den.steward.backend.states.DataState
+import com.den.steward.backend.states.PlanTabUiState
 import com.den.steward.ui.dataAddition.PlanFulfillmentBottomDrawerSheet
 
 @Composable
 fun PlanTabLazyList(
-    dataAdditionState: DataAdditionState,
+    planTabUiState: PlanTabUiState,
     planFulfillmentState: DataState<List<Transaction>>,
     planTransactionsState: DataState<List<Transaction>>,
     updateShowFulfillmentTransactionTypeBottomSheet: (Boolean) -> Unit,
-    updateSelectedParentTransaction: (Transaction?) -> Unit,
     updateSelectedFulfillmentTransactionType: (TransactionType) -> Unit,
     setSelectedTransaction: (Transaction?) -> Unit,
     updatePlanFulfillmentStatus: (String, PlanStatus, Transaction.PlanFulfillment) -> Unit,
+    onTypeChange: (TransactionType) -> Unit,
     addPlanFulfillment: () -> Unit,
+    deleteFulfillmentPlan: (String, Transaction) -> Unit,
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -61,7 +62,6 @@ fun PlanTabLazyList(
                             PlanTabLazyListItem(
                                 transaction = transaction,
                                 updateShowFulfillmentTransactionTypeBottomSheet = updateShowFulfillmentTransactionTypeBottomSheet,
-                                updateSelectedParentTransaction = updateSelectedParentTransaction,
                                 updateSelectedFulfillmentTransactionType = updateSelectedFulfillmentTransactionType,
                                 setSelectedTransaction = setSelectedTransaction,
                             )
@@ -87,12 +87,13 @@ fun PlanTabLazyList(
     }
 
     PlanFulfillmentBottomDrawerSheet(
+        planTabUiState = planTabUiState,
         updatePlanFulfillmentStatus = updatePlanFulfillmentStatus,
-        dataAdditionState = dataAdditionState,
         planFulfillmentState = planFulfillmentState,
         setSelectedTransaction =  setSelectedTransaction,
-        updateSelectedParentTransaction = updateSelectedParentTransaction,
         addPlanFulfillment = addPlanFulfillment,
         updateShowFulfillmentTransactionTypeBottomSheet = updateShowFulfillmentTransactionTypeBottomSheet,
+        onTypeChange = onTypeChange,
+        deleteFulfillmentPlan = deleteFulfillmentPlan
     )
 }
