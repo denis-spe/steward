@@ -29,6 +29,7 @@ fun TodayTab(
 ) {
 
     val todayUiState by todayViewModel.todayUiState.collectAsStateWithLifecycle()
+    val todayTabDataState by todayViewModel.todayTabDataState.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -41,7 +42,8 @@ fun TodayTab(
             modifier = Modifier.fillMaxSize(),
             chartViewModel = chartViewModel,
             todayViewModel = todayViewModel,
-            dataDeletionViewModel = dataDeletionViewModel
+            dataDeletionViewModel = dataDeletionViewModel,
+            todayTabDataState = todayTabDataState
         )
     }
 

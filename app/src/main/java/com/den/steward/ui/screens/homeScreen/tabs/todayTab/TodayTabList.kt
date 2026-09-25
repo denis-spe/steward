@@ -42,9 +42,11 @@ import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.Filter
 import com.den.steward.backend.states.OrderBy
 import com.den.steward.backend.states.SortBy
+import com.den.steward.backend.states.todayTabState.TodayTabDataState
 import com.den.steward.backend.viewModels.ChartViewModel
 import com.den.steward.backend.viewModels.DataDeletionViewModel
 import com.den.steward.backend.viewModels.TodayViewModel
+import com.den.steward.helper.formatToAmount
 import com.den.steward.ui.componentExtenison.shimmerEffect
 import com.den.steward.ui.components.TransactionViewDialog
 import com.den.steward.ui.dataDeletion.DataDeletionDialog
@@ -57,22 +59,12 @@ fun TodayTabList(
     modifier: Modifier = Modifier,
     chartViewModel: ChartViewModel,
     todayViewModel: TodayViewModel,
-    dataDeletionViewModel: DataDeletionViewModel
+    dataDeletionViewModel: DataDeletionViewModel,
+    todayTabDataState: DataState<TodayTabDataState>,
 ) {
-    val transactionsState by todayViewModel.todayTransactions.collectAsStateWithLifecycle()
-    val donutChartState by chartViewModel.donutChart.collectAsStateWithLifecycle()
-
-    val combinedState = remember(transactionsState, donutChartState) {
-        when {
-            transactionsState is DataState.Loading || donutChartState is DataState.Loading -> DataState.Loading
-            transactionsState is DataState.Error -> transactionsState
-            donutChartState is DataState.Error -> donutChartState
-            else -> transactionsState // Both Success
-        }
-    }
 
     Crossfade(
-        targetState = combinedState,
+        targetState = todayTabDataState,
         label = "TodayTabListCrossfade"
     ) { state ->
         when (state) {
@@ -84,17 +76,13 @@ fun TodayTabList(
             }
 
             is DataState.Success -> {
-                val transactions = remember(state) {
-                    ((state as DataState.Success<*>).data as List<*>)
-                        .filterIsInstance<Transaction>()
-                }
 
                 TodayTabLazyList(
                     modifier = modifier,
                     chartViewModel = chartViewModel,
                     todayViewModel = todayViewModel,
                     dataDeletionViewModel = dataDeletionViewModel,
-                    transactions = transactions
+                    todayTabDataState = state.data
                 )
             }
 
@@ -296,10 +284,22 @@ fun TodayTabLazyList(
     chartViewModel: ChartViewModel,
     todayViewModel: TodayViewModel,
     dataDeletionViewModel: DataDeletionViewModel,
-    transactions: List<Transaction>,
+    todayTabDataState: TodayTabDataState
 ) {
     val todayUiState by todayViewModel.todayUiState.collectAsStateWithLifecycle()
     val selectedTransactionForView = remember { mutableStateOf<Transaction?>(null) }
+
+    val (
+        transactions,
+        donutChartData,
+        balanceStatStates,
+        liabilitiesPaymentStatsState,
+        donutSummaryStat
+    ) = todayTabDataState
+
+    val flow = remember(balanceStatStates) {
+        balanceStatStates.flow.formatToAmount()
+    }
 
     LazyColumn(
         modifier = modifier,
@@ -309,8 +309,11 @@ fun TodayTabLazyList(
 
         item {
             TodayTabStatisticView(
-                chartViewModel = chartViewModel,
-                todayViewModel = todayViewModel
+                donutChartData = donutChartData,
+                balanceStatStates = balanceStatStates,
+                liabilitiesPaymentStatsState = liabilitiesPaymentStatsState,
+                donutSummaryStat = donutSummaryStat,
+                donutChartCenterAmount = flow
             )
         }
 

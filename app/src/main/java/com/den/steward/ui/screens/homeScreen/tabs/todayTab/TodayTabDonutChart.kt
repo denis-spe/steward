@@ -31,7 +31,7 @@ import java.util.Locale
 @Composable
 fun TodayDonutChartView(
     donutChartData: List<DonutChartData>,
-    donutChartCenterAmount: Double,
+    donutChartCenterAmount: String,
     chartSize: Dp = 350.dp,
     strokeWidth: Dp = 20.dp,
     strokeWidthSelected: Dp = 40.dp,
@@ -56,7 +56,7 @@ fun TodayDonutChartView(
                 fontWeight = MaterialTheme.typography.titleMedium.fontWeight,
             )
             Text(
-                text = donutChartCenterAmount.formatToAmount(),
+                text = donutChartCenterAmount,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = MaterialTheme.typography.labelMedium.fontWeight,
             )

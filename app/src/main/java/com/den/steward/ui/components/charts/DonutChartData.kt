@@ -5,7 +5,7 @@ import androidx.compose.ui.graphics.Color
 
 @Stable
 data class DonutChartData(
-    val amount: Float,
-    val color: Color,
-    val title: String,
+    val amount: Float = 0.0f,
+    val color: Color = Color.Unspecified,
+    val title: String = "",
 )

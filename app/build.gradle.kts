@@ -117,6 +117,8 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.profileinstaller)
     implementation(libs.exp4j)
+    implementation(libs.kotlinx.collections.immutable)
+
     // When using Kotlin.
     ksp(libs.hilt.android.compiler)
     ksp(libs.androidx.hilt.compiler)

@@ -1,4 +1,4 @@
-package com.den.steward.backend.states
+package com.den.steward.backend.states.todayTabState
 
 import androidx.compose.runtime.Immutable
 
