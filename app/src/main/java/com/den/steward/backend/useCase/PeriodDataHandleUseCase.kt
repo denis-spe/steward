@@ -4,6 +4,7 @@ import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.Filter
+import com.den.steward.backend.states.Filter.Companion.toTransactionType
 import com.den.steward.backend.states.OrderBy
 import com.den.steward.backend.states.PeriodType
 import com.den.steward.backend.states.SortBy
@@ -66,7 +67,7 @@ class PeriodDataHandleUseCase @Inject constructor(
         startDate: LocalDate,
         endDate: LocalDate, // Exclusive
         orderBy: OrderBy = OrderBy.ASCENDING,
-        filter: Filter = Filter.ALL,
+        filter: List<Filter> = emptyList(),
         sortBy: SortBy
     ): Flow<DataState<List<Transaction>>> {
         val startMillis = startDate.atStartOfDay(zoneId).toInstant().toEpochMilli()
@@ -79,9 +80,9 @@ class PeriodDataHandleUseCase @Inject constructor(
                     var filtered = state.data.filter { it.createdAt in startMillis until endMillis }
 
                     // 2. Filter by transaction type
-                    if (filter != Filter.ALL) {
-                         val targetType = mapFilterToTransactionType(filter)
-                        filtered = filtered.filter { it.type == targetType }
+                    val targetTypes = filter.mapNotNull { it.toTransactionType }
+                    if (targetTypes.isNotEmpty()) {
+                        filtered = filtered.filter { it.type in targetTypes }
                     }
 
                     val comparator = when (sortBy) {
@@ -121,7 +122,7 @@ class PeriodDataHandleUseCase @Inject constructor(
         now: LocalDate,
         orderBy: OrderBy = OrderBy.ASCENDING,
         filterForDayOfWeek: DayOfWeek? = null,
-        filter: Filter = Filter.ALL,
+        filter: List<Filter> = emptyList(),
         sortBy: SortBy
     ): Flow<DataState<List<Transaction>>> {
         val startOfWeek = now.with(TemporalAdjusters.previousOrSame(firstDayOfWeek))
@@ -148,7 +149,7 @@ class PeriodDataHandleUseCase @Inject constructor(
         date: LocalDate,
         periodType: PeriodType,
         orderBy: OrderBy = OrderBy.ASCENDING,
-        filter: Filter = Filter.ALL,
+        filter: List<Filter> = emptyList(),
         sortBy: SortBy
     ): Flow<DataState<List<Transaction>>> {
         return when (periodType) {

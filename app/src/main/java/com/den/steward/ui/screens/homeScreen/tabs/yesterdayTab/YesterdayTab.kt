@@ -26,7 +26,9 @@ fun YesterdayTab(
     dataDeletionViewModel: DataDeletionViewModel = hiltViewModel()
 ) {
 
-    val yesterdayUiState by yesterdayViewModel.yesterdayUiState.collectAsStateWithLifecycle()
+    val sortAndFilterState by yesterdayViewModel.sortAndFilterState.collectAsStateWithLifecycle()
+    val yesterdayTabState by yesterdayViewModel.yesterdayTabDataState.collectAsStateWithLifecycle()
+
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -37,14 +39,18 @@ fun YesterdayTab(
     ) {
         YesterdayTabList(
             modifier = Modifier.fillMaxSize(),
-            yesterdayViewModel = yesterdayViewModel,
-            dataDeletionViewModel = dataDeletionViewModel
+            dataDeletionViewModel = dataDeletionViewModel,
+            yesterdayTabState = yesterdayTabState,
+            sortAndFilterState = sortAndFilterState,
+            updateIsSortByExpanded = yesterdayViewModel::updateIsSortByExpanded,
+            updateIsFilterExpanded = yesterdayViewModel::updateIsFilterExpanded,
+            updateIsOrderExpanded = yesterdayViewModel::updateIsOrderExpanded
         )
     }
 
     FilterBottomSheet(
-        isExpanded = yesterdayUiState.isFilterExpanded,
-        selected = yesterdayUiState.filter,
+        isExpanded = sortAndFilterState.isFilterExpanded,
+        selected = sortAndFilterState.filter,
         onFilterSelected = yesterdayViewModel::updateFilter,
         onDismiss = {
             yesterdayViewModel.updateIsFilterExpanded(false)
@@ -52,8 +58,8 @@ fun YesterdayTab(
     )
 
     OrderByBottomSheet(
-        isExpanded = yesterdayUiState.isOrderByExpanded,
-        selected = yesterdayUiState.orderBy,
+        isExpanded = sortAndFilterState.isOrderByExpanded,
+        selected = sortAndFilterState.orderBy,
         onSortSelected = yesterdayViewModel::updateOrderBy,
         onDismiss = {
             yesterdayViewModel.updateIsOrderExpanded(false)
@@ -61,8 +67,8 @@ fun YesterdayTab(
     )
 
     SortByBottomSheet(
-        isExpanded = yesterdayUiState.isSortByExpanded,
-        selected = yesterdayUiState.sortBy,
+        isExpanded = sortAndFilterState.isSortByExpanded,
+        selected = sortAndFilterState.sortBy,
         onSortSelected = yesterdayViewModel::updateSortBy,
         onDismiss = {
             yesterdayViewModel.updateIsSortByExpanded(false)

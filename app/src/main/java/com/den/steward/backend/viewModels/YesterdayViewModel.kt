@@ -1,225 +1,231 @@
 package com.den.steward.backend.viewModels
 
+import android.content.Context
+import androidx.compose.ui.graphics.Color
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataState
-import com.den.steward.backend.states.YesterdayTransactionSummary
-import com.den.steward.backend.states.YesterdayUiState
+import com.den.steward.backend.states.yesterdayTabState.YesterdayTransactionSummary
 import com.den.steward.backend.useCase.ChartUseCase
 import com.den.steward.backend.useCase.DataFilterUseCase
 import com.den.steward.backend.states.Filter
+import com.den.steward.backend.states.Filter.Companion.toTransactionType
 import com.den.steward.backend.states.OrderBy
+import com.den.steward.backend.states.SortAndFilterState
 import com.den.steward.backend.states.SortBy
+import com.den.steward.backend.states.todayTabState.TodayTabDataState
+import com.den.steward.backend.states.yesterdayTabState.YesterdayTabState
+import com.den.steward.helper.calculateFlow
+import com.den.steward.helper.filterAndSortTodayTransactions
+import com.den.steward.helper.getStartOfDayMillis
+import com.den.steward.helper.incoming
+import com.den.steward.helper.outgoing
+import com.den.steward.helper.toLocalDateTime
+import com.den.steward.ui.components.charts.collections.ChartData
 import com.den.steward.ui.components.charts.collections.ChartDataCollection
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toPersistentList
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import com.den.steward.backend.useCase.DataFetchUseCase
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
 @HiltViewModel
 class YesterdayViewModel @Inject constructor(
-    dataFilterUseCase: DataFilterUseCase,
-    chartUseCase: ChartUseCase
+    @ApplicationContext private val context: Context,
+    dataFetchUseCase: DataFetchUseCase
 ) : ViewModel() {
-    private val _yesterdayUiState = MutableStateFlow(YesterdayUiState())
-    val yesterdayUiState = _yesterdayUiState.asStateFlow()
+    private val _sortAndFilterState = MutableStateFlow(SortAndFilterState())
+    val sortAndFilterState = _sortAndFilterState.asStateFlow()
 
-    val chartDataCollection: StateFlow<DataState<ChartDataCollection>> = chartUseCase.chartDataCollection(dataFilterUseCase.yesterdayTransactions)
+    private val filterCriteriaFlow = _sortAndFilterState
+        .map { Triple(it.filter, it.orderBy, it.sortBy) }
         .distinctUntilChanged()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = DataState.Loading
-        )
 
-    val yesterdayTransactions: StateFlow<DataState<List<Transaction>>> = dataFilterUseCase.yesterdayTransactions
-        .combine(
-            _yesterdayUiState
-                .map { Triple(it.filter, it.orderBy, it.sortBy) }
-                .distinctUntilChanged()
-        ) { state, (filter, orderBy, sortBy) ->
-            when (state) {
-                is DataState.Success -> {
-                    var transactions = state.data
+    val yesterdayTabDataState: StateFlow<DataState<YesterdayTabState>> = combine(
+        dataFetchUseCase.fetchAllTransactions,
+        filterCriteriaFlow
+    ) { state, (filter, orderBy, sortBy) ->
+        when (state) {
+            is DataState.Success -> {
+                val transactions = state.data
+                val startOfYesterday = getStartOfDayMillis(-1)
+                val startOfToday = getStartOfDayMillis(0)
 
-                    val comparator = when (sortBy) {
-                        SortBy.TIME -> compareBy<Transaction> { it.createdAt }
-                        SortBy.AMOUNT -> compareBy { it.getAmountOrValue ?: 0.0 }
-                        SortBy.LABEL -> compareBy { it.getLabel.lowercase() }
-                        SortBy.FULFILLED -> compareBy { transaction ->
-                            when (transaction) {
-                                is Transaction.Lent -> transaction.remainingAmount
-                                is Transaction.Debt -> transaction.remainingAmount
-                                is Transaction.Goal -> transaction.remainingValue
-                                else -> 0.0
-                            }
-                        }
-                    }
+                val yesterdayTransactions = filterAndSortTodayTransactions(
+                    transactions = transactions,
+                    startOfToday = startOfToday,
+                    startOfTomorrow = startOfYesterday,
+                    filter = filter,
+                    orderBy = orderBy,
+                    sortBy = sortBy
+                )
 
-                    val finalComparator = if (orderBy == OrderBy.ASCENDING) {
-                        comparator
-                    } else {
-                        comparator.reversed()
-                    }
+                val summary = handleSummary(yesterdayTransactions)
+                val chartDataCollection = handleChartDataCollection(yesterdayTransactions)
 
-                    val targetType = mapFilterToTransactionType(filter)
-                    transactions = transactions.sortedWith(finalComparator)
-                        .filter { targetType == null || it.type == targetType }
-
-                    DataState.Success(transactions)
-                }
-                is DataState.Error -> DataState.Error(state.message)
-                is DataState.Loading -> DataState.Loading
-            }
-        }
-        .distinctUntilChanged()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = DataState.Loading
-        )
-
-    val yesterdaySummaryTransactions: StateFlow<DataState<YesterdayTransactionSummary>> = dataFilterUseCase.yesterdayTransactions
-        .distinctUntilChanged()
-        .map { state ->
-            when (state) {
-                is DataState.Success -> {
-                    val transactions = state.data
-                        .filter {
-                            it.type != TransactionType.GOAL ||
-                                    it.type != TransactionType.ATTAIN ||
-                                    it.type != TransactionType.ACHIEVEMENT
-                        }
-
-                    val group = transactions.groupBy { it.type }
-                        .mapValues { (_, value) -> value.sumOf { it.getAmountOrValue ?: 0.0 } }
-
-                    val flow = calculateFlow(transactions)
-                    val highTransaction = group.maxByOrNull { it.value }
-                    val lowTransaction = group.minByOrNull { it.value }
-
-                    val totalTransactionAmount = transactions
-                        .sumOf { it.getAmountOrValue ?: 0.0 }
-
-                    val incoming = transactions.filter {
-                        it.type == TransactionType.EARNINGS ||
-                        it.type == TransactionType.DEBT ||
-                        it.type == TransactionType.REPAYMENT
-                    }.sumOf { it.getAmountOrValue ?: 0.0 }
-
-                    val outgoing = transactions.filter {
-                        it.type == TransactionType.EXPENSE ||
-                        it.type == TransactionType.LENT ||
-                        it.type == TransactionType.SAVINGS ||
-                        it.type == TransactionType.SETTLEMENT
-                    }.sumOf { it.getAmountOrValue ?: 0.0 }
-
-                    val yesterdayTransactionSummary = YesterdayTransactionSummary(
-                        flow = flow,
-                        transactionSize = transactions.size,
-                        highTransactionActivityAmount = highTransaction?.value ?: 0.0,
-                        highTransactionActivityLabel = highTransaction?.key?.name ?: "",
-                        lowTransactionActivityAmount = lowTransaction?.value ?: 0.0,
-                        lowTransactionActivityLabel = lowTransaction?.key?.name ?: "",
-                        incoming = incoming,
-                        outgoing = outgoing,
-                        incomingPercentage = ((incoming / totalTransactionAmount) * 100).toInt(),
-                        outgoingPercentage = ((outgoing / totalTransactionAmount) * 100).toInt()
+                DataState.Success(
+                    YesterdayTabState(
+                        transactions = yesterdayTransactions,
+                        summary = summary,
+                        chartDataCollection = chartDataCollection
                     )
-
-                    DataState.Success(yesterdayTransactionSummary)
-                }
-                is DataState.Error -> DataState.Error(state.message)
-                is DataState.Loading -> DataState.Loading
+                )
             }
+
+            is DataState.Error -> DataState.Error(state.message)
+            is DataState.Loading -> DataState.Loading
         }
+    }
+        .flowOn(Dispatchers.Default)
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = DataState.Loading
         )
 
-    fun calculateFlow(transactions: List<Transaction>): Double {
-        var incoming = 0.0
-        var outgoing = 0.0
-
-        transactions.forEach { transaction ->
-            if (transaction.getAffectAmount == "Yes") {
-                val amount = transaction.getAmountOrValue ?: 0.0
-                when (transaction.type) {
-                    TransactionType.EARNINGS,
-                    TransactionType.DEBT,
-                    TransactionType.REPAYMENT -> incoming += amount
-
-                    TransactionType.EXPENSE,
-                    TransactionType.LENT,
-                    TransactionType.SAVINGS,
-                    TransactionType.SETTLEMENT -> outgoing += amount
-                    else -> {}
-                }
+    private fun handleSummary(transaction: List<Transaction>): YesterdayTransactionSummary {
+        val transactions = transaction
+            .filter {
+                it.type != TransactionType.GOAL ||
+                        it.type != TransactionType.ATTAIN ||
+                        it.type != TransactionType.ACHIEVEMENT
             }
-        }
-        return incoming - outgoing
-    }
 
-    private fun mapFilterToTransactionType(filter: Filter): TransactionType? {
-        return when (filter) {
-            Filter.EARNINGS -> TransactionType.EARNINGS
-            Filter.EXPENSE -> TransactionType.EXPENSE
-            Filter.GOAL -> TransactionType.GOAL
-            Filter.SAVINGS -> TransactionType.SAVINGS
-            Filter.REPAYMENT -> TransactionType.REPAYMENT
-            Filter.SETTLEMENT -> TransactionType.SETTLEMENT
-            Filter.ATTAIN -> TransactionType.ATTAIN
-            Filter.LENT -> TransactionType.LENT
-            Filter.DEBT -> TransactionType.DEBT
-            Filter.PLAN -> TransactionType.PLAN
-            Filter.ALL -> null
+        val group = transactions.groupBy { it.type }
+            .mapValues { (_, value) -> value.sumOf { it.getAmountOrValue ?: 0.0 } }
+
+        val flow = transactions.calculateFlow
+        val highTransaction = group.maxByOrNull { it.value }
+        val lowTransaction = group.minByOrNull { it.value }
+
+        val totalTransactionAmount = transactions
+            .sumOf { it.getAmountOrValue ?: 0.0 }
+
+        val incoming = transactions.incoming
+        val outgoing = transactions.outgoing
+
+        return YesterdayTransactionSummary(
+            flow = flow,
+            transactionSize = transactions.size,
+            highTransactionActivityAmount = highTransaction?.value ?: 0.0,
+            highTransactionActivityLabel = highTransaction?.key?.name ?: "",
+            lowTransactionActivityAmount = lowTransaction?.value ?: 0.0,
+            lowTransactionActivityLabel = lowTransaction?.key?.name ?: "",
+            incoming = incoming,
+            outgoing = outgoing,
+            incomingPercentage = ((incoming / totalTransactionAmount) * 100).toInt(),
+            outgoingPercentage = ((outgoing / totalTransactionAmount) * 100).toInt()
+        )
+    }
+    private fun handleChartDataCollection(transactions: List<Transaction>): ChartDataCollection {
+        // 1. Filter out GOAL and ATTAIN transactions and transactions that don't affect the amount
+        val filterNoneAmount = transactions.filter {
+            it.type != TransactionType.GOAL &&
+                    it.type != TransactionType.ATTAIN
+        }.filter { (it.getAffectAmount?.lowercase() ?: "no") == "yes" }
+
+        // 2. Find all unique hours that have any activity across any transaction type
+        val allUniqueHours = filterNoneAmount.map {
+            it.createdAt.toLocalDateTime().hour
+        }.distinct().sorted()
+
+        // 3. Group by type and create a ChartData for each group with aligned X values
+        val chartData = filterNoneAmount.groupBy {
+            it.type
         }
+            .map { (type, groupedTransactions) ->
+                val color = Color(ContextCompat.getColor(context, type.color))
+                val label = ContextCompat.getString(context, type.label)
+
+                val hourlyData = groupedTransactions.groupBy {
+                    it.createdAt.toLocalDateTime().hour
+                }
+
+                val x = allUniqueHours.map { it.toDouble() }
+                val y = allUniqueHours.map { hour ->
+                    hourlyData[hour]?.sumOf { it.getAmountOrValue ?: 0.0 } ?: 0.0
+                }
+
+                ChartData(
+                    x = x,
+                    y = y,
+                    label = label,
+                    color = color
+                )
+            }
+
+
+        // 3. Create a ChartDataCollection with the list of ChartData
+        return ChartDataCollection(
+            chartData = chartData.toPersistentList()
+        )
     }
 
     fun updateFilter(filter: Filter) {
-        _yesterdayUiState.value = _yesterdayUiState.value.copy(
-            filter = filter,
-            isFilterExpanded = false
-        )
+        _sortAndFilterState.update { state ->
+            val currentFilters = state.filter.toMutableList()
+            val newFilters = if (filter == Filter.ALL) {
+                listOf(Filter.ALL)
+            } else {
+                currentFilters.remove(Filter.ALL)
+                if (currentFilters.contains(filter)) {
+                    currentFilters.remove(filter)
+                } else {
+                    currentFilters.add(filter)
+                }
+                if (currentFilters.isEmpty()) {
+                    listOf(Filter.ALL)
+                } else {
+                    currentFilters
+                }
+            }
+            state.copy(filter = newFilters)
+        }
     }
 
     fun updateIsFilterExpanded(isExpanded: Boolean) {
-        _yesterdayUiState.value = _yesterdayUiState.value.copy(
+        _sortAndFilterState.value = _sortAndFilterState.value.copy(
             isFilterExpanded = isExpanded
         )
     }
 
     fun updateSortBy(sortBy: SortBy) {
-        _yesterdayUiState.value = _yesterdayUiState.value.copy(
+        _sortAndFilterState.value = _sortAndFilterState.value.copy(
             sortBy = sortBy,
             isSortByExpanded = false
         )
     }
     fun updateIsSortByExpanded(isExpanded: Boolean) {
-        _yesterdayUiState.value = _yesterdayUiState.value.copy(
+        _sortAndFilterState.value = _sortAndFilterState.value.copy(
             isSortByExpanded = isExpanded
         )
     }
 
     fun updateOrderBy(orderBy: OrderBy) {
-        _yesterdayUiState.value = _yesterdayUiState.value.copy(
+        _sortAndFilterState.value = _sortAndFilterState.value.copy(
             orderBy = orderBy,
             isOrderByExpanded = false
         )
     }
 
     fun updateIsOrderExpanded(isExpanded: Boolean) {
-        _yesterdayUiState.value = _yesterdayUiState.value.copy(
+        _sortAndFilterState.value = _sortAndFilterState.value.copy(
             isOrderByExpanded = isExpanded
         )
     }

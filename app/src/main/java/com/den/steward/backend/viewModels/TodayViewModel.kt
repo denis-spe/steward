@@ -12,12 +12,13 @@ import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.Filter
 import com.den.steward.backend.states.OrderBy
 import com.den.steward.backend.states.SortBy
-import com.den.steward.backend.states.TodayUiState
+import com.den.steward.backend.states.SortAndFilterState
 import com.den.steward.backend.states.todayTabState.BalanceStatStates
 import com.den.steward.backend.states.todayTabState.LiabilitiesPaymentStatsState
 import com.den.steward.backend.states.todayTabState.TodayTabDataState
 import com.den.steward.backend.useCase.DataFetchUseCase
 import com.den.steward.helper.calculateFlow
+import com.den.steward.helper.filterAndSortTodayTransactions
 import com.den.steward.helper.formatToAmount
 import com.den.steward.helper.getStartOfDayMillis
 import com.den.steward.ui.components.charts.DonutChartData
@@ -36,6 +37,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
 @HiltViewModel
@@ -44,11 +46,11 @@ class TodayViewModel @Inject constructor(
     dataFetchUseCase: DataFetchUseCase
 ) : ViewModel() {
 
-    private val _todayUiState = MutableStateFlow(TodayUiState())
-    val todayUiState = _todayUiState.asStateFlow()
+    private val _sortAndFilterState = MutableStateFlow(SortAndFilterState())
+    val sortAndFilterState = _sortAndFilterState.asStateFlow()
 
     // Extract ONLY query criteria to avoid re-triggering calculations on sheet expansion toggles
-    private val filterCriteriaFlow = _todayUiState
+    private val filterCriteriaFlow = _sortAndFilterState
         .map { Triple(it.filter, it.orderBy, it.sortBy) }
         .distinctUntilChanged()
 
@@ -100,46 +102,12 @@ class TodayViewModel @Inject constructor(
             initialValue = DataState.Loading
         )
 
-    private fun filterAndSortTodayTransactions(
-        transactions: List<Transaction>,
-        startOfToday: Long,
-        startOfTomorrow: Long,
-        filter: Filter,
-        orderBy: OrderBy,
-        sortBy: SortBy
-    ): ImmutableList<Transaction> {
-        val targetType = mapFilterToTransactionType(filter)
-
-        val comparator = when (sortBy) {
-            SortBy.TIME -> compareBy<Transaction> { it.createdAt }
-            SortBy.AMOUNT -> compareBy { it.getAmountOrValue ?: 0.0 }
-            SortBy.LABEL -> compareBy { it.getLabel.lowercase() }
-            SortBy.FULFILLED -> compareBy { transaction ->
-                when (transaction) {
-                    is Transaction.Lent -> transaction.remainingAmount
-                    is Transaction.Debt -> transaction.remainingAmount
-                    is Transaction.Goal -> transaction.remainingValue
-                    else -> 0.0
-                }
-            }
-        }
-
-        val finalComparator = if (orderBy == OrderBy.ASCENDING) comparator else comparator.reversed()
-
-        return transactions
-            .asSequence()
-            .filter { it.createdAt in startOfToday until startOfTomorrow }
-            .filter { targetType == null || it.type == targetType }
-            .sortedWith(finalComparator)
-            .toImmutableList()
-    }
-
     private fun handleBalanceStatStates(
         todayTransaction: List<Transaction>,
         transactions: List<Transaction>
     ): BalanceStatStates {
         val paymentMethodStat = mutableMapOf<PaymentMethod, Double>()
-        val flow = calculateFlow(todayTransaction)
+        val flow = todayTransaction.calculateFlow
 
         transactions.forEach { transaction ->
             if (transaction.getAffectAmount == "Yes") {
@@ -240,43 +208,45 @@ class TodayViewModel @Inject constructor(
         }
     }
 
-    private fun mapFilterToTransactionType(filter: Filter): TransactionType? {
-        return when (filter) {
-            Filter.EARNINGS -> TransactionType.EARNINGS
-            Filter.EXPENSE -> TransactionType.EXPENSE
-            Filter.GOAL -> TransactionType.GOAL
-            Filter.SAVINGS -> TransactionType.SAVINGS
-            Filter.REPAYMENT -> TransactionType.REPAYMENT
-            Filter.SETTLEMENT -> TransactionType.SETTLEMENT
-            Filter.ATTAIN -> TransactionType.ATTAIN
-            Filter.LENT -> TransactionType.LENT
-            Filter.DEBT -> TransactionType.DEBT
-            Filter.PLAN -> TransactionType.PLAN
-            Filter.ALL -> null
+    fun updateFilter(filter: Filter) {
+        _sortAndFilterState.update { state ->
+            val currentFilters = state.filter.toMutableList()
+            val newFilters = if (filter == Filter.ALL) {
+                listOf(Filter.ALL)
+            } else {
+                currentFilters.remove(Filter.ALL)
+                if (currentFilters.contains(filter)) {
+                    currentFilters.remove(filter)
+                } else {
+                    currentFilters.add(filter)
+                }
+                if (currentFilters.isEmpty()) {
+                    listOf(Filter.ALL)
+                } else {
+                    currentFilters
+                }
+            }
+            state.copy(filter = newFilters)
         }
     }
 
-    fun updateFilter(filter: Filter) {
-        _todayUiState.value = _todayUiState.value.copy(filter = filter, isFilterExpanded = false)
-    }
-
     fun updateIsFilterExpanded(isExpanded: Boolean) {
-        _todayUiState.value = _todayUiState.value.copy(isFilterExpanded = isExpanded)
+        _sortAndFilterState.value = _sortAndFilterState.value.copy(isFilterExpanded = isExpanded)
     }
 
     fun updateSortBy(sortBy: SortBy) {
-        _todayUiState.value = _todayUiState.value.copy(sortBy = sortBy, isSortByExpanded = false)
+        _sortAndFilterState.value = _sortAndFilterState.value.copy(sortBy = sortBy, isSortByExpanded = false)
     }
 
     fun updateIsSortByExpanded(isExpanded: Boolean) {
-        _todayUiState.value = _todayUiState.value.copy(isSortByExpanded = isExpanded)
+        _sortAndFilterState.value = _sortAndFilterState.value.copy(isSortByExpanded = isExpanded)
     }
 
     fun updateOrderBy(orderBy: OrderBy) {
-        _todayUiState.value = _todayUiState.value.copy(orderBy = orderBy, isOrderByExpanded = false)
+        _sortAndFilterState.value = _sortAndFilterState.value.copy(orderBy = orderBy, isOrderByExpanded = false)
     }
 
     fun updateIsOrderExpanded(isExpanded: Boolean) {
-        _todayUiState.value = _todayUiState.value.copy(isOrderByExpanded = isExpanded)
+        _sortAndFilterState.value = _sortAndFilterState.value.copy(isOrderByExpanded = isExpanded)
     }
 }

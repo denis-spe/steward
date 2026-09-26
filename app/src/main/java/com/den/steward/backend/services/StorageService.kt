@@ -114,7 +114,7 @@ class StorageService @Inject constructor(
         userId: String,
         transactionId: String,
         fulfillment: Transaction
-    ): Result<Unit> {
+    ): Result<String> {
         val collection = when (fulfillment) {
             is Transaction.Settlement -> SETTLEMENT_COLLECTION
             is Transaction.Repayment -> REPAYMENT_COLLECTION
@@ -122,22 +122,23 @@ class StorageService @Inject constructor(
             is Transaction.Achievement -> ACHIEVEMENT_COLLECTION
             is Transaction.PlanFulfillment -> PLAN_COLLECTION
             else -> return Result.failure(
-                IllegalArgumentException("Invalid fulfillment type " +
-                        "${fulfillment.javaClass.simpleName}"))
+                IllegalArgumentException("Invalid fulfillment type ${fulfillment.javaClass.simpleName}"))
         }
         return try {
             val transactionRef = docRef.document(userId)
                 .collection(TRANSACTION_COLLECTION)
                 .document(transactionId)
 
+            val fulfillmentRef = transactionRef.collection(collection).document() // generate ref up front
             val fulfillmentData = fulfillment.toMap
+            fulfillmentData["id"] = fulfillmentRef.id // stamp the real id
+
             withTimeoutOrNull(SERVER_ACK_TIMEOUT_MS.milliseconds) {
-                transactionRef.collection(collection)
-                    .add(fulfillmentData)
-                    .await()
+                fulfillmentRef.set(fulfillmentData).await()
             }
-            Result.success(Unit)
+            Result.success(fulfillmentRef.id)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.e(TAG, "Failed to add fulfillment for transaction $transactionId (user $userId)", e)
             Result.failure(e)
         }
@@ -375,16 +376,27 @@ class StorageService @Inject constructor(
         fulfillmentId: String,
         fulfillmentType: Transaction
     ): Result<Unit> {
+        Log.d(TAG, "deleteFulfillment: class=${fulfillmentType::class.java.simpleName}, userId=$userId, fulfillmentId=$fulfillmentId")
+
+        if (userId.isEmpty() || transactionId.isEmpty() || fulfillmentId.isEmpty()) {
+            Log.e(TAG, "deleteFulfillment failed: Blank ID passed")
+            return Result.failure(IllegalArgumentException("User ID, Transaction ID, or Fulfillment ID is empty"))
+        }
+
         val collection = when (fulfillmentType) {
             is Transaction.Settlement -> SETTLEMENT_COLLECTION
             is Transaction.Repayment -> REPAYMENT_COLLECTION
             is Transaction.Attain -> ATTAIN_COLLECTION
             is Transaction.Achievement -> ACHIEVEMENT_COLLECTION
-            else -> return Result.failure(
-                IllegalArgumentException("Invalid fulfillment type " +
-                        fulfillmentType.type.name
-                ))
+            is Transaction.PlanFulfillment -> PLAN_COLLECTION
+            else -> {
+                Log.e(TAG, "deleteFulfillment failed: Invalid fulfillment class ${fulfillmentType::class.java.simpleName}")
+                return Result.failure(
+                    IllegalArgumentException("Invalid fulfillment type: ${fulfillmentType::class.java.simpleName}")
+                )
+            }
         }
+
         return try {
             val fulfillmentRef = docRef.document(userId)
                 .collection(TRANSACTION_COLLECTION)
@@ -392,10 +404,23 @@ class StorageService @Inject constructor(
                 .collection(collection)
                 .document(fulfillmentId)
 
-            fulfillmentRef.delete().await()
+            // Bounding the wait so offline/slow network operations apply locally
+            // without suspending your Coroutine indefinitely.
+            val committedServerSide = withTimeoutOrNull(SERVER_ACK_TIMEOUT_MS.milliseconds) {
+                fulfillmentRef.delete().await()
+                true
+            } ?: false
+
+            if (!committedServerSide) {
+                Log.w(TAG, "deleteFulfillment for $fulfillmentId applied locally; server acknowledgment pending.")
+            } else {
+                Log.d(TAG, "deleteFulfillment successfully acknowledged by server: $fulfillmentId")
+            }
+
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to delete fulfillment $fulfillmentId for transaction $transactionId and user $userId", e)
+            if (e is CancellationException) throw e
+            Log.e(TAG, "Failed to delete fulfillment $fulfillmentId for transaction $transactionId", e)
             Result.failure(e)
         }
     }

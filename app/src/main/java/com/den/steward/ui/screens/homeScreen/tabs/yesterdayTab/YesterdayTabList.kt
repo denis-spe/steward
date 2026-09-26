@@ -17,51 +17,46 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.R
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.Filter
 import com.den.steward.backend.states.OrderBy
+import com.den.steward.backend.states.SortAndFilterState
 import com.den.steward.backend.states.SortBy
+import com.den.steward.backend.states.yesterdayTabState.YesterdayTabState
+import com.den.steward.backend.states.yesterdayTabState.YesterdayTransactionSummary
 import com.den.steward.backend.viewModels.DataDeletionViewModel
 import com.den.steward.backend.viewModels.YesterdayViewModel
 import com.den.steward.ui.componentExtenison.shimmerEffect
+import com.den.steward.ui.components.charts.collections.ChartDataCollection
 import com.den.steward.ui.dataDeletion.DataDeletionDialog
 import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabLazyListItem
 import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabLazyListItemShimmer
 import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabListEmpty
 import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabListError
 import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabListPanelButton
+import kotlinx.collections.immutable.ImmutableList
 
 @Composable
 fun YesterdayTabList(
     modifier: Modifier = Modifier,
-    yesterdayViewModel: YesterdayViewModel,
-    dataDeletionViewModel: DataDeletionViewModel
+    dataDeletionViewModel: DataDeletionViewModel,
+    yesterdayTabState: DataState<YesterdayTabState>,
+    sortAndFilterState: SortAndFilterState,
+    updateIsFilterExpanded: (isExpanded: Boolean) -> Unit,
+    updateIsSortByExpanded: (isExpanded: Boolean) -> Unit,
+    updateIsOrderExpanded: (isExpanded: Boolean) -> Unit
 ) {
-    val transactionsState by yesterdayViewModel.yesterdayTransactions.collectAsStateWithLifecycle()
-    val chartDataCollection by yesterdayViewModel.chartDataCollection.collectAsStateWithLifecycle()
-
-    val combinedState = remember(transactionsState, chartDataCollection) {
-        when {
-            transactionsState is DataState.Loading || chartDataCollection is DataState.Loading -> DataState.Loading
-            transactionsState is DataState.Error -> transactionsState
-            chartDataCollection is DataState.Error -> chartDataCollection
-            else -> transactionsState // Both Success
-        }
-    }
 
     Crossfade(
-        targetState = combinedState,
+        targetState = yesterdayTabState,
         label = "YesterdayTabListCrossfade"
     ) { state ->
         when (state) {
@@ -73,16 +68,22 @@ fun YesterdayTabList(
             }
 
             is DataState.Success -> {
-                val transactions = remember(state) {
-                    ((state as DataState.Success<*>).data as List<*>)
-                        .filterIsInstance<Transaction>()
-                }
+                val (
+                    yesterdayTransactionSummary,
+                    transactions,
+                    chartDataCollection
+                ) = state.data
 
                 YesterdayTabLazyList(
                     modifier = modifier,
-                    yesterdayViewModel = yesterdayViewModel,
                     dataDeletionViewModel = dataDeletionViewModel,
-                    transactions = transactions
+                    transactions = transactions,
+                    yesterdayTransactionSummary = yesterdayTransactionSummary,
+                    chartDataCollection = chartDataCollection,
+                    sortAndFilterState = sortAndFilterState,
+                    updateIsOrderExpanded = updateIsOrderExpanded,
+                    updateIsFilterExpanded = updateIsFilterExpanded,
+                    updateIsSortByExpanded = updateIsSortByExpanded
                 )
             }
 
@@ -115,12 +116,15 @@ fun YesterdayTabListHeader() {
 @Composable
 fun YesterdayTabLazyList(
     modifier: Modifier = Modifier,
-    yesterdayViewModel: YesterdayViewModel,
     dataDeletionViewModel: DataDeletionViewModel,
-    transactions: List<Transaction>,
+    transactions: ImmutableList<Transaction>,
+    yesterdayTransactionSummary: YesterdayTransactionSummary,
+    chartDataCollection: ChartDataCollection,
+    sortAndFilterState: SortAndFilterState,
+    updateIsFilterExpanded: (isExpanded: Boolean) -> Unit,
+    updateIsSortByExpanded: (isExpanded: Boolean) -> Unit,
+    updateIsOrderExpanded: (isExpanded: Boolean) -> Unit
 ) {
-    val yesterdayUiState by yesterdayViewModel.yesterdayUiState.collectAsStateWithLifecycle()
-
     LazyColumn(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -129,27 +133,28 @@ fun YesterdayTabLazyList(
 
         item {
             YesterdayTabStatisticView(
-                yesterdayViewModel = yesterdayViewModel
+                yesterdayTransactionSummary = yesterdayTransactionSummary,
+                chartDataCollection = chartDataCollection
             )
         }
 
         stickyHeader {
             YesterdayTabListHeader()
             YesterdayTabListPanelButtons(
-                filter = yesterdayUiState.filter,
-                sortBy = yesterdayUiState.sortBy,
-                orderBy = yesterdayUiState.orderBy,
-                filterSelected = yesterdayUiState.filter != Filter.ALL,
-                orderBySelected = yesterdayUiState.orderBy != OrderBy.DESCENDING,
-                sortBySelected = yesterdayUiState.sortBy != SortBy.TIME,
+                filter = sortAndFilterState.filter,
+                sortBy = sortAndFilterState.sortBy,
+                orderBy = sortAndFilterState.orderBy,
+                filterSelected = sortAndFilterState.filter != listOf(Filter.ALL),
+                orderBySelected = sortAndFilterState.orderBy != OrderBy.DESCENDING,
+                sortBySelected = sortAndFilterState.sortBy != SortBy.TIME,
                 onFilterClick = {
-                    yesterdayViewModel.updateIsFilterExpanded(true)
+                    updateIsFilterExpanded(true)
                 },
                 onSortByClick = {
-                    yesterdayViewModel.updateIsSortByExpanded(true)
+                    updateIsSortByExpanded(true)
                 },
                 onOrderByClick = {
-                    yesterdayViewModel.updateIsOrderExpanded(true)
+                    updateIsOrderExpanded(true)
                 }
             )
         }
@@ -189,7 +194,7 @@ fun YesterdayTabLazyList(
 
 @Composable
 fun YesterdayTabListPanelButtons(
-    filter: Filter,
+    filter: List<Filter>,
     sortBy: SortBy,
     orderBy: OrderBy,
     filterSelected: Boolean,
@@ -201,18 +206,22 @@ fun YesterdayTabListPanelButtons(
 ) {
     val iconSize = 20.dp
 
-    val filterIcon = when (filter) {
-        Filter.ALL -> R.drawable.filter
-        Filter.EARNINGS -> R.drawable.ic_earnings
-        Filter.EXPENSE -> R.drawable.ic_expense
-        Filter.GOAL -> R.drawable.ic_finance_target
-        Filter.SAVINGS -> R.drawable.ic_savings
-        Filter.REPAYMENT -> R.drawable.ic_repayment
-        Filter.SETTLEMENT -> R.drawable.ic_refund
-        Filter.ATTAIN -> R.drawable.ic_attain
-        Filter.LENT -> R.drawable.ic_loan
-        Filter.DEBT -> R.drawable.ic_debt
-        Filter.PLAN -> R.drawable.ic_plan
+    val filterIcon = if (filter.size == 1) {
+        when (filter.first()) {
+            Filter.ALL -> R.drawable.filter
+            Filter.EARNINGS -> R.drawable.ic_earnings
+            Filter.EXPENSE -> R.drawable.ic_expense
+            Filter.GOAL -> R.drawable.ic_finance_target
+            Filter.SAVINGS -> R.drawable.ic_savings
+            Filter.REPAYMENT -> R.drawable.ic_repayment
+            Filter.SETTLEMENT -> R.drawable.ic_refund
+            Filter.ATTAIN -> R.drawable.ic_attain
+            Filter.LENT -> R.drawable.ic_loan
+            Filter.DEBT -> R.drawable.ic_debt
+            Filter.PLAN -> R.drawable.ic_plan
+        }
+    } else {
+        R.drawable.filter
     }
 
     val orderByIcon = when (orderBy) {

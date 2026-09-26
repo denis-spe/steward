@@ -1,7 +1,12 @@
 package com.den.steward.ui.components.charts.collections
 
+import androidx.compose.runtime.Immutable
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+
+@Immutable
 data class ChartDataCollection(
-    val chartData: List<ChartData> = emptyList()
+    val chartData: ImmutableList<ChartData> = persistentListOf()
 ) {
 
     /**

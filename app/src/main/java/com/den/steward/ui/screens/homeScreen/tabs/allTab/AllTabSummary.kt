@@ -1,6 +1,10 @@
 // Bless be the name of the LORD GOD
 package com.den.steward.ui.screens.homeScreen.tabs.allTab
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -35,6 +39,10 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -47,13 +55,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.den.steward.R
-import com.den.steward.backend.states.AllTransactionSummary
+import com.den.steward.backend.states.allTabState.AllTransactionSummary
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.PeriodType
 import com.den.steward.helper.formatToAmount
 import com.den.steward.helper.formattedDate
 import com.den.steward.ui.componentExtenison.shimmerEffect
-import com.den.steward.ui.components.charts.VicoBarChart
 import com.den.steward.ui.components.charts.VicoLineChart
 import com.den.steward.ui.components.charts.collections.ChartDataCollection
 import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
@@ -76,6 +83,15 @@ fun AllTabSummaryCard(
         tabs.size
     }
 
+    val periodText = remember(periodType) {
+        when (periodType) {
+            PeriodType.DAY -> selectedDate.formattedDate
+            PeriodType.WEEK -> "Weekly Summary"
+            PeriodType.MONTH -> "Monthly Summary"
+            PeriodType.YEAR -> "Yearly Summary"
+        }
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -94,12 +110,7 @@ fun AllTabSummaryCard(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = when (periodType) {
-                    PeriodType.DAY -> selectedDate.formattedDate
-                    PeriodType.WEEK -> "Weekly Summary"
-                    PeriodType.MONTH -> "Monthly Summary"
-                    PeriodType.YEAR -> "Yearly Summary"
-                },
+                text = periodText,
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold,
                 ),
@@ -296,47 +307,57 @@ fun AllTabSummarySelectorTabs(
 fun AllTabSummary(
     allTransactionSummary: DataState<AllTransactionSummary>
 ) {
+    val isLoading = allTransactionSummary !is DataState.Success
+    val summary = (allTransactionSummary as? DataState.Success)?.data
+
+    // Extract raw target values
+    val flowTarget = summary?.flow ?: 0.0
+    val transactionSizeTarget = summary?.transactionSize ?: 0
+    val totalReceivedTarget = summary?.totalReceived ?: 0.0
+    val totalSpentTarget = summary?.totalSpent ?: 0.0
+    val totalSavingsTarget = summary?.totalSavings ?: 0.0
+
+    // Master progress animation (0f -> 1f) with an smooth easing curve
+    val progress by animateFloatAsState(
+        targetValue = if (isLoading) 0f else 1f,
+        animationSpec = tween(
+            durationMillis = 1000,
+            easing = FastOutSlowInEasing
+        ),
+        label = "summaryCountUpProgress"
+    )
+
+    // Compute live animated numerical values
+    val animatedFlow = (flowTarget * progress).toLong()
+    val animatedTransactionSize = (transactionSizeTarget * progress).toLong()
+    val animatedTotalReceived = (totalReceivedTarget * progress).toLong()
+    val animatedTotalSpent = (totalSpentTarget * progress).toLong()
+    val animatedTotalSavings = (totalSavingsTarget * progress).toLong()
+
+
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(300.dp)
     ) {
-        when (allTransactionSummary) {
-            is DataState.Success -> {
-                val allTransactionSummary = allTransactionSummary.data
-
-                AllTabSummaryCardContent(
-                    flow = allTransactionSummary.flow,
-                    transactionSize = allTransactionSummary.transactionSize,
-                    totalReceived = allTransactionSummary.totalReceived,
-                    totalSpent = allTransactionSummary.totalSpent,
-                    totalSavings = allTransactionSummary.totalSavings
-                )
-
-            }
-
-            is DataState.Loading -> {
-                AllTabSummaryCardContentShimmer()
-            }
-
-            is DataState.Error -> {
-                Text(
-                    text = "Error loading summary",
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-        }
+        AllTabSummaryCardContent(
+            flow = animatedFlow,
+            transactionSize = animatedTransactionSize,
+            totalReceived = animatedTotalReceived,
+            totalSpent = animatedTotalSpent,
+            totalSavings = animatedTotalSavings
+        )
     }
 }
 
 @Composable
 private fun AllTabSummaryCardContent(
-    flow: Double,
-    transactionSize: Int,
-    totalReceived: Double,
-    totalSpent: Double,
-    totalSavings: Double
+    flow: Long,
+    transactionSize: Long,
+    totalReceived: Long,
+    totalSpent: Long,
+    totalSavings: Long
 ) {
     val error = MaterialTheme.colorScheme.error
     val green = colorResource(R.color.earnings)
@@ -346,6 +367,11 @@ private fun AllTabSummaryCardContent(
     }
     val flowIcon = remember(flow) {
         if (flow >= 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown
+    }
+
+
+    val finalFlow = remember(flow) {
+        flow.formatToAmount()
     }
 
     Column(
@@ -379,7 +405,7 @@ private fun AllTabSummaryCardContent(
                     tint = flowIconColor
                 )
                 Text(
-                    text = flow.formatToAmount(),
+                    text = finalFlow,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.ExtraBold,
                     color = flowIconColor
@@ -435,7 +461,7 @@ private fun AllTabSummaryCardContent(
             AllTabSummaryTransactionCard(
                 icon = Icons.Default.AcUnit,
                 text = "Transaction Count",
-                amount = transactionSize.toDouble(),
+                amount = transactionSize,
                 color = colorResource(R.color.purple_200),
             )
         }
@@ -446,13 +472,11 @@ private fun AllTabSummaryCardContent(
 private fun AllTabSummaryTransactionCard(
     icon: ImageVector,
     text: String,
-    amount: Double,
+    amount: Long,
     color: Color,
     modifier: Modifier = Modifier,
 ) {
-    val amountState = remember(amount) {
-        amount.formatToAmount()
-    }
+    val formattedAmount = remember(amount) { amount.formatToAmount() }
 
     Surface(
         modifier = Modifier
@@ -503,7 +527,7 @@ private fun AllTabSummaryTransactionCard(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = amountState,
+                text = formattedAmount,
                 style = MaterialTheme.typography.labelMedium
                     .copy(
                         fontWeight = FontWeight.Bold,

@@ -26,7 +26,6 @@ import androidx.compose.material.icons.filled.Balance
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Wallet
-import androidx.compose.material.icons.outlined.Balance
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material.icons.outlined.PieChart
@@ -40,33 +39,29 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.den.steward.backend.states.DataState
-import com.den.steward.backend.viewModels.YesterdayViewModel
+import com.den.steward.backend.states.yesterdayTabState.YesterdayTransactionSummary
 import com.den.steward.helper.formatToAmount
 import com.den.steward.ui.componentExtenison.shimmerEffect
 import com.den.steward.ui.components.charts.VicoBarChart
-import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayDonutChartErrorView
+import com.den.steward.ui.components.charts.collections.ChartDataCollection
 import kotlinx.coroutines.launch
 
 @Composable
 fun YesterdayTabStatisticView(
-    yesterdayViewModel: YesterdayViewModel
+    yesterdayTransactionSummary: YesterdayTransactionSummary,
+    chartDataCollection: ChartDataCollection
 ) {
     val tabs = listOf(
         "Trend Chart",
@@ -96,13 +91,14 @@ fun YesterdayTabStatisticView(
             ) {
                 when (page) {
                     0 -> YesterdayTabBarChart(
-                        viewModel = yesterdayViewModel,
-                        chartSize = 160.dp
+                        chartDataCollection = chartDataCollection
                     )
 
-                    1 -> YesterdaySummaryView(yesterdayViewModel = yesterdayViewModel)
+                    1 -> YesterdaySummaryView(
+                        yesterdayTransactionSummary = yesterdayTransactionSummary
+                    )
 
-                    2 -> YesterdayTabStat(yesterdayViewModel = yesterdayViewModel)
+                    2 -> YesterdayTabStat()
                 }
             }
         }
@@ -227,50 +223,25 @@ fun YesterdayTabBarChartEmpty() {
 
 @Composable
 fun YesterdayTabBarChart(
-    viewModel: YesterdayViewModel,
-    chartSize: Dp = 160.dp
+    chartDataCollection: ChartDataCollection
 ) {
-    val chartDataCollection by viewModel.chartDataCollection.collectAsStateWithLifecycle()
 
     YesterdayStatisticLayout {
-        when (val currentState = chartDataCollection) {
-            is DataState.Success -> {
-                if (currentState.data.chartData.isEmpty()) {
-                   YesterdayTabBarChartEmpty()
-                } else {
-                    VicoBarChart(
-                        chartDataCollection = currentState.data,
-                        modifier = Modifier.fillMaxSize(),
-                        thickness = 3.dp,
-                        xValueFormatter = { value -> "${value.toInt()}hr" }
-                    )
-                }
-            }
-
-            is DataState.Error -> TodayDonutChartErrorView(message = currentState.message)
-            is DataState.Loading -> {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(24.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(chartSize)
-                            .clip(MaterialTheme.shapes.large)
-                            .shimmerEffect()
-                    )
-                }
-            }
+        if (chartDataCollection.chartData.isEmpty()) {
+           YesterdayTabBarChartEmpty()
+        } else {
+            VicoBarChart(
+                chartDataCollection = chartDataCollection,
+                modifier = Modifier.fillMaxSize(),
+                thickness = 3.dp,
+                xValueFormatter = { value -> "${value.toInt()}hr" }
+            )
         }
     }
 }
 
 @Composable
-fun YesterdaySummaryView(
-    yesterdayViewModel: YesterdayViewModel
-) {
-    val yesterdaySummaryTransactions by yesterdayViewModel.yesterdaySummaryTransactions.collectAsStateWithLifecycle()
+fun YesterdaySummaryView(yesterdayTransactionSummary: YesterdayTransactionSummary) {
 
     YesterdayStatisticLayout {
         Column(
@@ -278,37 +249,18 @@ fun YesterdaySummaryView(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            when (val state = yesterdaySummaryTransactions) {
-                is DataState.Success -> {
-                    YesterdaySummaryViewContent(
-                        flow = state.data.flow,
-                        transactionSize = state.data.transactionSize,
-                        highTransactionActivityAmount = state.data.highTransactionActivityAmount,
-                        highTransactionActivityLabel = state.data.highTransactionActivityLabel,
-                        lowTransactionActivityAmount = state.data.lowTransactionActivityAmount,
-                        lowTransactionActivityLabel = state.data.lowTransactionActivityLabel,
-                        incoming = state.data.incoming,
-                        outgoing = state.data.outgoing,
-                        incomingPercentage = state.data.incomingPercentage,
-                        outgoingPercentage = state.data.outgoingPercentage
-                    )
-                }
-
-                is DataState.Loading -> Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(80.dp)
-                        .clip(MaterialTheme.shapes.medium)
-                        .shimmerEffect()
-                )
-
-                is DataState.Error -> Text(
-                    text = state.message,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center
-                )
-            }
+            YesterdaySummaryViewContent(
+                flow = yesterdayTransactionSummary.flow,
+                transactionSize = yesterdayTransactionSummary.transactionSize,
+                highTransactionActivityAmount = yesterdayTransactionSummary.highTransactionActivityAmount,
+                highTransactionActivityLabel = yesterdayTransactionSummary.highTransactionActivityLabel,
+                lowTransactionActivityAmount = yesterdayTransactionSummary.lowTransactionActivityAmount,
+                lowTransactionActivityLabel = yesterdayTransactionSummary.lowTransactionActivityLabel,
+                incoming = yesterdayTransactionSummary.incoming,
+                outgoing = yesterdayTransactionSummary.outgoing,
+                incomingPercentage = yesterdayTransactionSummary.incomingPercentage,
+                outgoingPercentage = yesterdayTransactionSummary.outgoingPercentage
+            )
         }
     }
 }
@@ -481,7 +433,7 @@ fun YesterdaySummaryViewContent(
 }
 
 @Composable
-fun YesterdayTabStat(yesterdayViewModel: YesterdayViewModel) {
+fun YesterdayTabStat() {
     YesterdayStatisticLayout {
         Column(
             modifier = Modifier.fillMaxWidth(),

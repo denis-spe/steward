@@ -1,5 +1,4 @@
-// Bless be the name of LORD GOD of hosts
-package com.den.steward.backend.states
+package com.den.steward.backend.states.yesterdayTabState
 
 import androidx.compose.runtime.Immutable
 

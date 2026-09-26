@@ -33,7 +33,7 @@ fun PlanTabLazyList(
     updatePlanFulfillmentStatus: (String, PlanStatus, Transaction.PlanFulfillment) -> Unit,
     onTypeChange: (TransactionType) -> Unit,
     addPlanFulfillment: () -> Unit,
-    deleteFulfillmentPlan: (String, Transaction) -> Unit,
+    deleteFulfillmentPlan: (fulfillmentId: String, fulfillment: Transaction) -> Unit,
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),

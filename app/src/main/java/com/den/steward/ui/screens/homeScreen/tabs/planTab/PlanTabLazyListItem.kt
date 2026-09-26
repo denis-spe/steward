@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -16,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import com.den.steward.backend.entitles.PlanStatus
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
+import com.den.steward.helper.calculateFlow
+import com.den.steward.helper.formatToAmount
 import com.den.steward.helper.formatedDateTime
 import com.den.steward.helper.toLocalDateTime
 import com.den.steward.ui.dataAddition.AddPlanFulfillment
@@ -43,6 +47,19 @@ fun PlanTabLazyListItem(
 
     val typeColor = colorResource(id = transaction.type.color)
     val statusColor = colorResource(id = transaction.status.color)
+    val amount = remember(transaction.transactions) {
+        transaction.transactions.calculateFlow
+    }
+
+    val color = when {
+        amount < 0.0 -> MaterialTheme.colorScheme.error
+        amount > 0.0 -> Color(0xFF16C210)
+        else -> Color(0xFFF5A623)
+    }
+
+    val formattedAmount = remember(transaction.transactions) {
+        amount.formatToAmount()
+    }
 
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
@@ -80,18 +97,34 @@ fun PlanTabLazyListItem(
                     )
                 }
 
-                Box(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(statusColor.copy(alpha = 0.1f))
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End
                 ) {
-                    Text(
-                        text = transaction.status.label,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = statusColor,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(statusColor.copy(alpha = 0.1f))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = transaction.status.label,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = statusColor,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.size(2.dp))
+
+                    AddPlanFulfillment(
+                        transaction = transaction,
+                        updateSelectedParentTransaction = setSelectedTransaction,
+                        updateSelectedFulfillmentTransactionType = updateSelectedFulfillmentTransactionType,
+                        updateShowFulfillmentTransactionTypeBottomSheet = updateShowFulfillmentTransactionTypeBottomSheet,
+                    ) {
+                        setSelectedTransaction(transaction)
+                    }
                 }
             }
 
@@ -114,20 +147,11 @@ fun PlanTabLazyListItem(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = transaction.getFormattedAmountOrValue,
+                        text = formattedAmount,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        color = typeColor
+                        color = color
                     )
-
-                    AddPlanFulfillment(
-                        transaction = transaction,
-                        updateSelectedParentTransaction = setSelectedTransaction,
-                        updateSelectedFulfillmentTransactionType = updateSelectedFulfillmentTransactionType,
-                        updateShowFulfillmentTransactionTypeBottomSheet = updateShowFulfillmentTransactionTypeBottomSheet,
-                    ) {
-                        setSelectedTransaction(transaction)
-                    }
                 }
             }
         }

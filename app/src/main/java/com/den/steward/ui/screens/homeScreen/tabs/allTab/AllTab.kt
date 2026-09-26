@@ -24,6 +24,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,7 +34,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.R
-import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.PeriodType
 import com.den.steward.backend.states.Filter
 import com.den.steward.backend.states.OrderBy
@@ -56,7 +56,11 @@ fun AllTab(
         pageCount = { Int.MAX_VALUE }
     )
 
+
     val allUiState by allViewModel.allUiState.collectAsStateWithLifecycle()
+    val sortAndFilterState by allViewModel.sortAndFilterState.collectAsStateWithLifecycle()
+    val allTabDataState by allViewModel.allTabDataState.collectAsStateWithLifecycle()
+    val transactions by allViewModel.transactions.collectAsStateWithLifecycle()
     val homeUiState by homeViewModel.homeUiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(homeUiState.allTabFilter) {
@@ -66,52 +70,46 @@ fun AllTab(
         }
     }
 
-    val transactionsState by allViewModel.transactions.collectAsStateWithLifecycle()
-    val allTransactionSummary by allViewModel.transactionSummary.collectAsStateWithLifecycle()
-    val chartDataCollection by allViewModel.chartDataCollection.collectAsStateWithLifecycle()
-
-    LaunchedEffect(pagerState.currentPage) {
-        allViewModel.onPageChange(pagerState.currentPage)
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.settledPage }
+            .collect { page ->
+                allViewModel.onPageChange(page)
+            }
     }
 
-    val getWeekDaysForPage = remember(pagerState.currentPage) {
-        allViewModel.getWeekDaysForPage(pagerState.currentPage)
-    }
+    val settledPage = pagerState.settledPage
+    val weekDaysForPage = remember(settledPage) { allViewModel.getWeekDaysForPage(settledPage) }
+    val transactionCountsState by remember(settledPage) {
+        allViewModel.transactionCounts(settledPage)
+    }.collectAsStateWithLifecycle()
 
-    val transactionCountsState by allViewModel.transactionCounts.collectAsStateWithLifecycle()
-
-    val countList = remember(transactionCountsState, pagerState.currentPage) {
-        val state = transactionCountsState
-        if (state is DataState.Success) {
-            val localDates = allViewModel.getWeekDaysForPage(pagerState.currentPage)
-            localDates.map { date -> state.data[date] ?: 0 }
-        } else {
-            emptyList()
-        }
-    }
 
     val coroutineScope = rememberCoroutineScope()
 
-    val filterIcon = when (allUiState.filter) {
-        Filter.ALL -> R.drawable.filter
-        Filter.EARNINGS -> R.drawable.ic_earnings
-        Filter.EXPENSE -> R.drawable.ic_expense
-        Filter.GOAL -> R.drawable.ic_finance_target
-        Filter.SAVINGS -> R.drawable.ic_savings
-        Filter.REPAYMENT -> R.drawable.ic_repayment
-        Filter.SETTLEMENT -> R.drawable.ic_refund
-        Filter.ATTAIN -> R.drawable.ic_attain
-        Filter.LENT -> R.drawable.ic_loan
-        Filter.DEBT -> R.drawable.ic_debt
-        Filter.PLAN -> R.drawable.ic_plan
+    val filterIcon = if (sortAndFilterState.filter.size == 1) {
+        when (sortAndFilterState.filter.first()) {
+            Filter.ALL -> R.drawable.filter
+            Filter.EARNINGS -> R.drawable.ic_earnings
+            Filter.EXPENSE -> R.drawable.ic_expense
+            Filter.GOAL -> R.drawable.ic_finance_target
+            Filter.SAVINGS -> R.drawable.ic_savings
+            Filter.REPAYMENT -> R.drawable.ic_repayment
+            Filter.SETTLEMENT -> R.drawable.ic_refund
+            Filter.ATTAIN -> R.drawable.ic_attain
+            Filter.LENT -> R.drawable.ic_loan
+            Filter.DEBT -> R.drawable.ic_debt
+            Filter.PLAN -> R.drawable.ic_plan
+        }
+    } else {
+        R.drawable.filter
     }
 
-    val orderByIcon = when (allUiState.orderBy) {
+    val orderByIcon = when (sortAndFilterState.orderBy) {
         OrderBy.ASCENDING -> R.drawable.ascending_sort
         OrderBy.DESCENDING -> R.drawable.descending_sorting
     }
 
-    val sortByIcon = when (allUiState.sortBy) {
+    val sortByIcon = when (sortAndFilterState.sortBy) {
         SortBy.TIME -> R.drawable.time
         SortBy.AMOUNT -> R.drawable.outline_amount
         SortBy.LABEL -> R.drawable.outline_label
@@ -123,6 +121,16 @@ fun AllTab(
         PeriodType.MONTH -> R.drawable.ic_month
         PeriodType.YEAR -> R.drawable.ic_year
         PeriodType.DAY -> R.drawable.ic_day
+    }
+
+    val transactionListSortName = when(allUiState.isTransactionListSort) {
+        OrderBy.ASCENDING -> "Oldest"
+        OrderBy.DESCENDING -> "Latest"
+    }
+
+    val transactionListSortIcon = when(allUiState.isTransactionListSort) {
+        OrderBy.DESCENDING -> R.drawable.ic_sort_latest
+        OrderBy.ASCENDING -> R.drawable.ascending_sort
     }
 
 
@@ -143,10 +151,10 @@ fun AllTab(
         ) {
             WeekView(
                 pagerState = pagerState,
-                weekDaysForPage = getWeekDaysForPage,
+                weekDaysForPage = weekDaysForPage,
                 selectedDate = allUiState.selectedDate,
                 weekNumber = allUiState.weekNumber,
-                counts = countList,
+                counts = transactionCountsState,
                 onResetClick = {
                     coroutineScope.launch {
                         pagerState.animateScrollToPage(PeriodDataHandleUseCase.INITIAL_PAGE)
@@ -163,9 +171,9 @@ fun AllTab(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 AllTabListPanelButtons(
-                    filterSelected = allUiState.filter != Filter.ALL,
-                    orderBySelected = allUiState.orderBy != OrderBy.ASCENDING,
-                    sortBySelected = allUiState.sortBy != SortBy.TIME,
+                    filterSelected = sortAndFilterState.filter != listOf(Filter.ALL),
+                    orderBySelected = sortAndFilterState.orderBy != OrderBy.DESCENDING,
+                    sortBySelected = sortAndFilterState.sortBy != SortBy.TIME,
                     onFilterClick = { allViewModel.updateIsFilterExpanded(true) },
                     onSortByClick = { allViewModel.updateIsSortByExpanded(true) },
                     onOrderByClick = { allViewModel.updateIsOrderByExpanded(true) },
@@ -175,7 +183,11 @@ fun AllTab(
                     sortByIcon = sortByIcon,
                     onPeriodTypeClick = { allViewModel.updateIsPeriodTypeExpanded(true) },
                     periodTypeIcon = periodTypeIcon,
-                    periodTypeSelected = allUiState.periodType != PeriodType.WEEK
+                    periodTypeSelected = allUiState.periodType != PeriodType.WEEK,
+                    isTransactionListSort = allUiState.isTransactionListSort != OrderBy.DESCENDING,
+                    transactionListSortName = transactionListSortName,
+                    transactionListSortIcon = transactionListSortIcon,
+                    onTransactionListSort = { allViewModel.updateIsTransactionListOrderExpanded(isExpanded = true) }
                 )
             }
         }
@@ -186,14 +198,16 @@ fun AllTab(
         )
 
         AllTabLazyList(
-            transactions = transactionsState,
-            allTransactionChartData = chartDataCollection,
-            allTransactionSummary = allTransactionSummary,
+            allTabDataState = allTabDataState,
+            transactions = transactions,
             selectedDate = allUiState.selectedDate,
             periodType = allUiState.periodType,
             allUiState = allUiState,
+            sortAndFilterState = sortAndFilterState,
             updateFilter = allViewModel::updateFilter,
             updateSort = allViewModel::updateSort,
+            updateIsTransactionListOrder = allViewModel::updateIsTransactionListOrder,
+            updateIsTransactionListOrderExpanded = allViewModel::updateIsTransactionListOrderExpanded,
             updateSortType = allViewModel::updateSortType,
             updateIsFilterExpanded = allViewModel::updateIsFilterExpanded,
             updateIsOrderByExpanded = allViewModel::updateIsOrderByExpanded,
@@ -213,15 +227,20 @@ fun AllTabListPanelButtons(
     orderBySelected: Boolean,
     sortBySelected: Boolean,
     periodTypeSelected: Boolean,
+    isTransactionListSort: Boolean,
     onFilterClick: () -> Unit,
     onSortByClick: () -> Unit,
     onOrderByClick: () -> Unit,
     onPeriodTypeClick: () -> Unit,
+    onTransactionListSort: () -> Unit,
     periodType: PeriodType,
+    transactionListSortName: String,
+    transactionListSortIcon: Int,
     filterIcon: Int,
     orderByIcon: Int,
     sortByIcon: Int,
-    periodTypeIcon: Int
+    periodTypeIcon: Int,
+
 ) {
     LazyRow(
         modifier = Modifier
@@ -230,6 +249,15 @@ fun AllTabListPanelButtons(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        item(key = "Transaction list sort") {
+            AllTabListPanelButton(
+                text = transactionListSortName,
+                isSelect = isTransactionListSort,
+                icon = transactionListSortIcon,
+                onClick = onTransactionListSort
+            )
+        }
+
         item(key = "Period Type") {
             AllTabListPanelButton(
                 text = periodType.name.lowercase().replaceFirstChar { it.uppercase() },

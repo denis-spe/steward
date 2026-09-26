@@ -114,7 +114,7 @@ fun TodayTabListHeader() {
 
 @Composable
 fun TodayTabListPanelButtons(
-    filter: Filter,
+    filter: List<Filter>,
     sortBy: SortBy,
     orderBy: OrderBy,
     filterSelected: Boolean,
@@ -126,18 +126,22 @@ fun TodayTabListPanelButtons(
 ) {
     val iconSize = 20.dp
 
-    val filterIcon = when (filter) {
-        Filter.ALL -> R.drawable.filter
-        Filter.EARNINGS -> R.drawable.ic_earnings
-        Filter.EXPENSE -> R.drawable.ic_expense
-        Filter.GOAL -> R.drawable.ic_finance_target
-        Filter.SAVINGS -> R.drawable.ic_savings
-        Filter.REPAYMENT -> R.drawable.ic_repayment
-        Filter.SETTLEMENT -> R.drawable.ic_refund
-        Filter.ATTAIN -> R.drawable.ic_attain
-        Filter.LENT -> R.drawable.ic_loan
-        Filter.DEBT -> R.drawable.ic_debt
-        Filter.PLAN -> R.drawable.ic_plan
+    val filterIcon = if (filter.size == 1) {
+        when (filter.first()) {
+            Filter.ALL -> R.drawable.filter
+            Filter.EARNINGS -> R.drawable.ic_earnings
+            Filter.EXPENSE -> R.drawable.ic_expense
+            Filter.GOAL -> R.drawable.ic_finance_target
+            Filter.SAVINGS -> R.drawable.ic_savings
+            Filter.REPAYMENT -> R.drawable.ic_repayment
+            Filter.SETTLEMENT -> R.drawable.ic_refund
+            Filter.ATTAIN -> R.drawable.ic_attain
+            Filter.LENT -> R.drawable.ic_loan
+            Filter.DEBT -> R.drawable.ic_debt
+            Filter.PLAN -> R.drawable.ic_plan
+        }
+    } else {
+        R.drawable.filter
     }
 
     val orderByIcon = when (orderBy) {
@@ -286,7 +290,7 @@ fun TodayTabLazyList(
     dataDeletionViewModel: DataDeletionViewModel,
     todayTabDataState: TodayTabDataState
 ) {
-    val todayUiState by todayViewModel.todayUiState.collectAsStateWithLifecycle()
+    val todayUiState by todayViewModel.sortAndFilterState.collectAsStateWithLifecycle()
     val selectedTransactionForView = remember { mutableStateOf<Transaction?>(null) }
 
     val (
@@ -323,7 +327,7 @@ fun TodayTabLazyList(
                 filter = todayUiState.filter,
                 sortBy = todayUiState.sortBy,
                 orderBy = todayUiState.orderBy,
-                filterSelected = todayUiState.filter != Filter.ALL,
+                filterSelected = todayUiState.filter != listOf(Filter.ALL),
                 orderBySelected = todayUiState.orderBy != OrderBy.DESCENDING,
                 sortBySelected = todayUiState.sortBy != SortBy.TIME,
                 onFilterClick = {

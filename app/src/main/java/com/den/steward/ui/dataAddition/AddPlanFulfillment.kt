@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Cancel
@@ -29,20 +30,29 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -53,6 +63,8 @@ import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataAdditionState
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.PlanTabUiState
+import com.den.steward.helper.calculateFlow
+import com.den.steward.helper.formatToAmount
 import com.den.steward.ui.components.bottomDrawerSheet.BottomDrawerSheet
 import com.den.steward.ui.components.transactionFields.PlanFulfillmentAmountField
 import com.den.steward.ui.components.transactionFields.PlanFulfillmentLabelField
@@ -68,7 +80,7 @@ fun AddPlanFulfillment(
     updateShowFulfillmentTransactionTypeBottomSheet: (Boolean) -> Unit,
     onClick: () -> Unit = {},
 ) {
-    Button(
+    Card (
         onClick = {
             onClick()
             updateSelectedFulfillmentTransactionType(TransactionType.PLAN_FULFILLMENT)
@@ -76,10 +88,16 @@ fun AddPlanFulfillment(
             updateShowFulfillmentTransactionTypeBottomSheet(true)
         },
         modifier = modifier,
+        shape = CircleShape,
+        colors = CardDefaults.cardColors().copy(
+            containerColor = MaterialTheme.colorScheme.primary
+        )
     ) {
-        Text(
-            "Add",
-            style = MaterialTheme.typography.titleSmall
+        Icon(
+            imageVector = Icons.Default.Add,
+            contentDescription = "Add",
+            modifier = Modifier.size(23.dp)
+                .padding(5.dp)
         )
     }
 }
@@ -96,9 +114,34 @@ fun PlanFulfillmentBottomDrawerSheet(
         transactionId: String,
         status: PlanStatus,
         planFulfillment: Transaction.PlanFulfillment) -> Unit,
-    deleteFulfillmentPlan: (transactionId: String, transaction: Transaction) -> Unit
+    deleteFulfillmentPlan: (fulfillmentId: String, transaction: Transaction) -> Unit
 ) {
 
+    val parentTransaction = (planTabUiState.selectedParentTransaction as? Transaction.Plan)
+        ?: return
+
+    val label = parentTransaction.getLabel
+
+    // 1. Calculate the amount directly.
+    // We use remember keyed to the 'transactions' list so it only recalculates
+    // the math when the actual list of transactions changes.
+    val amount = remember(parentTransaction.transactions) {
+        parentTransaction.transactions.calculateFlow
+    }
+
+    // 2. Derive the color directly from the amount
+    val color = when {
+        amount < 0.0 -> MaterialTheme.colorScheme.error
+        amount > 0.0 -> Color(0xFF16C210)
+        else -> Color(0xFFF5A623)
+    }
+
+    // 3. Format the amount, re-running only when 'amount' changes
+    val formattedAmount = remember(amount) {
+        amount.formatToAmount()
+    }
+
+    val transactionTypeColor = colorResource(id = parentTransaction.type.color)
 
     BottomDrawerSheet(
         title = "Plan fulfillment",
@@ -150,6 +193,73 @@ fun PlanFulfillmentBottomDrawerSheet(
                     is DataState.Success -> {
                         val transactions = planFulfillmentState.data
 
+                        stickyHeader {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors()
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(16.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Start
+                                    ) {
+                                        Card(
+                                            modifier = Modifier.size(30.dp),
+                                            shape = CircleShape,
+                                            colors = CardDefaults.cardColors().copy(
+                                                containerColor = transactionTypeColor.copy(alpha = 0.1f)
+                                            )
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(5.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.Center
+                                            ) {
+                                                Image(
+                                                    painter = painterResource(id = parentTransaction.selectedIcon),
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(25.dp),
+                                                    colorFilter = ColorFilter.tint(
+                                                        transactionTypeColor
+                                                    )
+                                                )
+                                            }
+                                        }
+
+                                        Spacer(modifier = Modifier.width(4.dp))
+
+                                        Text(
+                                            text = label,
+                                            style = MaterialTheme.typography.titleMedium.copy(
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        )
+                                    }
+
+                                    Column(
+                                        modifier = Modifier.padding(16.dp),
+                                        verticalArrangement = Arrangement.Center,
+                                        horizontalAlignment = Alignment.Start
+                                    ) {
+                                        Text(
+                                            text = "Net Flow",
+                                            style = MaterialTheme.typography.titleSmall
+                                        )
+                                        Text(
+                                            formattedAmount,
+                                            style = MaterialTheme.typography.titleLarge,
+                                            color = color
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
                         if (transactions.isNotEmpty()) {
                             items(
                                 transactions.size,
@@ -163,7 +273,7 @@ fun PlanFulfillmentBottomDrawerSheet(
                                     onStatusChange = updatePlanFulfillmentStatus,
                                     onDelete = {
                                         deleteFulfillmentPlan(
-                                            item.plan.id,
+                                            item.id,
                                             item
                                         )
                                     },
@@ -207,6 +317,7 @@ fun PlanFulfillmentBottomDrawerSheet(
 @Composable
 fun PlanFulfillmentBottomDrawerSheetItem(
     modifier: Modifier = Modifier,
+    shape: Shape = RectangleShape,
     planFulfillment: Transaction.PlanFulfillment,
     onStatusChange: (
         planId: String,
@@ -248,153 +359,160 @@ fun PlanFulfillmentBottomDrawerSheetItem(
     val note = planFulfillment.note
     val planId = planFulfillment.plan.id
 
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+    Surface (
+        modifier = Modifier.padding(vertical = 4.dp),
+        shape = shape,
+        color = material.background,
+        shadowElevation = if (onExpand.value) 10.dp else 0.dp,
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+        Column(
+            modifier = modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Image(
-                    painter = painterResource(fulfillmentType.icon),
-                    contentDescription = "fulfillment type",
-                    modifier = Modifier.size(20.dp),
-                    colorFilter = ColorFilter.tint(fulfillmentTypeColor)
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start
+                ) {
+                    Image(
+                        painter = painterResource(fulfillmentType.icon),
+                        contentDescription = "fulfillment type",
+                        modifier = Modifier.size(20.dp),
+                        colorFilter = ColorFilter.tint(fulfillmentTypeColor)
+                    )
 
-                Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
 
-                Text(
-                    label,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.End
-            ) {
-                Text(
-                    amount,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = fulfillmentTypeColor
-                )
+                    Text(
+                        label,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Text(
+                        amount,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = fulfillmentTypeColor
+                    )
 
-                Spacer(modifier = Modifier.width(2.dp))
+                    Spacer(modifier = Modifier.width(2.dp))
 
-                IconButton(
-                    onClick = {
+                    IconButton(
+                        onClick = {
 
-                        val planStatusState = when (status) {
-                            PlanStatus.PENDING -> PlanStatus.ACHIEVED
-                            PlanStatus.ACHIEVED -> PlanStatus.FAILED
-                            PlanStatus.FAILED -> PlanStatus.PENDING
-                            PlanStatus.NOT_YET -> PlanStatus.PENDING
-                        }
+                            val planStatusState = when (status) {
+                                PlanStatus.PENDING -> PlanStatus.ACHIEVED
+                                PlanStatus.ACHIEVED -> PlanStatus.FAILED
+                                PlanStatus.FAILED -> PlanStatus.PENDING
+                                PlanStatus.NOT_YET -> PlanStatus.PENDING
+                            }
 
-                        onStatusChange(
-                            planId,
-                            planStatusState,
-                            planFulfillment
+                            onStatusChange(
+                                planId,
+                                planStatusState,
+                                planFulfillment
+                            )
+                        },
+                        modifier = Modifier.size(22.dp)
+                    ) {
+                        Icon(
+                            imageVector = statusIcon,
+                            contentDescription = "status",
+                            tint = statusColor,
+                            modifier = Modifier.size(20.dp)
                         )
-                    },
-                    modifier = Modifier.size(22.dp)
-                ) {
-                    Icon(
-                        imageVector = statusIcon,
-                        contentDescription = "status",
-                        tint = statusColor,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
+                    }
 
-                Spacer(modifier = Modifier.width(2.dp))
+                    Spacer(modifier = Modifier.width(2.dp))
 
-                IconButton(
-                    onClick = {
-                        onExpand.value = !onExpand.value
-                    },
-                    modifier = Modifier.size(22.dp)
-                ) {
-                    Icon(
-                        imageVector = expandIcon,
-                        contentDescription = "extend",
-                        modifier = Modifier.size(20.dp)
-                    )
+                    IconButton(
+                        onClick = {
+                            onExpand.value = !onExpand.value
+                        },
+                        modifier = Modifier.size(22.dp)
+                    ) {
+                        Icon(
+                            imageVector = expandIcon,
+                            contentDescription = "extend",
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
-        }
 
-        AnimatedVisibility(
-            visible = onExpand.value,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+            AnimatedVisibility(
+                visible = onExpand.value,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                if (note.isNotEmpty()) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    if (note.isNotEmpty()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                note,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
-                        Text(
-                            note,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    TextButton(
-                        onClick = onEdit,
-                        modifier = Modifier
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "edit",
+                        TextButton(
+                            onClick = onEdit,
                             modifier = Modifier
-                                .size(20.dp)
-                                .padding(end = 4.dp)
-                        )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "edit",
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .padding(end = 4.dp)
+                            )
 
-                        Text(
-                            "Edit",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
+                            Text(
+                                "Edit",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
 
-                    TextButton(
-                        onClick = onDelete,
-                        modifier = Modifier
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.DeleteOutline,
-                            contentDescription = "delete",
+                        TextButton(
+                            onClick = onDelete,
                             modifier = Modifier
-                                .size(20.dp)
-                                .padding(end = 4.dp)
-                        )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.DeleteOutline,
+                                contentDescription = "delete",
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .padding(end = 4.dp)
+                            )
 
-                        Text(
-                            "Delete",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                            Text(
+                                "Delete",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
                     }
                 }
             }

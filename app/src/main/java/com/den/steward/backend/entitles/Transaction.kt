@@ -24,7 +24,9 @@ sealed class Transaction {
         val plannedAt: Long = System.currentTimeMillis(),
         val endAt: Long = System.currentTimeMillis(),
         val status: PlanStatus = PlanStatus.NOT_YET,
-    ) : Transaction()
+    ) : Transaction() {
+
+    }
 
     @Stable
     data class PlanFulfillment(

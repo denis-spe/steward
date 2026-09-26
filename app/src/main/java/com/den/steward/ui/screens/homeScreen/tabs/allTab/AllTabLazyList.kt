@@ -24,29 +24,29 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.den.steward.R
 import com.den.steward.backend.entitles.Transaction
-import com.den.steward.backend.states.AllTransactionSummary
-import com.den.steward.backend.states.AllUiState
+import com.den.steward.backend.states.allTabState.AllUiState
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.PeriodType
 import com.den.steward.backend.states.Filter
 import com.den.steward.backend.states.OrderBy
+import com.den.steward.backend.states.SortAndFilterState
 import com.den.steward.backend.states.SortBy
 import com.den.steward.backend.viewModels.DataDeletionViewModel
 import com.den.steward.ui.components.FilterBottomSheet
 import com.den.steward.ui.components.OrderByBottomSheet
 import com.den.steward.ui.components.PeriodTypeBottomSelector
 import com.den.steward.ui.components.SortByBottomSheet
+import com.den.steward.backend.states.allTabState.AllTabDataState
 import com.den.steward.ui.components.TransactionViewDialog
-import com.den.steward.ui.components.charts.collections.ChartDataCollection
 import com.den.steward.ui.dataDeletion.DataDeletionDialog
+import kotlinx.collections.immutable.ImmutableMap
 import java.time.LocalDate
 
 @Composable
 fun AllTabLazyList(
+    allTabDataState: DataState<AllTabDataState>,
     allUiState: AllUiState,
-    allTransactionChartData: DataState<ChartDataCollection>,
-    allTransactionSummary: DataState<AllTransactionSummary>,
-    transactions: DataState<Map<String, List<Transaction>>>,
+    sortAndFilterState: SortAndFilterState,
     selectedDate: LocalDate,
     periodType: PeriodType,
     updateSelectedTransactionForView: (Transaction?) -> Unit,
@@ -58,8 +58,18 @@ fun AllTabLazyList(
     updateIsFilterExpanded: (Boolean) -> Unit,
     updateIsOrderByExpanded: (Boolean) -> Unit,
     updateIsSortByExpanded: (Boolean) -> Unit,
-    dataDeletionViewModel: DataDeletionViewModel
+    dataDeletionViewModel: DataDeletionViewModel,
+    transactions: DataState<ImmutableMap<String, List<Transaction>>>,
+    updateIsTransactionListOrder: (OrderBy) -> Unit,
+    updateIsTransactionListOrderExpanded: (Boolean) -> Unit
 ) {
+    val (chartDataState, summaryState) = remember(allTabDataState) {
+        when (allTabDataState) {
+            is DataState.Success -> DataState.Success(allTabDataState.data.chartDataCollection) to DataState.Success(allTabDataState.data.allTransactionSummary)
+            is DataState.Error -> DataState.Error(allTabDataState.message) to DataState.Error(allTabDataState.message)
+            is DataState.Loading -> DataState.Loading to DataState.Loading
+        }
+    }
 
     Surface(
         color = MaterialTheme.colorScheme.background
@@ -75,8 +85,8 @@ fun AllTabLazyList(
                 contentType = "summary_card" // FIX: distinct contentType for efficient recycling
             ) {
                 AllTabSummaryCard(
-                    allTransactionChartData = allTransactionChartData,
-                    allTransactionSummary = allTransactionSummary,
+                    allTransactionChartData = chartDataState,
+                    allTransactionSummary = summaryState,
                     selectedDate = selectedDate,
                     periodType = periodType
                 )
@@ -179,18 +189,27 @@ fun AllTabLazyList(
 
     // --- Bottom Sheets & Dialogs ---
     FilterBottomSheet(
-        isExpanded = allUiState.isFilterExpanded,
-        selected = allUiState.filter,
+        isExpanded = sortAndFilterState.isFilterExpanded,
+        selected = sortAndFilterState.filter,
         onFilterSelected = {
             updateFilter(it)
-            updateIsFilterExpanded(false)
         },
         onDismiss = { updateIsFilterExpanded(false) }
     )
 
     OrderByBottomSheet(
-        isExpanded = allUiState.isOrderByExpanded,
-        selected = allUiState.orderBy,
+        isExpanded = allUiState.isTransactionListSortExpanded,
+        selected = allUiState.isTransactionListSort,
+        onSortSelected = {
+            updateIsTransactionListOrder(it)
+            updateIsTransactionListOrderExpanded(false)
+        },
+        onDismiss = { updateIsTransactionListOrderExpanded(false) }
+    )
+
+    OrderByBottomSheet(
+        isExpanded = sortAndFilterState.isOrderByExpanded,
+        selected = sortAndFilterState.orderBy,
         onSortSelected = {
             updateSort(it)
             updateIsOrderByExpanded(false)
@@ -199,8 +218,8 @@ fun AllTabLazyList(
     )
 
     SortByBottomSheet(
-        isExpanded = allUiState.isSortByExpanded,
-        selected = allUiState.sortBy,
+        isExpanded = sortAndFilterState.isSortByExpanded,
+        selected = sortAndFilterState.sortBy,
         onSortSelected = {
             updateSortType(it)
             updateIsSortByExpanded(false)

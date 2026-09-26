@@ -3,10 +3,17 @@ package com.den.steward.helper
 
 import android.util.Log
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextRange
+import androidx.core.content.ContextCompat
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import com.den.steward.backend.entitles.Transaction
+import com.den.steward.backend.entitles.TransactionType
+import com.den.steward.ui.components.charts.collections.ChartData
+import com.den.steward.ui.components.charts.collections.ChartDataCollection
 import net.objecthunter.exp4j.ExpressionBuilder
+import okhttp3.internal.toImmutableList
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.text.DecimalFormat
@@ -17,6 +24,9 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.util.Locale
+import kotlin.collections.component1
+import kotlin.collections.component2
+import kotlin.collections.sumOf
 import kotlin.math.abs
 import kotlin.math.log10
 import kotlin.math.pow
@@ -254,25 +264,24 @@ fun String.limitLength(maxLength: Int): String {
 // Cache the formatter so it isn't recreated on every invocation
 private val cachedDecimalFormat = DecimalFormat("#.##")
 private val suffixes = charArrayOf('M', 'B', 'T', 'Q')
+private val cachedNumberFormat by lazy {
+    NumberFormat.getNumberInstance(Locale.getDefault()).apply {
+        maximumFractionDigits = 2
+        minimumFractionDigits = 0
+    }
+}
 
 fun Double.formatToAmount(): String {
     val absValue = abs(this)
     val sign = if (this < 0) "-" else ""
 
     // Resolve system currency symbol without full heavy instance creation where possible
-    val symbol = try {
-        NumberFormat.getCurrencyInstance(Locale.getDefault()).currency?.symbol ?: "$"
-    } catch (e: Exception) {
-        "$"
-    }
+    val symbol = getCurrencySymbol()
 
     if (absValue < 1_000_000) {
         val rounding = BigDecimal(this).setScale(2, RoundingMode.HALF_UP)
         // Use Java/Kotlin built-in group formatting instead of heavy Regex replaces
-        val formattedAmount = NumberFormat.getNumberInstance(Locale.getDefault()).apply {
-            maximumFractionDigits = 2
-            minimumFractionDigits = 0
-        }.format(rounding.abs())
+        val formattedAmount = cachedNumberFormat.format(rounding.abs())
 
         return "$sign$symbol $formattedAmount"
     }
@@ -369,4 +378,59 @@ val LocalDate.toEpochMillis: Long
 
 infix fun LocalDate.combine(time: LocalTime): Long {
     return this.atTime(time).toEpochMillis(ZoneId.systemDefault())
+}
+
+val List<Transaction>.incoming: Double get() {
+    return this.filter {
+        it.type == TransactionType.EARNINGS ||
+                it.type == TransactionType.DEBT ||
+                it.type == TransactionType.REPAYMENT
+    }.sumOf { it.getAmountOrValue ?: 0.0 }
+}
+
+val List<Transaction>.outgoing: Double get() {
+    return this.filter {
+        it.type == TransactionType.EXPENSE ||
+                it.type == TransactionType.LENT ||
+                it.type == TransactionType.SAVINGS ||
+                it.type == TransactionType.SETTLEMENT
+    }.sumOf { it.getAmountOrValue ?: 0.0 }
+}
+
+val List<Transaction>.calculateFlow: Double get() {
+    var incoming = 0.0
+    var outgoing = 0.0
+
+    this.forEach { transaction ->
+        if (transaction.getAffectAmount == "Yes") {
+            val amount = transaction.getAmountOrValue ?: 0.0
+            when (transaction.type) {
+                TransactionType.EARNINGS,
+                TransactionType.DEBT,
+                TransactionType.REPAYMENT -> incoming += amount
+
+                TransactionType.EXPENSE,
+                TransactionType.LENT,
+                TransactionType.SAVINGS,
+                TransactionType.SETTLEMENT -> outgoing += amount
+                else -> {}
+            }
+        }
+
+        if (transaction is Transaction.PlanFulfillment) {
+            val amount = transaction.getAmountOrValue ?: 0.0
+            when (transaction.fulfillmentType) {
+                TransactionType.EARNINGS,
+                TransactionType.DEBT,
+                TransactionType.REPAYMENT -> incoming += amount
+
+                TransactionType.EXPENSE,
+                TransactionType.LENT,
+                TransactionType.SAVINGS,
+                TransactionType.SETTLEMENT -> outgoing += amount
+                else -> {}
+            }
+        }
+    }
+    return incoming - outgoing
 }

@@ -13,7 +13,7 @@ interface Storage {
     ): Flow<Result<List<Transaction>>>
 
     suspend fun addTransaction(userId: String, transaction: Transaction): Result<String>
-    suspend fun addFulfillment(userId: String, transactionId: String, fulfillment: Transaction): Result<Unit>
+    suspend fun addFulfillment(userId: String, transactionId: String, fulfillment: Transaction): Result<String>
     suspend fun resetGoalAttain(userId: String, transaction: Transaction.Goal): Result<Transaction.Goal>
     suspend fun addGoalAchieved(userId: String, transaction: Transaction.Goal): Result<Unit>
     suspend fun getTransaction(userId: String, transactionId: String): Result<Transaction?>

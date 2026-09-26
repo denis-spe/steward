@@ -56,6 +56,33 @@ class PlanTabViewModel @Inject constructor(
             initialValue = DataState.Loading
         )
 
+    // ========================================================================
+    // NEW: Sync the selected parent transaction with the live database stream
+    // ========================================================================
+    init {
+        viewModelScope.launch {
+            dataFilterUseCase.planTransactions.collect { dataState ->
+                if (dataState is DataState.Success) {
+                    val allPlans = dataState.data
+
+                    _planTabUiState.update { currentState ->
+                        val currentSelectedId = currentState.selectedParentTransaction?.id
+                        if (currentSelectedId != null) {
+                            // Find the fresh version of the currently selected transaction
+                            val freshTransaction = allPlans.find { it.id == currentSelectedId }
+                            currentState.copy(
+                                selectedParentTransaction = freshTransaction ?: currentState.selectedParentTransaction
+                            )
+                        } else {
+                            currentState
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // ========================================================================
+
     fun setSelectedTransaction(transaction: Transaction?) {
         _planTabUiState.value = _planTabUiState.value.copy(selectedParentTransaction = transaction)
     }
@@ -170,22 +197,20 @@ class PlanTabViewModel @Inject constructor(
             return
         }
 
-        // Immediately update state to indicate saving and close the sheet
-        _planTabUiState.update { it.copy(
-            isSaving = true,
-        ) }
+        _planTabUiState.update { it.copy(isSaving = true) }
 
         viewModelScope.launch {
             try {
-                // Perform the database operation
                 addDataUseCase.addFulfillment(
                     parent.id,
                     fulfillment
                 )
 
+                // Note: Fixed a minor bug here. You were keeping `isSaving = true` on success.
+                // It should be flipped back to `false` when the operation completes.
                 _planTabUiState.update {
                     it.copy(
-                        isSaving = true,
+                        isSaving = false,
                         amount = TextFieldState(),
                         label = TextFieldState(),
                         note = TextFieldState(),

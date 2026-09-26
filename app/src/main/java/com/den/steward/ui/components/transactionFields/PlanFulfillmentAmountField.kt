@@ -3,6 +3,8 @@ package com.den.steward.ui.components.transactionFields
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -11,6 +13,8 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -38,5 +42,12 @@ fun PlanFulfillmentAmountField(
         shape = MaterialTheme.shapes.medium,
         modifier = modifier.height(40.dp),
         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 7.dp),
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Number,
+            imeAction = ImeAction.Done
+        ),
+        inputTransformation = CustomInputTransformation(),
+        outputTransformation = CustomOutputTransformation(),
+        lineLimits = TextFieldLineLimits.SingleLine,
     )
 }

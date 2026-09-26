@@ -121,11 +121,7 @@ fun TodayDonutChartEmptyView(
     strokeWidth: Dp = 20.dp,
     backgroundColor: Color = MaterialTheme.colorScheme.background
 ) {
-    val symbol = try {
-        NumberFormat.getCurrencyInstance(Locale.getDefault()).currency?.symbol ?: "$"
-    } catch (_: Exception) {
-        "$"
-    }
+    val symbol = com.den.steward.helper.getCurrencySymbol()
 
     Box(
         modifier = Modifier

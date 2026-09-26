@@ -1,7 +1,7 @@
 package com.den.steward.backend.states
 
-data class TodayUiState(
-    val filter: Filter = Filter.ALL,
+data class SortAndFilterState(
+    val filter: List<Filter> = listOf(Filter.ALL),
     val orderBy: OrderBy = OrderBy.DESCENDING,
     val sortBy: SortBy = SortBy.TIME,
     val isFilterExpanded: Boolean = false,

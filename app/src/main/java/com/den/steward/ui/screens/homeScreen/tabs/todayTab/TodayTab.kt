@@ -28,7 +28,7 @@ fun TodayTab(
     dataDeletionViewModel: DataDeletionViewModel = hiltViewModel()
 ) {
 
-    val todayUiState by todayViewModel.todayUiState.collectAsStateWithLifecycle()
+    val todayUiState by todayViewModel.sortAndFilterState.collectAsStateWithLifecycle()
     val todayTabDataState by todayViewModel.todayTabDataState.collectAsStateWithLifecycle()
 
     Column(

@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarViewWeek
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
@@ -133,7 +134,7 @@ private fun SortFilterBottomSheetLayout(
 @Composable
 fun FilterBottomSheet(
     isExpanded: Boolean,
-    selected: Filter,
+    selected: List<Filter>,
     onFilterSelected: (Filter) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -149,8 +150,9 @@ fun FilterBottomSheet(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FilterBottomSheetContent(
-    selected: Filter,
-    onFilterSelected: (Filter) -> Unit, onDismiss: () -> Unit
+    selected: List<Filter>,
+    onFilterSelected: (Filter) -> Unit,
+    onDismiss: () -> Unit
 ) {
     val entries = Filter.entries
 
@@ -177,7 +179,7 @@ fun FilterBottomSheetContent(
                 val entry = entries[index]
                 FilterBottomSheetItem(
                     filter = entry,
-                    selected = selected == entry,
+                    selected = entry in selected,
                     onFilterSelected = onFilterSelected
                 )
             }
@@ -229,50 +231,57 @@ fun FilterBottomSheetItem(
         if (selected) primaryColor else onSurfaceColor
     }
 
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .selectable(
+                selected = selected,
+                onClick = { onFilterSelected(filter) },
+                role = Role.Checkbox,
+            )
+            .padding(horizontal = 3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Row(
-            Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .selectable(
-                    selected = selected,
-                    onClick = { onFilterSelected(filter) },
-                    role = Role.RadioButton,
-                )
-                .padding(horizontal = 3.dp),
+            modifier = Modifier.weight(1f),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start
-            ) {
-                Image(
-                    painter = painterResource(id = icon),
-                    contentDescription = "$filterName filter icon",
-                    colorFilter = ColorFilter.tint(selectedColor),
-                    modifier = Modifier.size(ICON_SIZE)
+            Image(
+                painter = painterResource(id = icon),
+                contentDescription = "$filterName filter icon",
+                colorFilter = ColorFilter.tint(selectedColor),
+                modifier = Modifier.size(ICON_SIZE)
+            )
+
+            Spacer(
+                modifier = Modifier.width(10.dp)
+            )
+
+            Column {
+                Text(
+                    filterName,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = selectedColor
                 )
 
-                Spacer(
-                    modifier = Modifier.width(10.dp)
+                Text(
+                    desc,
+                    style = MaterialTheme.typography.bodySmall,
                 )
-
-
-                Column {
-                    Text(
-                        filterName,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = selectedColor
-                    )
-
-                    Text(
-                        desc,
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
             }
         }
 
+        if (selected) {
+            Icon(
+                imageVector = Icons.Default.Check,
+                contentDescription = "Selected",
+                tint = primaryColor,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
 }
 
 

@@ -22,7 +22,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,11 +29,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.den.steward.backend.states.DataState
-import kotlinx.coroutines.flow.StateFlow
 import java.time.LocalDate
-import androidx.compose.runtime.collectAsState
+import kotlinx.collections.immutable.ImmutableList
 
 @Composable
 fun WeekView(
@@ -42,7 +38,7 @@ fun WeekView(
     weekDaysForPage: List<LocalDate>,
     selectedDate: LocalDate,
     weekNumber: Int?,
-    counts: List<Int>,
+    counts: ImmutableList<Pair<Int?, Int>>,
     onResetClick: () -> Unit,
     onDayClick: (LocalDate) -> Unit,
 ) {
@@ -52,7 +48,8 @@ fun WeekView(
     ) {
         HorizontalPager(
             modifier = Modifier.fillMaxWidth(0.95f),
-            state = pagerState
+            state = pagerState,
+            beyondViewportPageCount = 1
         ) {
             LazyRow(
                 modifier = Modifier.fillMaxWidth(),
@@ -61,11 +58,12 @@ fun WeekView(
             ) {
                 weekDaysForPage.forEachIndexed { index, date ->
                     item(key = index) {
-                        val countValue = counts.getOrNull(index) ?: 0
+                        val (flowIndicator, countValue) = counts.getOrNull(index) ?: (null to 0)
 
                         WeekDayView(
                             day = date,
                             count = countValue,
+                            flowIndicator = flowIndicator,
                             isSelected = date == selectedDate
                         ) {
                             onDayClick(date)
@@ -101,6 +99,7 @@ fun WeekView(
 private fun WeekDayView(
     day: LocalDate,
     count: Int,
+    flowIndicator: Int?,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
@@ -117,12 +116,25 @@ private fun WeekDayView(
         materialTheme.primary
     else Color.Transparent
 
+    val badgeColor = when (flowIndicator) {
+        -1 -> materialTheme.error
+        1 -> materialTheme.secondary
+        else -> materialTheme.secondary
+    }
+
+    val dayOfWeek = remember(day.dayOfWeek) {
+        day.dayOfWeek.name.take(3)
+    }
+    val dayOfMonth = remember(day.dayOfMonth) {
+        day.dayOfMonth.toString().padStart(2, '0')
+    }
+
     BadgedBox(
         badge = {
             if (count > 0) {
                 Badge(
-                    containerColor = materialTheme.secondary,
-                    contentColor = materialTheme.onSurface
+                    containerColor = badgeColor,
+                    contentColor = MaterialTheme.colorScheme.surface
                 ) {
                     Text(
                         text = count.toString(),
@@ -143,7 +155,7 @@ private fun WeekDayView(
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
-                text = day.dayOfWeek.name.take(3),
+                text = dayOfWeek,
                 style = MaterialTheme.typography.labelMedium,
                 color = textColor,
             )
@@ -153,7 +165,7 @@ private fun WeekDayView(
             )
 
             Text(
-                text = day.dayOfMonth.toString().padStart(2, '0'),
+                text = dayOfMonth,
                 style = MaterialTheme.typography.titleMedium,
                 color = textColor,
             )
