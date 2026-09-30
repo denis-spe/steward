@@ -34,6 +34,7 @@ import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
+import com.patrykandpatrick.vico.core.cartesian.marker.ColumnCartesianLayerMarkerTarget
 import com.patrykandpatrick.vico.core.cartesian.marker.DefaultCartesianMarker
 import com.patrykandpatrick.vico.core.cartesian.marker.LineCartesianLayerMarkerTarget
 import com.patrykandpatrick.vico.core.common.Fill
@@ -51,41 +52,41 @@ fun VicoLineChart(
     lineType: LineCartesianLayer.PointConnector = LineCartesianLayer.PointConnector.cubic(),
     xValueFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
     yValueFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
-    markerFormatter: ((x: Double, y: Double) -> CharSequence)? = null,
+    markerFormatter: (value: Double) -> CharSequence =
+        { value -> "$value" },
     horizontalItemPlacer: HorizontalAxis.ItemPlacer = remember { HorizontalAxis.ItemPlacer.aligned() },
 ) {
     val modelProducer = remember { CartesianChartModelProducer() }
     val zoomState = rememberVicoZoomState(initialZoom = Zoom.Content)
     val chartData = chartDataCollection.chartData
 
-    val vicoMarkerFormatter = remember(xValueFormatter, yValueFormatter, markerFormatter, chartData) {
-        DefaultCartesianMarker.ValueFormatter { context, targets ->
-            val primaryTarget = targets.firstOrNull() as? LineCartesianLayerMarkerTarget
-            val points = primaryTarget?.points ?: return@ValueFormatter ""
+    val markerValueFormatter = DefaultCartesianMarker.ValueFormatter { _, targets ->
+        val columnTarget =
+            targets.filterIsInstance<ColumnCartesianLayerMarkerTarget>().firstOrNull()
 
-            if (points.isEmpty()) return@ValueFormatter ""
+        if (columnTarget != null && columnTarget.columns.isNotEmpty()) {
+            val timeLabel = xValueFormatter(columnTarget.columns.first().entry.x)
 
-            val sb = StringBuilder()
+            // Get labels for all series that have a non-zero value at this point
+            val valuesLabel = columnTarget.columns
+                .mapIndexedNotNull { index, column ->
+                    if (column.entry.y <= 0) return@mapIndexedNotNull null
+                    val seriesLabel = chartData.getOrNull(index)?.label?.let { "$it: " } ?: ""
+                    seriesLabel + markerFormatter(
+                        column.entry.y
+                    )
+                }
+                .joinToString(", ")
 
-            points.forEachIndexed { index, point ->
-                val entry = point.entry
-                val seriesLabel = chartData.find { it.color.toArgb() == point.color }?.label
-
-                val xStr = xValueFormatter(entry.x)
-                val yStr = yValueFormatter(entry.y)
-                val label = seriesLabel?.let { "$it: " } ?: ""
-
-                val formattedValue = markerFormatter?.invoke(entry.x, entry.y)
-                    ?: "$xStr | $label$yStr"
-
-                sb.append(formattedValue)
-                if (index < points.size - 1) sb.append("\n")
+            if (valuesLabel.isEmpty()) {
+                "$timeLabel: 0"
+            } else {
+                "$timeLabel | $valuesLabel"
             }
-            sb
-        }
+        } else ""
     }
 
-    val marker = rememberMarker(valueFormatter = vicoMarkerFormatter)
+    val marker = rememberMarker(valueFormatter = markerValueFormatter)
 
     val lineLayer = rememberLineCartesianLayer(
         lineProvider = remember(chartData, fillArea, lineType) {

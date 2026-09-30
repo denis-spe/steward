@@ -57,76 +57,57 @@ private fun SortFilterBottomSheetLayout(
     onDismiss: () -> Unit,
     content: @Composable () -> Unit
 ) {
-    val state = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true
-    )
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = Color.Transparent,
-        sheetState = state,
-        dragHandle = { },
+    FloatingModelBottomSheet(
+        onDismiss = onDismiss
     ) {
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 20.dp),
-            contentAlignment = Alignment.Center
+                .padding(20.dp),
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.Center
         ) {
-            Surface(
-                modifier = Modifier.fillMaxWidth(0.9f),
-                shape = MaterialTheme.shapes.medium
+            Row(
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                    horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.Center
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            modifier = Modifier.weight(1f),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Start
-                        ) {
-                            icon()
+                    icon()
 
-                            Spacer(
-                                modifier = Modifier.width(10.dp)
-                            )
-
-                            Text(
-                                title,
-                                style = MaterialTheme.typography.titleMedium,
-                            )
-                        }
-
-                        FilledIconButton (
-                            onClick = onDismiss,
-                            colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = ExtendedTheme.colors.lightGray,
-                                contentColor = MaterialTheme.colorScheme.onSurface
-                            )
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Close,
-                                contentDescription = "Close Icon",
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-
-                    }
-
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 10.dp)
+                    Spacer(
+                        modifier = Modifier.width(10.dp)
                     )
 
-                    content()
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.titleMedium,
+                    )
                 }
+
+                FilledIconButton(
+                    onClick = onDismiss,
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = ExtendedTheme.colors.lightGray,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Close,
+                        contentDescription = "Close Icon",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
             }
+
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 10.dp)
+            )
+
+            content()
         }
     }
 }
@@ -302,7 +283,11 @@ fun OrderByBottomSheet(
 }
 
 @Composable
-private fun OrderByBottomSheetContent(selected: OrderBy, onSortSelected: (OrderBy) -> Unit, onDismiss: () -> Unit) {
+private fun OrderByBottomSheetContent(
+    selected: OrderBy,
+    onSortSelected: (OrderBy) -> Unit,
+    onDismiss: () -> Unit
+) {
     val entries = OrderBy.entries
 
     SortFilterBottomSheetLayout(
@@ -313,7 +298,7 @@ private fun OrderByBottomSheetContent(selected: OrderBy, onSortSelected: (OrderB
                 contentDescription = "OrderBy Icon",
                 colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
 
-            )
+                )
         },
         onDismiss = onDismiss
     ) {
@@ -334,7 +319,11 @@ private fun OrderByBottomSheetContent(selected: OrderBy, onSortSelected: (OrderB
 }
 
 @Composable
-private fun OrderByBottomSheetItem(orderBy: OrderBy, selected: Boolean, onSortSelected: (OrderBy) -> Unit) {
+private fun OrderByBottomSheetItem(
+    orderBy: OrderBy,
+    selected: Boolean,
+    onSortSelected: (OrderBy) -> Unit
+) {
     val primary = MaterialTheme.colorScheme.primary
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
 
@@ -398,7 +387,7 @@ fun SortByBottomSheet(
     selected: SortBy,
     onSortSelected: (SortBy) -> Unit,
     onDismiss: () -> Unit,
-){
+) {
     if (isExpanded) {
         SortByBottomSheetContent(
             selected = selected,
@@ -426,11 +415,11 @@ fun SortByBottomSheetContent(
         },
         onDismiss = onDismiss
     ) {
-        LazyColumn (
+        LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(0.4f)
-            ) {
+        ) {
             items(
                 count = entries.size,
                 key = { index -> entries[index] }
@@ -584,30 +573,30 @@ fun PeriodTypeBottomSheetItem(
                 onClick = { onPeriodTypeChange(periodType) },
                 role = Role.RadioButton
             )
-        ) {
-            Image(
-                painter = painterResource(id = icon),
-                contentDescription = "$name filter icon",
-                colorFilter = ColorFilter.tint(selectedTextColor),
-                modifier = Modifier.size(ICON_SIZE)
+    ) {
+        Image(
+            painter = painterResource(id = icon),
+            contentDescription = "$name filter icon",
+            colorFilter = ColorFilter.tint(selectedTextColor),
+            modifier = Modifier.size(ICON_SIZE)
+        )
+
+        Spacer(
+            modifier = Modifier.width(10.dp)
+        )
+
+        Column {
+            Text(
+                name,
+                style = MaterialTheme.typography.titleMedium,
+                color = selectedTextColor
             )
 
-            Spacer(
-                modifier = Modifier.width(10.dp)
+            Text(
+                desc,
+                style = MaterialTheme.typography.bodySmall,
             )
-
-            Column {
-                Text(
-                    name,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = selectedTextColor
-                )
-
-                Text(
-                    desc,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
         }
+    }
 
 }

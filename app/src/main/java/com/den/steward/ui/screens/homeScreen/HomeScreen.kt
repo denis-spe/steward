@@ -21,6 +21,7 @@ import androidx.navigation3.runtime.NavKey
 import com.den.steward.backend.states.HomeTab
 import com.den.steward.backend.viewModels.DataAdditionViewModel
 import com.den.steward.backend.viewModels.HomeViewModel
+import com.den.steward.ui.components.IconSelectorDialog
 import com.den.steward.ui.dataAddition.MainFloatingActionButton
 import com.den.steward.ui.screens.homeScreen.tabs.allTab.AllTab
 import com.den.steward.ui.screens.homeScreen.tabs.overviewTab.OverviewTab

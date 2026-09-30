@@ -18,6 +18,7 @@ import com.den.steward.backend.states.OrderBy
 import com.den.steward.backend.states.SortAndFilterState
 import com.den.steward.backend.states.SortBy
 import com.den.steward.backend.states.allTabState.AllTabDataState
+import com.den.steward.backend.useCase.DataFetchUseCase
 import com.den.steward.helper.calculateFlow
 import com.den.steward.helper.formattedDate
 import com.den.steward.helper.toLocalDateTime
@@ -70,6 +71,7 @@ private data class SortFilterControllers(
 @HiltViewModel
 class AllViewModel @Inject constructor(
     private val periodDataHandleUseCase: PeriodDataHandleUseCase,
+    dataFetchUseCase: DataFetchUseCase,
     @ApplicationContext private val context: Context,
     private val chartUseCase: ChartUseCase
 ) : ViewModel() {
@@ -173,6 +175,7 @@ class AllViewModel @Inject constructor(
             )
         }
     }
+
     fun updateIsTransactionListOrder(order: OrderBy) {
         _allUiState.update {
             it.copy(
@@ -244,16 +247,15 @@ class AllViewModel @Inject constructor(
                         val transactions = timedTransactions
                             .groupBy { it.dateTime.toLocalDate() }
                             .toSortedMap()
-                            .mapKeys{
-                                (key, value) ->
-                                    val today = LocalDate.now()
-                                    val yesterday = today.minusDays(1)
+                            .mapKeys { (key, value) ->
+                                val today = LocalDate.now()
+                                val yesterday = today.minusDays(1)
 
-                                    when (key) {
-                                        today -> "Today"
-                                        yesterday -> "Yesterday"
-                                        else -> key.formattedDate
-                                    }
+                                when (key) {
+                                    today -> "Today"
+                                    yesterday -> "Yesterday"
+                                    else -> key.formattedDate
+                                }
                             }
                             .mapValues { (_, grouped) -> grouped.map { it.transaction } }
                             .toImmutableMap()
@@ -275,6 +277,7 @@ class AllViewModel @Inject constructor(
                             )
                         )
                     }
+
                     is DataState.Error -> DataState.Error(stateResult.message)
                     is DataState.Loading -> DataState.Loading
                 }
@@ -321,16 +324,14 @@ class AllViewModel @Inject constructor(
 
                         val transactions = timedTransactions
                             .groupBy { it.dateTime.toLocalDate() }
-                            .toSortedMap {
-                                    date1, date2 ->
+                            .toSortedMap { date1, date2 ->
                                 if (isTransactionListSort == OrderBy.DESCENDING) {
                                     date2.compareTo(date1)
                                 } else {
                                     date1.compareTo(date2)
                                 }
                             }
-                            .mapKeys{
-                                    (key, value) ->
+                            .mapKeys { (key, value) ->
                                 val today = LocalDate.now()
                                 val yesterday = today.minusDays(1)
 
@@ -347,6 +348,7 @@ class AllViewModel @Inject constructor(
                             transactions
                         )
                     }
+
                     is DataState.Error -> DataState.Error(stateResult.message)
                     is DataState.Loading -> DataState.Loading
                 }
@@ -364,13 +366,14 @@ class AllViewModel @Inject constructor(
     // grows for the lifetime of the ViewModel as the user swipes through weeks.
     private val maxCachedCountPages = 15
 
-    private val countsCache = object : LinkedHashMap<Int, StateFlow<ImmutableList<Pair<Int?, Int>>>>(
-        maxCachedCountPages, 0.75f, true
-    ) {
-        override fun removeEldestEntry(
-            eldest: MutableMap.MutableEntry<Int, StateFlow<ImmutableList<Pair<Int?, Int>>>>
-        ): Boolean = size > maxCachedCountPages
-    }
+    private val countsCache =
+        object : LinkedHashMap<Int, StateFlow<ImmutableList<Pair<Int?, Int>>>>(
+            maxCachedCountPages, 0.75f, true
+        ) {
+            override fun removeEldestEntry(
+                eldest: MutableMap.MutableEntry<Int, StateFlow<ImmutableList<Pair<Int?, Int>>>>
+            ): Boolean = size > maxCachedCountPages
+        }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     fun transactionCounts(page: Int): StateFlow<ImmutableList<Pair<Int?, Int>>> =
@@ -389,8 +392,11 @@ class AllViewModel @Inject constructor(
                                 if (it.value.calculateFlow < 0) -1 else 1
                             }
 
-                            getWeekDaysForPage(page).map { date -> flow[date] to (counts[date] ?: 0) }.toImmutableList()
+                            getWeekDaysForPage(page).map { date ->
+                                flow[date] to (counts[date] ?: 0)
+                            }.toImmutableList()
                         }
+
                         is DataState.Error, is DataState.Loading -> persistentListOf()
                     }
                 }
@@ -401,6 +407,35 @@ class AllViewModel @Inject constructor(
                     persistentListOf()
                 )
         }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val transactionCountsByDate: StateFlow<Pair<Map<LocalDate, Int>, Map<LocalDate, Int>>> =
+        dataFetchUseCase.fetchAllTransactions.distinctUntilChanged().map { stateResult ->
+            when (stateResult) {
+                is DataState.Success -> {
+                    val groupedTransaction = stateResult.data
+                        .groupBy { it.createdAt.toLocalDateTime().toLocalDate() }
+                    val counts = groupedTransaction.mapValues { it.value.size }
+                    val flow = groupedTransaction.mapValues {
+                        if (it.value.calculateFlow < 0) -1 else 1
+                    }
+
+                    Pair(flow, counts)
+                }
+
+                is DataState.Error, is DataState.Loading -> Pair(
+                    emptyMap<LocalDate, Int>(), emptyMap<LocalDate, Int>()
+                )
+            }
+        }
+            .flowOn(Dispatchers.Default)
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5_000),
+                Pair(
+                    emptyMap(), emptyMap()
+                )
+            )
 
     private fun handleAllTabSummary(timedTransactions: List<TimedTransaction>): AllTransactionSummary {
         val transactions = timedTransactions.map { it.transaction }
@@ -494,8 +529,6 @@ class AllViewModel @Inject constructor(
 
     private fun chartDataCollectionByMonth(timedTransactions: List<TimedTransaction>): ChartDataCollection =
         buildChartDataCollection(timedTransactions) { it.monthValue }
-
-
 
 
 }

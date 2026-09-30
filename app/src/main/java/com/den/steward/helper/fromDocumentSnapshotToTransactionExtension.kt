@@ -36,6 +36,25 @@ val DocumentSnapshot.toTransaction: Transaction?
     val selectedIcon = getLong("selectedIcon") ?: R.drawable.description.toLong()
 
     return when (type) {
+        TransactionType.RAMPING.name -> {
+            val from = getString("from")?.let { name ->
+                paymentMethodMap[name]
+            } ?: PaymentMethod.CARD
+            val to = getString("to")?.let { name ->
+                paymentMethodMap[name]
+            } ?: PaymentMethod.CARD
+
+            Transaction.Ramping(
+                id = id,
+                label = label,
+                note = note,
+                createdAt = createdAt,
+                from = from,
+                to = to,
+                amount = amount
+            )
+        }
+
         TransactionType.GOAL.name -> {
             val value = getDouble("value") ?: 0.0
             val goalType = getString("goalType")?.let { name ->

@@ -14,6 +14,7 @@ import com.den.steward.backend.entitles.Transaction.Settlement
 import com.den.steward.backend.entitles.Transaction.Savings
 import com.den.steward.backend.entitles.Transaction.Plan
 import com.den.steward.backend.entitles.Transaction.PlanFulfillment
+import com.den.steward.backend.entitles.Transaction.Ramping
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 
@@ -30,6 +31,15 @@ val Transaction.toMap: MutableMap<String, Any>
         )
 
         when(this) {
+
+            is Ramping -> {
+                mapping["amount"] = this.amount
+                mapping["label"] = this.label
+                mapping["note"] = this.note
+                mapping["to"] = this.to.name
+                mapping["from"] = this.from.name
+            }
+
             is Earnings -> {
                 mapping["amount"] = this.amount
                 mapping["label"] = this.label

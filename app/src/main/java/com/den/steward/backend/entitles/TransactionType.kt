@@ -89,5 +89,12 @@ enum class TransactionType(
         R.string.plan_fulfillment_desc,
         R.drawable.ic_plan,
         R.color.plan_fulfillment
+    ),
+
+    RAMPING(
+        R.string.ramping,
+        R.string.ramping_desc,
+        R.drawable.ic_ramping,
+        R.color.ramping
     )
 }

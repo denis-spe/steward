@@ -33,6 +33,7 @@ import com.den.steward.ui.components.transactionFields.TransactionAffectAmount
 import com.den.steward.ui.components.transactionFields.TransactionAmountField
 import com.den.steward.ui.components.transactionFields.TransactionDateField
 import com.den.steward.ui.components.transactionFields.TransactionFieldState
+import com.den.steward.ui.components.transactionFields.TransactionIconSelector
 import com.den.steward.ui.components.transactionFields.TransactionLabelField
 import com.den.steward.ui.components.transactionFields.TransactionNoteField
 import com.den.steward.ui.components.transactionFields.TransactionPaymentMethodField
@@ -175,6 +176,8 @@ fun TransactionBottomDrawerSheet(
                 localTime = dataAdditionState.localTimeCreatedAt,
                 onLocalTimeChange = dataAdditionViewModel::updateLocalTimeCreatedAt
             )
+
+            TransactionIconSelector() { }
 
             // Only show payment method field for non-goal transactions
             if (type != TransactionType.GOAL && type != TransactionType.PLAN) {

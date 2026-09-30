@@ -42,6 +42,18 @@ sealed class Transaction {
     ) : Transaction()
 
     @Stable
+    data class Ramping (
+        override val id: String = "",
+        val label: String = "",
+        val note: String = "",
+        override val type: TransactionType = TransactionType.RAMPING,
+        override val createdAt: Long = System.currentTimeMillis(),
+        val from: PaymentMethod = PaymentMethod.CARD,
+        val to: PaymentMethod = PaymentMethod.CASH,
+        val amount: Double = 0.0
+    ) : Transaction()
+
+    @Stable
     data class Earnings(
         override val id: String = "",
         val label: String = "",
@@ -245,6 +257,7 @@ sealed class Transaction {
                 is Savings -> this.label.title
                 is Plan -> this.label.title
                 is PlanFulfillment -> this.label.title
+                is Ramping -> "Ramping"
             }
         }
 
@@ -263,6 +276,7 @@ sealed class Transaction {
                 is Plan -> null
                 is Attain -> null
                 is Achievement -> null
+                is Ramping -> null
             }
         }
 
@@ -281,6 +295,7 @@ sealed class Transaction {
                 is PlanFulfillment -> "A plan fulfillment ${this.label}"
                 is Attain -> "Attained ${this.value} of ${this.goal.value}"
                 is Achievement -> "Achieved ${this.value} of ${this.goal.value}"
+                is Ramping -> this.note
             }
         }
     val getAmountOrValue: Double?
@@ -298,6 +313,7 @@ sealed class Transaction {
                 is Plan -> this.initialValue
                 is PlanFulfillment -> this.value
                 is Achievement -> this.value
+                is Ramping -> this.amount
             }
         }
 
@@ -328,7 +344,7 @@ sealed class Transaction {
 
                 is Plan -> this.initialValue.formatToAmount()
                 is PlanFulfillment -> this.value.formatToAmount()
-
+                is Ramping -> this.amount.formatToAmount()
             }
         }
 
@@ -347,6 +363,7 @@ sealed class Transaction {
                 is Attain -> null
                 is Achievement -> null
                 is PlanFulfillment -> null
+                is Ramping -> null
             }
 
             if (affectAmount == null) return null

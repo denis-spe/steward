@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -20,8 +21,10 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,19 +32,27 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.den.steward.backend.states.PeriodType
+import com.den.steward.helper.formattedDate
+import com.den.steward.ui.components.FloatingBottomSheetCalendar
+import com.kizitonwose.calendar.core.CalendarDay
 import java.time.LocalDate
 import kotlinx.collections.immutable.ImmutableList
 
 @Composable
 fun WeekView(
     pagerState: PagerState,
+    periodType: PeriodType,
     weekDaysForPage: List<LocalDate>,
     selectedDate: LocalDate,
     weekNumber: Int?,
     counts: ImmutableList<Pair<Int?, Int>>,
     onResetClick: () -> Unit,
+    moreInfo: @Composable (ColumnScope.(day: CalendarDay) -> Unit) = {},
     onDayClick: (LocalDate) -> Unit,
 ) {
+    val onCalenderShow = remember { mutableStateOf(false) }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -73,26 +84,69 @@ fun WeekView(
             }
         }
 
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Week ${weekNumber ?: ""}",
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        when(periodType) {
+            PeriodType.WEEK -> {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Week ${weekNumber ?: ""}",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
 
-            IconButton(onClick = onResetClick) {
-                Icon(
-                    imageVector = Icons.Default.Refresh,
-                    contentDescription = "Reset",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                    IconButton(onClick = onResetClick) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Reset",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            else -> {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val date = selectedDate.formattedDate
+                    OutlinedButton (
+                        onClick = {
+                            onCalenderShow.value = true
+                        }
+                    ) {
+                        Text(
+                            text = date,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    IconButton(onClick = onResetClick) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Reset",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
         }
     }
+
+    FloatingBottomSheetCalendar(
+        isExpanded = onCalenderShow.value,
+        selectedDate = selectedDate,
+        onDateSelected = onDayClick,
+        onDismiss = {
+            onCalenderShow.value = false
+        },
+        moreInfo = moreInfo
+    )
 }
 
 @Composable

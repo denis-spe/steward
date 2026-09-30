@@ -13,7 +13,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.Badge
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -28,6 +31,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -82,6 +86,8 @@ fun AllTab(
     val transactionCountsState by remember(settledPage) {
         allViewModel.transactionCounts(settledPage)
     }.collectAsStateWithLifecycle()
+    val transactionCountsByDate by allViewModel.transactionCountsByDate.collectAsStateWithLifecycle()
+
 
 
     val coroutineScope = rememberCoroutineScope()
@@ -155,6 +161,40 @@ fun AllTab(
                 selectedDate = allUiState.selectedDate,
                 weekNumber = allUiState.weekNumber,
                 counts = transactionCountsState,
+                periodType = allUiState.periodType,
+                moreInfo = { day ->
+                    val (flow, count) = transactionCountsByDate
+                    val dayCount = count[day.date]
+                    val dayFlow = flow[day.date]
+                    val color = if (dayFlow == -1)
+                        MaterialTheme.colorScheme.error
+                    else Color(0xFF3BA429)
+
+
+                    if (dayCount != null) {
+                        Card(
+                            colors = CardDefaults.cardColors().copy(
+                                containerColor = color.copy(0.3f).compositeOver(
+                                    MaterialTheme.colorScheme.background
+                                )
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(2.dp),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    dayCount.toString(),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = color
+                                )
+                            }
+                        }
+                    }
+                },
                 onResetClick = {
                     coroutineScope.launch {
                         pagerState.animateScrollToPage(PeriodDataHandleUseCase.INITIAL_PAGE)
