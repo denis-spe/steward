@@ -5,6 +5,7 @@ import com.den.steward.backend.entitles.PaymentMethod
 import com.den.steward.backend.entitles.RecurrencePattern
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.helper.toEpochMillis
+import com.den.steward.ui.components.SelectedIcon
 import java.time.LocalDateTime
 
 @Immutable
@@ -19,4 +20,5 @@ data class DataTransferToViewModel(
     val startedAt: Long = LocalDateTime.now().toEpochMillis(),
     val repeatable: RecurrencePattern = RecurrencePattern.NONE,
     val isAffectingAmount: Boolean? = null,
+    val selectedIcon: SelectedIcon = SelectedIcon(),
 )

@@ -2,12 +2,10 @@
 package com.den.steward.backend.viewModels
 
 import android.util.Log
-import androidx.compose.foundation.text.input.TextFieldState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.den.steward.backend.entitles.GoalStatus
 import com.den.steward.backend.entitles.PaymentMethod
-import com.den.steward.backend.entitles.PlanStatus
 import com.den.steward.backend.entitles.RecurrencePattern
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
@@ -16,6 +14,7 @@ import com.den.steward.backend.states.DataState
 import com.den.steward.backend.useCase.AddDataUseCase
 import com.den.steward.backend.useCase.DataFetchUseCase
 import com.den.steward.helper.toEpochMillis
+import com.den.steward.ui.components.SelectedIcon
 import com.den.steward.ui.components.transactionFields.TransactionFieldState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -209,6 +208,14 @@ class DataAdditionViewModel @Inject constructor(
         }
     }
 
+    fun updateSelectedIcon(selectedIcon: SelectedIcon) {
+        _dataAdditionState.update {
+            it.copy(
+                selectedIcon = selectedIcon
+            )
+        }
+    }
+
     // ============= Data Addition ===========
     fun addCoreEntriesTransaction() {
         val currentState = _dataAdditionState.value
@@ -263,7 +270,8 @@ class DataAdditionViewModel @Inject constructor(
                             transactionType = transactionType,
                             startedAt = currentState.startAt.toEpochMillis(),
                             endAt = currentState.endAt.toEpochMillis(),
-                            repeatable = currentState.recurrence
+                            repeatable = currentState.recurrence,
+                            selectedIcon = currentState.selectedIcon
                         )
                     )
                     // 3. Reset the state after adding the transaction

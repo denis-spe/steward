@@ -8,6 +8,7 @@ import com.den.steward.backend.entitles.PlanStatus
 import com.den.steward.backend.entitles.RecurrencePattern
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
+import com.den.steward.ui.components.SelectedIcon
 import com.den.steward.ui.components.transactionFields.TransactionFieldState
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -95,4 +96,7 @@ data class DataAdditionState(
     // Plan fulfillment
     val planStatus: PlanStatus = PlanStatus.NOT_YET,
     val selectedPlanFulfillmentType: TransactionType = TransactionType.EARNINGS,
+
+    // Selected icon
+    val selectedIcon: SelectedIcon = SelectedIcon()
 )

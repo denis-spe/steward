@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -23,8 +22,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,7 +39,6 @@ import com.den.steward.helper.formattedTime
 import com.den.steward.helper.toLocalDateTime
 import com.den.steward.ui.componentExtenison.shimmerEffect
 import com.den.steward.ui.components.SwipeDismiss
-import com.den.steward.ui.components.TransactionViewDialog
 
 @Composable
 fun TodayTabLazyListItem(
@@ -74,6 +70,7 @@ fun TodayTabLazyListItem(
     val percentage = transaction.getPercentage
     val status = transaction.getStatus
     val statusColorRes = transaction.getStatusColor
+    val transactionIcon = painterResource(id = transaction.getIcon)
 
     // Optimization: Ensure progress animation target is stable
     val progressTarget = remember(percentage) { (percentage?.toFloat() ?: 0f) / 100f }
@@ -105,20 +102,40 @@ fun TodayTabLazyListItem(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Leading Icon
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(typeColor.copy(alpha = 0.1f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(id = transaction.type.icon),
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp),
-                            tint = typeColor
-                        )
+                    // Leading Icon with Type Badge Overlay
+                    Box {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(typeColor.copy(alpha = 0.1f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Image(
+                                painter = transactionIcon,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .size(20.dp)
+                                .align(Alignment.BottomEnd)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surface)
+                                .padding(2.dp)
+                                .clip(CircleShape)
+                                .background(typeColor.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = transaction.type.icon),
+                                contentDescription = null,
+                                modifier = Modifier.size(12.dp),
+                                tint = typeColor
+                            )
+                        }
                     }
 
                     // Center Content

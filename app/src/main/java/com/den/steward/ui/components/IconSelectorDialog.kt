@@ -50,7 +50,7 @@ private val icons = mapOf(
 )
 
 data class  SelectedIcon(
-    val name: String = "",
+    val name: String = "Apple",
     val icon: Int = R.drawable.apple
 )
 

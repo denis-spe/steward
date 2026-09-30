@@ -36,7 +36,8 @@ class AddDataUseCase @Inject constructor(
                     note = dataTransferToViewModel.note,
                     createdAt = dataTransferToViewModel.createdAt,
                     paymentMethod = dataTransferToViewModel.paymentMethod,
-                    affectAmount = dataTransferToViewModel.isAffectingAmount ?: false
+                    affectAmount = dataTransferToViewModel.isAffectingAmount ?: false,
+                    selectedIcon = dataTransferToViewModel.selectedIcon.icon
                 )
                 TransactionType.EXPENSE -> Transaction.Expense(
                     label = dataTransferToViewModel.label,
@@ -44,7 +45,8 @@ class AddDataUseCase @Inject constructor(
                     note = dataTransferToViewModel.note,
                     createdAt = dataTransferToViewModel.createdAt,
                     paymentMethod = dataTransferToViewModel.paymentMethod,
-                    affectAmount = dataTransferToViewModel.isAffectingAmount ?: false
+                    affectAmount = dataTransferToViewModel.isAffectingAmount ?: false,
+                    selectedIcon = dataTransferToViewModel.selectedIcon.icon
                 )
                 TransactionType.LENT -> Transaction.Lent(
                     label = dataTransferToViewModel.label,
@@ -53,7 +55,7 @@ class AddDataUseCase @Inject constructor(
                     createdAt = dataTransferToViewModel.createdAt,
                     paymentMethod = dataTransferToViewModel.paymentMethod,
                     affectAmount = dataTransferToViewModel.isAffectingAmount ?: false,
-                    selectedIcon = TransactionType.LENT.icon
+                    selectedIcon = dataTransferToViewModel.selectedIcon.icon
                 )
                 TransactionType.DEBT -> Transaction.Debt(
                     label = dataTransferToViewModel.label,
@@ -62,7 +64,7 @@ class AddDataUseCase @Inject constructor(
                     createdAt = dataTransferToViewModel.createdAt,
                     paymentMethod = dataTransferToViewModel.paymentMethod,
                     affectAmount = dataTransferToViewModel.isAffectingAmount ?: false,
-                    selectedIcon = TransactionType.DEBT.icon
+                    selectedIcon = dataTransferToViewModel.selectedIcon.icon
                 )
                 TransactionType.SAVINGS -> Transaction.Savings(
                     label = dataTransferToViewModel.label,
@@ -70,7 +72,8 @@ class AddDataUseCase @Inject constructor(
                     note = dataTransferToViewModel.note,
                     createdAt = dataTransferToViewModel.createdAt,
                     paymentMethod = dataTransferToViewModel.paymentMethod,
-                    affectAmount = dataTransferToViewModel.isAffectingAmount ?: false
+                    affectAmount = dataTransferToViewModel.isAffectingAmount ?: false,
+                    selectedIcon = dataTransferToViewModel.selectedIcon.icon
                 )
                 TransactionType.GOAL -> Transaction.Goal(
                     label = dataTransferToViewModel.label,
@@ -80,13 +83,14 @@ class AddDataUseCase @Inject constructor(
                     startedAt = dataTransferToViewModel.startedAt,
                     endAt = dataTransferToViewModel.endAt,
                     repeatable = dataTransferToViewModel.repeatable,
+                    selectedIcon = dataTransferToViewModel.selectedIcon.icon
                 )
                 TransactionType.PLAN -> Transaction.Plan(
                     label = dataTransferToViewModel.label,
                     initialValue = amount,
                     note = dataTransferToViewModel.note,
                     createdAt = dataTransferToViewModel.createdAt,
-                    selectedIcon = TransactionType.PLAN.icon
+                    selectedIcon = dataTransferToViewModel.selectedIcon.icon
                 )
 
                 else -> throw IllegalArgumentException("Invalid transaction type: ${dataTransferToViewModel.transactionType}")

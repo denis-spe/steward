@@ -370,7 +370,7 @@ sealed class Transaction {
             return if (affectAmount) "Yes" else "No"
         }
 
-    val getIcon: Int?
+    val getIcon: Int
         get() {
             return when(this) {
                 is Earnings -> this.selectedIcon
@@ -380,7 +380,12 @@ sealed class Transaction {
                 is Goal -> this.selectedIcon
                 is Savings -> this.selectedIcon
                 is Plan -> this.selectedIcon
-                else -> null
+                is Attain -> this.goal.selectedIcon
+                is Achievement -> this.goal.selectedIcon
+                is Settlement -> this.debt.selectedIcon
+                is Repayment -> this.lent.selectedIcon
+                is PlanFulfillment -> this.plan.selectedIcon
+                is Ramping -> R.drawable.ic_cash
             }
         }
 

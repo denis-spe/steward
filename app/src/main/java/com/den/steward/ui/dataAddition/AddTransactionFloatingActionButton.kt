@@ -27,6 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataAdditionState
 import com.den.steward.backend.viewModels.DataAdditionViewModel
+import com.den.steward.ui.components.SelectedIcon
 import com.den.steward.ui.components.bottomDrawerSheet.BottomDrawerSheet
 import com.den.steward.ui.components.bottomDrawerSheet.BottomDrawerSheetItem
 import com.den.steward.ui.components.transactionFields.TransactionAffectAmount
@@ -177,7 +178,11 @@ fun TransactionBottomDrawerSheet(
                 onLocalTimeChange = dataAdditionViewModel::updateLocalTimeCreatedAt
             )
 
-            TransactionIconSelector() { }
+            TransactionIconSelector(
+                colorResId = type.color,
+                selectedIcon = dataAdditionState.selectedIcon,
+                onIconSelected = dataAdditionViewModel::updateSelectedIcon
+            )
 
             // Only show payment method field for non-goal transactions
             if (type != TransactionType.GOAL && type != TransactionType.PLAN) {
