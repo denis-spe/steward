@@ -64,8 +64,8 @@ fun AllTabLazyListItem(
     transaction: Transaction,
     shape: Shape = MaterialTheme.shapes.small,
     color: Color = MaterialTheme.colorScheme.surface,
-    onUpdate: suspend () -> Unit = {},
-    onDelete: suspend () -> Unit = {},
+    onUpdate: () -> Unit = {},
+    onDelete: () -> Unit = {},
     onClick: () -> Unit = {}
 ) {
     val localDateTime = remember(transaction) { transaction.createdAt.toLocalDateTime() }

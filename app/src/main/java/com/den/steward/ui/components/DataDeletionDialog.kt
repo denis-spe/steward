@@ -1,5 +1,5 @@
 // Grace and truth came through JESUS
-package com.den.steward.ui.dataDeletion
+package com.den.steward.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -25,24 +25,22 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.backend.entitles.Transaction
-import com.den.steward.backend.viewModels.DataDeletionViewModel
 
 @Composable
 fun DataDeletionDialog(
-    viewModel: DataDeletionViewModel,
+    transaction: Transaction? = null,
+    onDialogShow: Boolean,
+    onDelete: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    val onDialogShowState = viewModel.onDialogShow.collectAsStateWithLifecycle()
-    val onDialogShow = onDialogShowState.value
-
-    if (onDialogShow) {
+    if (onDialogShow && transaction != null) {
         Dialog(
             onDismissRequest = onDismissRequest
         ) {
             DataDeletionContent(
-                viewModel = viewModel,
+                transaction = transaction,
+                onDelete = onDelete,
                 onDismissRequest = onDismissRequest
             )
         }
@@ -51,11 +49,10 @@ fun DataDeletionDialog(
 
 @Composable
 fun DataDeletionContent(
-    viewModel: DataDeletionViewModel,
+    transaction: Transaction,
+    onDelete: () -> Unit = {},
     onDismissRequest: () -> Unit
 ) {
-    val selectedTransaction = viewModel.selectedTransaction.collectAsStateWithLifecycle()
-    val transaction = selectedTransaction.value ?: return
 
     Card {
         Column(
@@ -127,15 +124,7 @@ fun DataDeletionContent(
                 }
 
                 TextButton(
-                    onClick = {
-                        when(transaction) {
-                            is Transaction.Attain,
-                            is Transaction.Repayment,
-                            is Transaction.Settlement,
-                            is Transaction.Achievement -> viewModel.deleteFulfillment()
-                            else -> viewModel.deleteTransaction()
-                        }
-                    },
+                    onClick = onDelete,
                     colors = ButtonDefaults.textButtonColors().copy(
                         contentColor = MaterialTheme.colorScheme.error
                     )

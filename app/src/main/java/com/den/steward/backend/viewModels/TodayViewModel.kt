@@ -16,6 +16,8 @@ import com.den.steward.backend.states.SortAndFilterState
 import com.den.steward.backend.states.todayTabState.BalanceStatStates
 import com.den.steward.backend.states.todayTabState.LiabilitiesPaymentStatsState
 import com.den.steward.backend.states.todayTabState.TodayTabDataState
+import com.den.steward.backend.states.todayTabState.TodayUiState
+import com.den.steward.backend.useCase.DataDeletionUseCase
 import com.den.steward.backend.useCase.DataFetchUseCase
 import com.den.steward.helper.calculateFlow
 import com.den.steward.helper.filterAndSortTodayTransactions
@@ -38,16 +40,22 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class TodayViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val deletionUseCase: DataDeletionUseCase,
     dataFetchUseCase: DataFetchUseCase
 ) : ViewModel() {
 
     private val _sortAndFilterState = MutableStateFlow(SortAndFilterState())
     val sortAndFilterState = _sortAndFilterState.asStateFlow()
+
+    private val _todayUiState = MutableStateFlow(TodayUiState())
+    val todayUiState = _todayUiState.asStateFlow()
+
 
     // Extract ONLY query criteria to avoid re-triggering calculations on sheet expansion toggles
     private val filterCriteriaFlow = _sortAndFilterState
@@ -102,6 +110,7 @@ class TodayViewModel @Inject constructor(
             initialValue = DataState.Loading
         )
 
+    // ==================== Helper Functions ====================
     private fun handleBalanceStatStates(
         todayTransaction: List<Transaction>,
         transactions: List<Transaction>
@@ -208,6 +217,7 @@ class TodayViewModel @Inject constructor(
         }
     }
 
+    // ================ Sort and Filter ================
     fun updateFilter(filter: Filter) {
         _sortAndFilterState.update { state ->
             val currentFilters = state.filter.toMutableList()
@@ -248,5 +258,32 @@ class TodayViewModel @Inject constructor(
 
     fun updateIsOrderExpanded(isExpanded: Boolean) {
         _sortAndFilterState.value = _sortAndFilterState.value.copy(isOrderByExpanded = isExpanded)
+    }
+
+    // ===================== Delete =====================
+    fun deleteTransaction() {
+        viewModelScope.launch {
+            val transaction = _todayUiState.value.selectedTransactionToDelete ?: return@launch
+            deletionUseCase.deleteTransaction(transaction)
+        }
+
+        // Reset the state
+        updateSelectedTransactionToDelete(null)
+        updateOpenDeleteDialog(false)
+    }
+
+    fun updateSelectedTransactionToDelete(transaction: Transaction?) {
+        _todayUiState.update {
+            it.copy(
+                selectedTransactionToDelete = transaction,
+                openDeleteDialog = transaction != null
+            )
+        }
+    }
+
+    fun updateOpenDeleteDialog(show: Boolean) {
+        _todayUiState.update {
+            it.copy(openDeleteDialog = show)
+        }
     }
 }

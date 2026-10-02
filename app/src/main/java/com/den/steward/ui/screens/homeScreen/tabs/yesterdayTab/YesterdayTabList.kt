@@ -15,8 +15,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismissBoxState
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,22 +36,23 @@ import com.den.steward.backend.states.SortAndFilterState
 import com.den.steward.backend.states.SortBy
 import com.den.steward.backend.states.yesterdayTabState.YesterdayTabState
 import com.den.steward.backend.states.yesterdayTabState.YesterdayTransactionSummary
-import com.den.steward.backend.viewModels.DataDeletionViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.backend.viewModels.YesterdayViewModel
 import com.den.steward.ui.componentExtenison.shimmerEffect
 import com.den.steward.ui.components.charts.collections.ChartDataCollection
-import com.den.steward.ui.dataDeletion.DataDeletionDialog
+import com.den.steward.ui.components.DataDeletionDialog
 import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabLazyListItem
 import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabLazyListItemShimmer
 import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabListEmpty
 import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabListError
 import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabListPanelButton
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.coroutines.launch
 
 @Composable
 fun YesterdayTabList(
     modifier: Modifier = Modifier,
-    dataDeletionViewModel: DataDeletionViewModel,
+    yesterdayViewModel: YesterdayViewModel,
     yesterdayTabState: DataState<YesterdayTabState>,
     sortAndFilterState: SortAndFilterState,
     updateIsFilterExpanded: (isExpanded: Boolean) -> Unit,
@@ -76,7 +81,7 @@ fun YesterdayTabList(
 
                 YesterdayTabLazyList(
                     modifier = modifier,
-                    dataDeletionViewModel = dataDeletionViewModel,
+                    yesterdayViewModel = yesterdayViewModel,
                     transactions = transactions,
                     yesterdayTransactionSummary = yesterdayTransactionSummary,
                     chartDataCollection = chartDataCollection,
@@ -116,7 +121,7 @@ fun YesterdayTabListHeader() {
 @Composable
 fun YesterdayTabLazyList(
     modifier: Modifier = Modifier,
-    dataDeletionViewModel: DataDeletionViewModel,
+    yesterdayViewModel: YesterdayViewModel,
     transactions: ImmutableList<Transaction>,
     yesterdayTransactionSummary: YesterdayTransactionSummary,
     chartDataCollection: ChartDataCollection,
@@ -125,6 +130,14 @@ fun YesterdayTabLazyList(
     updateIsSortByExpanded: (isExpanded: Boolean) -> Unit,
     updateIsOrderExpanded: (isExpanded: Boolean) -> Unit
 ) {
+    val yesterdayUiState by yesterdayViewModel.yesterdayUiState.collectAsStateWithLifecycle()
+    val dismissState: SwipeToDismissBoxState = rememberSwipeToDismissBoxState(
+        positionalThreshold = { distance: Float ->
+            distance * 0.5f
+        }
+    )
+    val scope = rememberCoroutineScope()
+
     LazyColumn(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -167,14 +180,15 @@ fun YesterdayTabLazyList(
                 val transaction = transactions[index]
 
                 TodayTabLazyListItem(
-                    transaction = transaction,
-                    color = MaterialTheme.colorScheme.surface,
+                    dismissState = dismissState,
                     modifier = Modifier.animateItem(
                         fadeInSpec = tween(1000),
                     ),
+                    transaction = transaction,
+                    color = MaterialTheme.colorScheme.surface,
                     onDelete = {
-                        dataDeletionViewModel.updateSelectedTransaction(transaction)
-                    }
+                        yesterdayViewModel.updateSelectedTransactionToDelete(transaction)
+                    },
                 )
             }
         } else {
@@ -184,12 +198,17 @@ fun YesterdayTabLazyList(
         }
     }
 
-
     DataDeletionDialog(
-        viewModel = dataDeletionViewModel
-    ) {
-        dataDeletionViewModel.updateOnDialogShow(false)
-    }
+        transaction = yesterdayUiState.selectedTransactionToDelete,
+        onDialogShow = yesterdayUiState.openDeleteDialog,
+        onDelete = yesterdayViewModel::deleteTransaction,
+        onDismissRequest = {
+            scope.launch {
+                dismissState.reset()
+                yesterdayViewModel.updateOpenDeleteDialog(false)
+            }
+        }
+    )
 }
 
 @Composable

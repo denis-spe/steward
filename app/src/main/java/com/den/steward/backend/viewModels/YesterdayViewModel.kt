@@ -9,15 +9,13 @@ import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.yesterdayTabState.YesterdayTransactionSummary
-import com.den.steward.backend.useCase.ChartUseCase
-import com.den.steward.backend.useCase.DataFilterUseCase
 import com.den.steward.backend.states.Filter
-import com.den.steward.backend.states.Filter.Companion.toTransactionType
 import com.den.steward.backend.states.OrderBy
 import com.den.steward.backend.states.SortAndFilterState
 import com.den.steward.backend.states.SortBy
-import com.den.steward.backend.states.todayTabState.TodayTabDataState
 import com.den.steward.backend.states.yesterdayTabState.YesterdayTabState
+import com.den.steward.backend.states.yesterdayTabState.YesterdayUiState
+import com.den.steward.backend.useCase.DataDeletionUseCase
 import com.den.steward.helper.calculateFlow
 import com.den.steward.helper.filterAndSortTodayTransactions
 import com.den.steward.helper.getStartOfDayMillis
@@ -28,8 +26,6 @@ import com.den.steward.ui.components.charts.collections.ChartData
 import com.den.steward.ui.components.charts.collections.ChartDataCollection
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,13 +39,19 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class YesterdayViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val dataDeletionUseCase: DataDeletionUseCase,
     dataFetchUseCase: DataFetchUseCase
 ) : ViewModel() {
+
+    private val _yesterdayUiState = MutableStateFlow(YesterdayUiState())
+    val yesterdayUiState = _yesterdayUiState.asStateFlow()
+
     private val _sortAndFilterState = MutableStateFlow(SortAndFilterState())
     val sortAndFilterState = _sortAndFilterState.asStateFlow()
 
@@ -228,5 +230,32 @@ class YesterdayViewModel @Inject constructor(
         _sortAndFilterState.value = _sortAndFilterState.value.copy(
             isOrderByExpanded = isExpanded
         )
+    }
+
+    // ===================== Delete =====================
+    fun deleteTransaction() {
+        viewModelScope.launch {
+            val transaction = _yesterdayUiState.value.selectedTransactionToDelete ?: return@launch
+            dataDeletionUseCase.deleteTransaction(transaction)
+        }
+
+        // Reset the state
+        updateSelectedTransactionToDelete(null)
+        updateOpenDeleteDialog(false)
+    }
+
+    fun updateSelectedTransactionToDelete(transaction: Transaction?) {
+        _yesterdayUiState.update {
+            it.copy(
+                selectedTransactionToDelete = transaction,
+                openDeleteDialog = transaction != null
+            )
+        }
+    }
+
+    fun updateOpenDeleteDialog(show: Boolean) {
+        _yesterdayUiState.update {
+            it.copy(openDeleteDialog = show)
+        }
     }
 }

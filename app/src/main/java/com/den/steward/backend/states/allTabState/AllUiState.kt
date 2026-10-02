@@ -17,5 +17,9 @@ data class AllUiState(
     val isPeriodTypeExpanded: Boolean = false,
     val weekNumber: Int? = selectedDate.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR),
     val selectedTransactionForView: Transaction? = null,
-    val isTransactionListSortExpanded: Boolean = false
+    val isTransactionListSortExpanded: Boolean = false,
+    val selectedTransactionToDelete: Transaction? = null,
+    val selectedTransactionToEdit: Transaction? = null,
+    val openDeleteDialog: Boolean = false,
+    val openEditDialog: Boolean = false
 )

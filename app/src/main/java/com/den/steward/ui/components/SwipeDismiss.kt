@@ -40,23 +40,25 @@ import com.den.steward.ui.theme.ExtendedTheme
 @Composable
 fun SwipeDismiss(
     modifier: Modifier = Modifier,
+    dismissState: SwipeToDismissBoxState = rememberSwipeToDismissBoxState(
+        positionalThreshold = { distance: Float ->
+            distance * 0.5f
+        }
+    ),
     shape: Shape = MaterialTheme.shapes.medium,
-    onUpdate: suspend () -> Unit,
-    onDelete: suspend () -> Unit,
+    onUpdate: () -> Unit,
+    onDelete: () -> Unit,
     content: @Composable (RowScope.() -> Unit),
 ) {
-    val dismissState = rememberSwipeToDismissBoxState()
 
     LaunchedEffect(dismissState.currentValue) {
         when (dismissState.currentValue) {
             SwipeToDismissBoxValue.EndToStart -> {
                 onDelete()
-                dismissState.snapTo(SwipeToDismissBoxValue.Settled)
             }
 
             SwipeToDismissBoxValue.StartToEnd -> {
                 onUpdate()
-                dismissState.snapTo(SwipeToDismissBoxValue.Settled)
             }
 
             else -> {}
@@ -92,25 +94,21 @@ private fun SwipeDismissBackground(dismissState: SwipeToDismissBoxState) {
     val icon = when (direction) {
         SwipeToDismissBoxValue.StartToEnd -> Icons.Rounded.Edit
         SwipeToDismissBoxValue.EndToStart -> Icons.Rounded.Delete
-        else -> null
     }
 
     val label = when (direction) {
         SwipeToDismissBoxValue.StartToEnd -> "Update"
         SwipeToDismissBoxValue.EndToStart -> "Delete"
-        else -> null
     }
 
     val alignment = when (direction) {
         SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
         SwipeToDismissBoxValue.EndToStart -> Alignment.CenterEnd
-        else -> Alignment.Center
     }
 
     val contentColor = when (direction) {
         SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.onSurface
         SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.onErrorContainer
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     val scale by animateFloatAsState(
@@ -129,36 +127,34 @@ private fun SwipeDismissBackground(dismissState: SwipeToDismissBoxState) {
                 .padding(horizontal = 24.dp),
             contentAlignment = alignment
         ) {
-            if (icon != null && label != null) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.scale(scale)
-                ) {
-                    if (direction == SwipeToDismissBoxValue.StartToEnd) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = label,
-                            tint = contentColor
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = label,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    } else {
-                        Text(
-                            text = label,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = label,
-                            tint = contentColor
-                        )
-                    }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.scale(scale)
+            ) {
+                if (direction == SwipeToDismissBoxValue.StartToEnd) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = label,
+                        tint = contentColor
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                } else {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = label,
+                        tint = contentColor
+                    )
                 }
             }
         }

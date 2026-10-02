@@ -31,14 +31,13 @@ import com.den.steward.backend.states.Filter
 import com.den.steward.backend.states.OrderBy
 import com.den.steward.backend.states.SortAndFilterState
 import com.den.steward.backend.states.SortBy
-import com.den.steward.backend.viewModels.DataDeletionViewModel
 import com.den.steward.ui.components.FilterBottomSheet
 import com.den.steward.ui.components.OrderByBottomSheet
 import com.den.steward.ui.components.PeriodTypeBottomSelector
 import com.den.steward.ui.components.SortByBottomSheet
 import com.den.steward.backend.states.allTabState.AllTabDataState
 import com.den.steward.ui.components.TransactionViewDialog
-import com.den.steward.ui.dataDeletion.DataDeletionDialog
+import com.den.steward.ui.components.DataDeletionDialog
 import kotlinx.collections.immutable.ImmutableMap
 import java.time.LocalDate
 
@@ -58,7 +57,9 @@ fun AllTabLazyList(
     updateIsFilterExpanded: (Boolean) -> Unit,
     updateIsOrderByExpanded: (Boolean) -> Unit,
     updateIsSortByExpanded: (Boolean) -> Unit,
-    dataDeletionViewModel: DataDeletionViewModel,
+    updateSelectedTransactionToDelete: (Transaction?) -> Unit,
+    updateOpenDeleteDialog: (Boolean) -> Unit,
+    onDeleteTransaction: () -> Unit,
     transactions: DataState<ImmutableMap<String, List<Transaction>>>,
     updateIsTransactionListOrder: (OrderBy) -> Unit,
     updateIsTransactionListOrderExpanded: (Boolean) -> Unit
@@ -146,7 +147,7 @@ fun AllTabLazyList(
                                         updateSelectedTransactionForView(transaction)
                                     },
                                     onDelete = {
-                                        dataDeletionViewModel.updateSelectedTransaction(transaction)
+                                        updateSelectedTransactionToDelete(transaction)
                                     }
                                 )
                             }
@@ -245,9 +246,11 @@ fun AllTabLazyList(
     }
 
     DataDeletionDialog(
-        viewModel = dataDeletionViewModel,
+        transaction = allUiState.selectedTransactionToDelete,
+        onDialogShow = allUiState.openDeleteDialog,
+        onDelete = onDeleteTransaction,
         onDismissRequest = {
-            dataDeletionViewModel.updateOnDialogShow(false)
+            updateOpenDeleteDialog(false)
         }
     )
 }

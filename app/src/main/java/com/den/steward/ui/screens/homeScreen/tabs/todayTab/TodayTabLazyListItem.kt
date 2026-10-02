@@ -15,10 +15,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismissBoxState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -45,10 +47,11 @@ fun TodayTabLazyListItem(
     modifier: Modifier = Modifier,
     transaction: Transaction,
     shape: Shape = MaterialTheme.shapes.small,
-    color: Color = MaterialTheme.colorScheme.surface,
-    onUpdate: suspend () -> Unit = {},
-    onDelete: suspend () -> Unit = {},
-    onClick: () -> Unit = {}
+    color: Color = MaterialTheme.colorScheme.background,
+    onUpdate: () -> Unit = {},
+    onDelete: () -> Unit = {},
+    dismissState: SwipeToDismissBoxState,
+    onClick: () -> Unit = {},
 ) {
     val localDateTime = remember(transaction) { transaction.createdAt.toLocalDateTime() }
     val time = localDateTime.formattedTime
@@ -81,6 +84,7 @@ fun TodayTabLazyListItem(
 
     SwipeDismiss(
         shape = shape,
+        dismissState = dismissState,
         onUpdate = onUpdate,
         onDelete = onDelete,
         modifier = modifier.padding(vertical = 4.dp)
@@ -88,8 +92,7 @@ fun TodayTabLazyListItem(
         Surface(
             onClick = onClick,
             shape = shape,
-            color = color,
-            tonalElevation = 1.dp
+            color = MaterialTheme.colorScheme.background,
         ) {
             Column(
                 modifier = Modifier
@@ -138,162 +141,174 @@ fun TodayTabLazyListItem(
                         }
                     }
 
-                    // Center Content
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        Text(
-                            text = transaction.getLabel,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1
-                        )
+                    Column {
 
-                        LazyRow (
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            item(key = "time") {
+                            // Center Content
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
                                 Text(
-                                    text = time,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    text = transaction.getLabel,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1
                                 )
-                            }
 
-                            item(key = "affectAmount") {
-                                if (uiData.affectAmount != null) {
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(CircleShape)
-                                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                                    ) {
+                                LazyRow(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    item(key = "time") {
                                         Text(
-                                            text = if (uiData.affectAmount == "Yes") "Affected" else "Neutral",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = if (uiData.affectAmount == "Yes")
-                                                typeColor
-                                            else MaterialTheme.colorScheme.onSurfaceVariant
+                                            text = time,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
-                                }
-                            }
 
-                            item(key = "parent") {
-                                uiData.parent?.let { parent ->
-                                    val parentLabel = stringResource(id = parent.type.label)
-                                    val parentColor = colorResource(parent.type.color)
-
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(CircleShape)
-                                            .background(parentColor.copy(alpha = 0.1f))
-                                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                                    ) {
-                                        Text(
-                                            text = parentLabel,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = parentColor,
-                                        )
-                                    }
-                                }
-                            }
-
-                            item(key = "status") {
-                                if (status != null) {
-                                    val sColor = colorResource(statusColorRes)
-
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(CircleShape)
-                                            .background(sColor.copy(alpha = 0.1f))
-                                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                                    ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                        ) {
+                                    item(key = "affectAmount") {
+                                        if (uiData.affectAmount != null) {
                                             Box(
                                                 modifier = Modifier
-                                                    .size(6.dp)
                                                     .clip(CircleShape)
-                                                    .background(sColor)
-                                            )
-                                            Text(
-                                                text = status,
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = sColor
-                                            )
+                                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            ) {
+                                                Text(
+                                                    text = if (uiData.affectAmount == "Yes") "Affected" else "Neutral",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = if (uiData.affectAmount == "Yes")
+                                                        typeColor
+                                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    item(key = "parent") {
+                                        uiData.parent?.let { parent ->
+                                            val parentLabel = stringResource(id = parent.type.label)
+                                            val parentColor = colorResource(parent.type.color)
+
+                                            Box(
+                                                modifier = Modifier
+                                                    .clip(CircleShape)
+                                                    .background(parentColor.copy(alpha = 0.1f))
+                                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            ) {
+                                                Text(
+                                                    text = parentLabel,
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = parentColor,
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    item(key = "status") {
+                                        if (status != null) {
+                                            val sColor = colorResource(statusColorRes)
+
+                                            Box(
+                                                modifier = Modifier
+                                                    .clip(CircleShape)
+                                                    .background(sColor.copy(alpha = 0.1f))
+                                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            ) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                                ) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(6.dp)
+                                                            .clip(CircleShape)
+                                                            .background(sColor)
+                                                    )
+                                                    Text(
+                                                        text = status,
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = sColor
+                                                    )
+                                                }
+                                            }
                                         }
                                     }
                                 }
                             }
-                        }
-                    }
 
-                    // Trailing Content (Amount)
-                    Column(
-                        horizontalAlignment = Alignment.End,
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = uiData.amount,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = typeColor
-                        )
-
-                        if (uiData.paymentMethod != null) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            // Trailing Content (Amount)
+                            Column(
+                                horizontalAlignment = Alignment.End,
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                Image(
-                                    painter = painterResource(id = uiData.paymentMethod.icon),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(14.dp),
-                                )
                                 Text(
-                                    text = uiData.paymentMethod.label,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    text = uiData.amount,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = typeColor
                                 )
+
+                                if (uiData.paymentMethod != null) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Image(
+                                            painter = painterResource(id = uiData.paymentMethod.icon),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(14.dp),
+                                        )
+                                        Text(
+                                            text = uiData.paymentMethod.label,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Progress Bar for Goals/Loans/Debts
+                            if (percentage != null) {
+                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    LinearProgressIndicator(
+                                        progress = { animatedProgress },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(6.dp)
+                                            .clip(CircleShape),
+                                        color = typeColor,
+                                        trackColor = typeColor.copy(alpha = 0.1f),
+                                        strokeCap = StrokeCap.Round
+                                    )
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = "Progress",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            text = "${percentage.toInt()}%",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = typeColor
+                                        )
+                                    }
+                                }
                             }
                         }
-                    }
-                }
-
-                // Progress Bar for Goals/Loans/Debts
-                if (percentage != null) {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        LinearProgressIndicator(
-                            progress = { animatedProgress },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(6.dp)
-                                .clip(CircleShape),
-                            color = typeColor,
-                            trackColor = typeColor.copy(alpha = 0.1f),
-                            strokeCap = StrokeCap.Round
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 5.dp)
                         )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "Progress",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = "${percentage.toInt()}%",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = typeColor
-                            )
-                        }
                     }
                 }
             }

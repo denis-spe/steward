@@ -225,17 +225,10 @@ class PlanTabViewModel @Inject constructor(
     }
 
     fun deleteFulfillmentPlan(
-        fulfillmentId: String,
         transaction: Transaction
     ) {
-        val id = _planTabUiState.value.selectedParentTransaction?.id ?: return
-
         viewModelScope.launch {
-            dataDeletionUseCase.deleteFulfillment(
-                id,
-                fulfillmentId,
-                transaction
-            )
+            dataDeletionUseCase.deleteTransaction(transaction)
         }
     }
 }

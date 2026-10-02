@@ -11,13 +11,13 @@ import com.den.steward.backend.states.allTabState.AllTransactionSummary
 import com.den.steward.backend.states.allTabState.AllUiState
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.PeriodType
-import com.den.steward.backend.useCase.ChartUseCase
 import com.den.steward.backend.states.Filter
 import com.den.steward.backend.useCase.PeriodDataHandleUseCase
 import com.den.steward.backend.states.OrderBy
 import com.den.steward.backend.states.SortAndFilterState
 import com.den.steward.backend.states.SortBy
 import com.den.steward.backend.states.allTabState.AllTabDataState
+import com.den.steward.backend.useCase.DataDeletionUseCase
 import com.den.steward.backend.useCase.DataFetchUseCase
 import com.den.steward.helper.calculateFlow
 import com.den.steward.helper.formattedDate
@@ -45,6 +45,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.IsoFields
@@ -71,9 +72,9 @@ private data class SortFilterControllers(
 @HiltViewModel
 class AllViewModel @Inject constructor(
     private val periodDataHandleUseCase: PeriodDataHandleUseCase,
+    private val deletionUseCase: DataDeletionUseCase,
     dataFetchUseCase: DataFetchUseCase,
-    @ApplicationContext private val context: Context,
-    private val chartUseCase: ChartUseCase
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
     private val _allUiState = MutableStateFlow(AllUiState())
     val allUiState = _allUiState.asStateFlow()
@@ -215,6 +216,33 @@ class AllViewModel @Inject constructor(
 
     fun updateIsPeriodTypeExpanded(expend: Boolean) {
         _allUiState.update { it.copy(isPeriodTypeExpanded = expend) }
+    }
+
+    // ===================== Delete =====================
+    fun deleteTransaction() {
+        viewModelScope.launch {
+            val transaction = _allUiState.value.selectedTransactionToDelete ?: return@launch
+            deletionUseCase.deleteTransaction(transaction)
+        }
+
+        // Reset the state
+        updateSelectedTransactionToDelete(null)
+        updateOpenDeleteDialog(false)
+    }
+
+    fun updateSelectedTransactionToDelete(transaction: Transaction?) {
+        _allUiState.update {
+            it.copy(
+                selectedTransactionToDelete = transaction,
+                openDeleteDialog = transaction != null
+            )
+        }
+    }
+
+    fun updateOpenDeleteDialog(show: Boolean) {
+        _allUiState.update {
+            it.copy(openDeleteDialog = show)
+        }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

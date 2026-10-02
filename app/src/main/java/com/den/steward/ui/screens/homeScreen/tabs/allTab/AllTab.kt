@@ -44,7 +44,6 @@ import com.den.steward.backend.states.OrderBy
 import com.den.steward.backend.useCase.PeriodDataHandleUseCase
 import com.den.steward.backend.states.SortBy
 import com.den.steward.backend.viewModels.AllViewModel
-import com.den.steward.backend.viewModels.DataDeletionViewModel
 import com.den.steward.backend.viewModels.HomeViewModel
 import kotlinx.coroutines.launch
 
@@ -52,7 +51,6 @@ import kotlinx.coroutines.launch
 fun AllTab(
     padding: PaddingValues,
     allViewModel: AllViewModel = hiltViewModel(),
-    dataDeletionViewModel: DataDeletionViewModel = hiltViewModel(),
     homeViewModel: HomeViewModel
 ) {
     val pagerState = rememberPagerState(
@@ -255,7 +253,9 @@ fun AllTab(
             updateSelectedTransactionForView = allViewModel::updateSelectedTransactionForView,
             updateIsPeriodTypeExpanded = allViewModel::updateIsPeriodTypeExpanded,
             updatePeriodType = allViewModel::updatePeriodType,
-            dataDeletionViewModel = dataDeletionViewModel
+            updateSelectedTransactionToDelete = allViewModel::updateSelectedTransactionToDelete,
+            updateOpenDeleteDialog = allViewModel::updateOpenDeleteDialog,
+            onDeleteTransaction = allViewModel::deleteTransaction
         )
     }
 }

@@ -22,11 +22,14 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismissBoxState
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,8 +52,9 @@ import com.den.steward.backend.viewModels.TodayViewModel
 import com.den.steward.helper.formatToAmount
 import com.den.steward.ui.componentExtenison.shimmerEffect
 import com.den.steward.ui.components.TransactionViewDialog
-import com.den.steward.ui.dataDeletion.DataDeletionDialog
+import com.den.steward.ui.components.DataDeletionDialog
 import com.den.steward.ui.theme.ExtendedTheme
+import kotlinx.coroutines.launch
 
 private val icon_size = 80.dp
 
@@ -79,9 +83,7 @@ fun TodayTabList(
 
                 TodayTabLazyList(
                     modifier = modifier,
-                    chartViewModel = chartViewModel,
                     todayViewModel = todayViewModel,
-                    dataDeletionViewModel = dataDeletionViewModel,
                     todayTabDataState = state.data
                 )
             }
@@ -285,12 +287,11 @@ fun TodayTabListPanelButton(
 @Composable
 fun TodayTabLazyList(
     modifier: Modifier = Modifier,
-    chartViewModel: ChartViewModel,
     todayViewModel: TodayViewModel,
-    dataDeletionViewModel: DataDeletionViewModel,
     todayTabDataState: TodayTabDataState
 ) {
-    val todayUiState by todayViewModel.sortAndFilterState.collectAsStateWithLifecycle()
+    val sortAndFilterState by todayViewModel.sortAndFilterState.collectAsStateWithLifecycle()
+    val todayUiState by todayViewModel.todayUiState.collectAsStateWithLifecycle()
     val selectedTransactionForView = remember { mutableStateOf<Transaction?>(null) }
 
     val (
@@ -304,6 +305,13 @@ fun TodayTabLazyList(
     val flow = remember(balanceStatStates) {
         balanceStatStates.flow.formatToAmount()
     }
+
+    val dismissState: SwipeToDismissBoxState = rememberSwipeToDismissBoxState(
+        positionalThreshold = { distance: Float ->
+            distance * 0.5f
+        }
+    )
+    val scope = rememberCoroutineScope()
 
     LazyColumn(
         modifier = modifier,
@@ -324,12 +332,12 @@ fun TodayTabLazyList(
         stickyHeader {
             TodayTabListHeader()
             TodayTabListPanelButtons(
-                filter = todayUiState.filter,
-                sortBy = todayUiState.sortBy,
-                orderBy = todayUiState.orderBy,
-                filterSelected = todayUiState.filter != listOf(Filter.ALL),
-                orderBySelected = todayUiState.orderBy != OrderBy.DESCENDING,
-                sortBySelected = todayUiState.sortBy != SortBy.TIME,
+                filter = sortAndFilterState.filter,
+                sortBy = sortAndFilterState.sortBy,
+                orderBy = sortAndFilterState.orderBy,
+                filterSelected = sortAndFilterState.filter != listOf(Filter.ALL),
+                orderBySelected = sortAndFilterState.orderBy != OrderBy.DESCENDING,
+                sortBySelected = sortAndFilterState.sortBy != SortBy.TIME,
                 onFilterClick = {
                     todayViewModel.updateIsFilterExpanded(true)
                 },
@@ -350,13 +358,14 @@ fun TodayTabLazyList(
                 val transaction = transactions[index]
 
                 TodayTabLazyListItem(
+                    dismissState = dismissState,
                     transaction = transaction,
                     color = MaterialTheme.colorScheme.surface,
                     modifier = Modifier.animateItem(
                         fadeInSpec = tween(1000),
                     ),
                     onDelete = {
-                        dataDeletionViewModel.updateSelectedTransaction(transaction)
+                        todayViewModel.updateSelectedTransactionToDelete(transaction)
                     },
                     onClick = {
                         selectedTransactionForView.value = transaction
@@ -379,9 +388,14 @@ fun TodayTabLazyList(
     }
 
     DataDeletionDialog(
-        viewModel = dataDeletionViewModel
+        transaction = todayUiState.selectedTransactionToDelete,
+        onDialogShow = todayUiState.openDeleteDialog,
+        onDelete = todayViewModel::deleteTransaction,
     ) {
-        dataDeletionViewModel.updateOnDialogShow(false)
+        scope.launch {
+            dismissState.reset()
+            todayViewModel.updateOpenDeleteDialog(false)
+        }
     }
 }
 

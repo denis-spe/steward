@@ -4,7 +4,6 @@ package com.den.steward.backend.viewModels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.den.steward.backend.entitles.Transaction
-import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.useCase.DataDeletionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
@@ -26,9 +25,8 @@ class DataDeletionViewModel @Inject constructor(
 
     fun deleteTransaction(
     ) {
-        val transactionId = _selectedTransaction.value?.id ?: return
-
         viewModelScope.launch {
+            val transactionId = _selectedTransaction.value ?: return@launch
             dataDeletionUseCase.deleteTransaction(transactionId)
         }
 
@@ -38,25 +36,10 @@ class DataDeletionViewModel @Inject constructor(
     }
 
     fun deleteFulfillment() {
-        if (selectedTransaction.value == null) return
-        val transactionId = when(selectedTransaction.value!!.type) {
-            TransactionType.ATTAIN -> (selectedTransaction.value as Transaction.Attain).goal.id
-            TransactionType.ACHIEVEMENT -> (selectedTransaction.value as Transaction.Achievement).goal.id
-            TransactionType.SETTLEMENT -> (selectedTransaction.value as Transaction.Settlement).debt.id
-            TransactionType.REPAYMENT -> (selectedTransaction.value as Transaction.Repayment).lent.id
-            else -> return
-        }
-        val fulfillmentId = when(selectedTransaction.value!!.type) {
-            TransactionType.ATTAIN -> (selectedTransaction.value as Transaction.Attain).id
-            TransactionType.ACHIEVEMENT -> (selectedTransaction.value as Transaction.Achievement).id
-            TransactionType.SETTLEMENT -> (selectedTransaction.value as Transaction.Settlement).id
-            TransactionType.REPAYMENT -> (selectedTransaction.value as Transaction.Repayment).id
-            else -> return
-        }
-        val fulfillmentType = selectedTransaction.value ?: return
-
         viewModelScope.launch {
-            dataDeletionUseCase.deleteFulfillment(transactionId, fulfillmentId, fulfillmentType)
+            _selectedTransaction.value?.let {
+                dataDeletionUseCase.deleteTransaction(it)
+            }
         }
 
         // Reset the state

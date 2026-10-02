@@ -13,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.den.steward.backend.viewModels.DataDeletionViewModel
 import com.den.steward.backend.viewModels.YesterdayViewModel
 import com.den.steward.ui.components.FilterBottomSheet
 import com.den.steward.ui.components.OrderByBottomSheet
@@ -22,8 +21,7 @@ import com.den.steward.ui.components.SortByBottomSheet
 @Composable
 fun YesterdayTab(
     padding: PaddingValues,
-    yesterdayViewModel: YesterdayViewModel = hiltViewModel(),
-    dataDeletionViewModel: DataDeletionViewModel = hiltViewModel()
+    yesterdayViewModel: YesterdayViewModel = hiltViewModel()
 ) {
 
     val sortAndFilterState by yesterdayViewModel.sortAndFilterState.collectAsStateWithLifecycle()
@@ -39,7 +37,7 @@ fun YesterdayTab(
     ) {
         YesterdayTabList(
             modifier = Modifier.fillMaxSize(),
-            dataDeletionViewModel = dataDeletionViewModel,
+            yesterdayViewModel = yesterdayViewModel,
             yesterdayTabState = yesterdayTabState,
             sortAndFilterState = sortAndFilterState,
             updateIsSortByExpanded = yesterdayViewModel::updateIsSortByExpanded,

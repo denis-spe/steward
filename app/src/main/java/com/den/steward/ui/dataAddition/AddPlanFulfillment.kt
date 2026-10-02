@@ -114,7 +114,7 @@ fun PlanFulfillmentBottomDrawerSheet(
         transactionId: String,
         status: PlanStatus,
         planFulfillment: Transaction.PlanFulfillment) -> Unit,
-    deleteFulfillmentPlan: (fulfillmentId: String, transaction: Transaction) -> Unit
+    deleteFulfillmentPlan: (transaction: Transaction) -> Unit
 ) {
 
     val parentTransaction = (planTabUiState.selectedParentTransaction as? Transaction.Plan)
@@ -273,7 +273,6 @@ fun PlanFulfillmentBottomDrawerSheet(
                                     onStatusChange = updatePlanFulfillmentStatus,
                                     onDelete = {
                                         deleteFulfillmentPlan(
-                                            item.id,
                                             item
                                         )
                                     },
