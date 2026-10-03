@@ -5,16 +5,24 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismissBoxState
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -39,6 +47,7 @@ import com.den.steward.backend.states.allTabState.AllTabDataState
 import com.den.steward.ui.components.TransactionViewDialog
 import com.den.steward.ui.components.DataDeletionDialog
 import kotlinx.collections.immutable.ImmutableMap
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 @Composable
@@ -71,6 +80,8 @@ fun AllTabLazyList(
             is DataState.Loading -> DataState.Loading to DataState.Loading
         }
     }
+    var swipedState by remember { mutableStateOf<SwipeToDismissBoxState?>(null) }
+    val scope = rememberCoroutineScope()
 
     Surface(
         color = MaterialTheme.colorScheme.background
@@ -137,20 +148,36 @@ fun AllTabLazyList(
                                     }
                                 }
 
+                                val dismissState = rememberSwipeToDismissBoxState(
+                                    positionalThreshold = { distance: Float ->
+                                        distance * 0.5f
+                                    }
+                                )
+
                                 AllTabLazyListItem(
                                     modifier = Modifier
                                         .padding(bottom = padding)
                                         .animateItem(),
                                     shape = shape,
+                                    dismissState = dismissState,
                                     transaction = transaction,
                                     onClick = {
                                         updateSelectedTransactionForView(transaction)
                                     },
                                     onDelete = {
+                                        swipedState = dismissState
                                         updateSelectedTransactionToDelete(transaction)
                                     }
                                 )
                             }
+                        }
+
+                        item(
+                            key = "Space up"
+                        ) {
+                            Spacer(
+                                modifier = Modifier.height(55.dp)
+                            )
                         }
                     }
                     else {
@@ -201,6 +228,7 @@ fun AllTabLazyList(
     OrderByBottomSheet(
         isExpanded = allUiState.isTransactionListSortExpanded,
         selected = allUiState.isTransactionListSort,
+        isOrderByTimeLine = true,
         onSortSelected = {
             updateIsTransactionListOrder(it)
             updateIsTransactionListOrderExpanded(false)
@@ -251,6 +279,9 @@ fun AllTabLazyList(
         onDelete = onDeleteTransaction,
         onDismissRequest = {
             updateOpenDeleteDialog(false)
+            scope.launch {
+                swipedState?.reset()
+            }
         }
     )
 }

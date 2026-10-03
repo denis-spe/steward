@@ -6,7 +6,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,7 +22,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,12 +42,11 @@ import com.den.steward.backend.states.SortBy
 import com.den.steward.backend.states.yesterdayTabState.YesterdayTabState
 import com.den.steward.backend.states.yesterdayTabState.YesterdayTransactionSummary
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.den.steward.backend.states.Filter.Companion.icon
 import com.den.steward.backend.viewModels.YesterdayViewModel
 import com.den.steward.ui.componentExtenison.shimmerEffect
 import com.den.steward.ui.components.charts.collections.ChartDataCollection
 import com.den.steward.ui.components.DataDeletionDialog
-import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabLazyListItem
-import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabLazyListItemShimmer
 import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabListEmpty
 import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabListError
 import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabListPanelButton
@@ -130,13 +134,9 @@ fun YesterdayTabLazyList(
     updateIsSortByExpanded: (isExpanded: Boolean) -> Unit,
     updateIsOrderExpanded: (isExpanded: Boolean) -> Unit
 ) {
-    val yesterdayUiState by yesterdayViewModel.yesterdayUiState.collectAsStateWithLifecycle()
-    val dismissState: SwipeToDismissBoxState = rememberSwipeToDismissBoxState(
-        positionalThreshold = { distance: Float ->
-            distance * 0.5f
-        }
-    )
+    var swipedState by remember { mutableStateOf<SwipeToDismissBoxState?>(null) }
     val scope = rememberCoroutineScope()
+    val yesterdayUiState by yesterdayViewModel.yesterdayUiState.collectAsStateWithLifecycle()
 
     LazyColumn(
         modifier = modifier,
@@ -178,17 +178,30 @@ fun YesterdayTabLazyList(
                 key = { index -> "yesterday_${transactions[index].id}" }
             ) { index ->
                 val transaction = transactions[index]
+                val yesterdayItemDismissState = rememberSwipeToDismissBoxState(
+                    positionalThreshold = { distance: Float ->
+                        distance * 0.5f
+                    }
+                )
 
-                TodayTabLazyListItem(
-                    dismissState = dismissState,
+                YesterdayTabLazyListItem(
+                    dismissState = yesterdayItemDismissState,
                     modifier = Modifier.animateItem(
                         fadeInSpec = tween(1000),
                     ),
                     transaction = transaction,
                     color = MaterialTheme.colorScheme.surface,
                     onDelete = {
-                        yesterdayViewModel.updateSelectedTransactionToDelete(transaction)
+                        swipedState = yesterdayItemDismissState
+                        yesterdayViewModel.updateSelectedTransactionToDelete(it)
                     },
+                )
+            }
+            item(
+                key = "Space up"
+            ) {
+                Spacer(
+                    modifier = Modifier.height(55.dp)
                 )
             }
         } else {
@@ -203,9 +216,9 @@ fun YesterdayTabLazyList(
         onDialogShow = yesterdayUiState.openDeleteDialog,
         onDelete = yesterdayViewModel::deleteTransaction,
         onDismissRequest = {
+            yesterdayViewModel.updateOpenDeleteDialog(false)
             scope.launch {
-                dismissState.reset()
-                yesterdayViewModel.updateOpenDeleteDialog(false)
+                swipedState?.reset()
             }
         }
     )
@@ -226,19 +239,7 @@ fun YesterdayTabListPanelButtons(
     val iconSize = 20.dp
 
     val filterIcon = if (filter.size == 1) {
-        when (filter.first()) {
-            Filter.ALL -> R.drawable.filter
-            Filter.EARNINGS -> R.drawable.ic_earnings
-            Filter.EXPENSE -> R.drawable.ic_expense
-            Filter.GOAL -> R.drawable.ic_finance_target
-            Filter.SAVINGS -> R.drawable.ic_savings
-            Filter.REPAYMENT -> R.drawable.ic_repayment
-            Filter.SETTLEMENT -> R.drawable.ic_refund
-            Filter.ATTAIN -> R.drawable.ic_attain
-            Filter.LENT -> R.drawable.ic_loan
-            Filter.DEBT -> R.drawable.ic_debt
-            Filter.PLAN -> R.drawable.ic_plan
-        }
+        filter.first().icon
     } else {
         R.drawable.filter
     }
@@ -332,7 +333,7 @@ fun YesterdayTabLazyListShimmer(
         }
 
         items(numberOfShimmerItems) {
-            TodayTabLazyListItemShimmer()
+            YesterdayTabLazyListItemShimmer()
         }
     }
 }

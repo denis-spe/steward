@@ -40,6 +40,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.R
 import com.den.steward.backend.states.PeriodType
 import com.den.steward.backend.states.Filter
+import com.den.steward.backend.states.Filter.Companion.icon
 import com.den.steward.backend.states.OrderBy
 import com.den.steward.backend.useCase.PeriodDataHandleUseCase
 import com.den.steward.backend.states.SortBy
@@ -91,19 +92,7 @@ fun AllTab(
     val coroutineScope = rememberCoroutineScope()
 
     val filterIcon = if (sortAndFilterState.filter.size == 1) {
-        when (sortAndFilterState.filter.first()) {
-            Filter.ALL -> R.drawable.filter
-            Filter.EARNINGS -> R.drawable.ic_earnings
-            Filter.EXPENSE -> R.drawable.ic_expense
-            Filter.GOAL -> R.drawable.ic_finance_target
-            Filter.SAVINGS -> R.drawable.ic_savings
-            Filter.REPAYMENT -> R.drawable.ic_repayment
-            Filter.SETTLEMENT -> R.drawable.ic_refund
-            Filter.ATTAIN -> R.drawable.ic_attain
-            Filter.LENT -> R.drawable.ic_loan
-            Filter.DEBT -> R.drawable.ic_debt
-            Filter.PLAN -> R.drawable.ic_plan
-        }
+        sortAndFilterState.filter.first().icon
     } else {
         R.drawable.filter
     }
@@ -134,7 +123,7 @@ fun AllTab(
 
     val transactionListSortIcon = when(allUiState.isTransactionListSort) {
         OrderBy.DESCENDING -> R.drawable.ic_sort_latest
-        OrderBy.ASCENDING -> R.drawable.ascending_sort
+        OrderBy.ASCENDING -> R.drawable.ic_sort_oldest
     }
 
 

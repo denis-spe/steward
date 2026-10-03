@@ -17,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismissBoxState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -62,6 +63,7 @@ fun AllTabLazyListStickyHeader(date: String) {
 fun AllTabLazyListItem(
     modifier: Modifier = Modifier,
     transaction: Transaction,
+    dismissState: SwipeToDismissBoxState,
     shape: Shape = MaterialTheme.shapes.small,
     color: Color = MaterialTheme.colorScheme.surface,
     onUpdate: () -> Unit = {},
@@ -103,6 +105,7 @@ fun AllTabLazyListItem(
     val progressTarget = remember(uiData.percentage) { (uiData.percentage?.toFloat() ?: 0f) / 100f }
 
     SwipeDismiss(
+        dismissState = dismissState,
         shape = shape,
         onUpdate = onUpdate,
         onDelete = onDelete,

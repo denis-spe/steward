@@ -1,6 +1,7 @@
 // Glory be to name of LORD GOD
 package com.den.steward.helper
 
+import com.den.steward.backend.entitles.LiabilitiesStatus
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.states.Filter
 import com.den.steward.backend.states.Filter.Companion.toTransactionType
@@ -65,7 +66,33 @@ fun filterAndSortTodayTransactions(
     return transactions
         .asSequence()
         .filter { it.createdAt in minTime until maxTime }
-        .filter { targetTypes.isEmpty() || it.type in targetTypes }
+        .filter { transaction ->
+            filter.all {
+                when (it) {
+                    Filter.UNPAID -> {
+                        when (transaction) {
+                            is Transaction.Lent -> transaction.status == LiabilitiesStatus.UNPAID
+                            is Transaction.Debt -> transaction.status == LiabilitiesStatus.UNPAID
+                            else -> false
+                        }
+                    }
+                    Filter.PAID -> {
+                        when (transaction) {
+                            is Transaction.Lent -> transaction.status == LiabilitiesStatus.PAID
+                            is Transaction.Debt -> transaction.status == LiabilitiesStatus.PAID
+                            else -> false
+                        }
+                    }
+                    Filter.AFFECTED -> {
+                        transaction.getAffectAmount == "Yes"
+                    }
+                    Filter.UN_AFFECTED -> {
+                        transaction.getAffectAmount == "No"
+                    }
+                    else -> targetTypes.isEmpty() || transaction.type in targetTypes
+                }
+            }
+        }
         .sortedWith(finalComparator)
         .toImmutableList()
 }

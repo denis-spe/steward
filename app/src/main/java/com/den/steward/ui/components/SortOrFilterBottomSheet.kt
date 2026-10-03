@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import com.den.steward.R
 import com.den.steward.backend.states.PeriodType
 import com.den.steward.backend.states.Filter
+import com.den.steward.backend.states.Filter.Companion.icon
 import com.den.steward.backend.states.OrderBy
 import com.den.steward.backend.states.SortBy
 import com.den.steward.helper.title
@@ -174,19 +175,7 @@ fun FilterBottomSheetItem(
     selected: Boolean = false,
     onFilterSelected: (Filter) -> Unit
 ) {
-    val icon = when (filter) {
-        Filter.ALL -> R.drawable.filter
-        Filter.EARNINGS -> R.drawable.ic_earnings
-        Filter.EXPENSE -> R.drawable.ic_expense
-        Filter.GOAL -> R.drawable.ic_finance_target
-        Filter.SAVINGS -> R.drawable.ic_savings
-        Filter.REPAYMENT -> R.drawable.ic_repayment
-        Filter.SETTLEMENT -> R.drawable.ic_refund
-        Filter.ATTAIN -> R.drawable.ic_attain
-        Filter.LENT -> R.drawable.ic_loan
-        Filter.DEBT -> R.drawable.ic_debt
-        Filter.PLAN -> R.drawable.ic_plan
-    }
+    val icon = filter.icon
 
     val desc = when (filter) {
         Filter.ALL -> "View all your financial activities"
@@ -200,6 +189,10 @@ fun FilterBottomSheetItem(
         Filter.LENT -> "Manage money lent out to others"
         Filter.DEBT -> "Track your outstanding liabilities"
         Filter.PLAN -> "Plan for your future financial targets"
+        Filter.UNPAID -> "Track unpaid loans and liabilities"
+        Filter.PAID -> "Track fully paid loans and liabilities"
+        Filter.AFFECTED -> "Transactions that affect your overall balance"
+        Filter.UN_AFFECTED -> "Transactions that do not affect your balance"
     }
 
     val filterName = remember(filter) {
@@ -270,12 +263,14 @@ fun FilterBottomSheetItem(
 fun OrderByBottomSheet(
     isExpanded: Boolean,
     selected: OrderBy,
+    isOrderByTimeLine: Boolean = false,
     onSortSelected: (OrderBy) -> Unit,
     onDismiss: () -> Unit,
 ) {
     if (isExpanded) {
         OrderByBottomSheetContent(
             selected = selected,
+            isOrderByTimeLine = isOrderByTimeLine,
             onSortSelected = onSortSelected,
             onDismiss = onDismiss
         )
@@ -285,6 +280,7 @@ fun OrderByBottomSheet(
 @Composable
 private fun OrderByBottomSheetContent(
     selected: OrderBy,
+    isOrderByTimeLine: Boolean = false,
     onSortSelected: (OrderBy) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -308,11 +304,19 @@ private fun OrderByBottomSheetContent(
                 .fillMaxHeight(0.4f)
         ) {
             entries.forEach { entry ->
-                OrderByBottomSheetItem(
-                    orderBy = entry,
-                    selected = selected == entry,
-                    onSortSelected = onSortSelected
-                )
+                if (isOrderByTimeLine) {
+                    OrderByTimeLineBottomSheetItem(
+                        orderBy = entry,
+                        selected = selected == entry,
+                        onSortSelected = onSortSelected
+                    )
+                } else {
+                    OrderByBottomSheetItem(
+                        orderBy = entry,
+                        selected = selected == entry,
+                        onSortSelected = onSortSelected
+                    )
+                }
             }
         }
     }
@@ -343,6 +347,72 @@ private fun OrderByBottomSheetItem(
 
     val name = remember(orderBy) {
         orderBy.name.title
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .selectable(
+                selected = selected,
+                onClick = { onSortSelected(orderBy) },
+                role = Role.RadioButton
+            )
+    ) {
+        Image(
+            painter = painterResource(id = icon),
+            contentDescription = "$name filter icon",
+            colorFilter = ColorFilter.tint(selectedTextColor),
+            modifier = Modifier.size(ICON_SIZE)
+        )
+
+        Spacer(
+            modifier = Modifier.width(10.dp)
+        )
+
+        Column {
+            Text(
+                name,
+                style = MaterialTheme.typography.titleMedium,
+                color = selectedTextColor
+            )
+
+            Text(
+                desc,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+    }
+}
+
+@Composable
+private fun OrderByTimeLineBottomSheetItem(
+    orderBy: OrderBy,
+    selected: Boolean,
+    onSortSelected: (OrderBy) -> Unit
+) {
+    val primary = MaterialTheme.colorScheme.primary
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+
+    val selectedTextColor = remember(selected) {
+        if (selected) primary else onSurfaceColor
+    }
+
+    val icon = when (orderBy) {
+        OrderBy.ASCENDING -> R.drawable.ic_sort_oldest
+        OrderBy.DESCENDING -> R.drawable.ic_sort_latest
+    }
+
+    val desc = when (orderBy) {
+        OrderBy.ASCENDING -> "Start with the oldest transaction"
+        OrderBy.DESCENDING -> "Sort by newest transaction"
+    }
+
+    val name = remember(orderBy) {
+        when (orderBy) {
+            OrderBy.ASCENDING -> "Oldest"
+            OrderBy.DESCENDING -> "Newest"
+        }
     }
 
     Row(

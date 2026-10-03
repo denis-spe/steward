@@ -8,8 +8,13 @@ import androidx.compose.ui.text.TextRange
 import androidx.core.content.ContextCompat
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import com.den.steward.backend.entitles.LiabilitiesStatus
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
+import com.den.steward.backend.states.Filter
+import com.den.steward.backend.states.Filter.Companion.toTransactionType
+import com.den.steward.backend.states.Filter.PAID
+import com.den.steward.backend.states.Filter.UNPAID
 import com.den.steward.ui.components.charts.collections.ChartData
 import com.den.steward.ui.components.charts.collections.ChartDataCollection
 import net.objecthunter.exp4j.ExpressionBuilder
@@ -433,4 +438,40 @@ val List<Transaction>.calculateFlow: Double get() {
         }
     }
     return incoming - outgoing
+}
+
+fun List<Transaction>.filterByListOfFilters(filters: List<Filter>): List<Transaction> {
+    val targetTypes = filters.mapNotNull { it.toTransactionType }
+
+    return this.filter { transaction ->
+        filters.all {
+            when (it) {
+                UNPAID -> {
+                    when (transaction) {
+                        is Transaction.Lent -> transaction.status == LiabilitiesStatus.UNPAID
+                        is Transaction.Debt -> transaction.status == LiabilitiesStatus.UNPAID
+                        else -> false
+                    }
+                }
+
+                PAID -> {
+                    when (transaction) {
+                        is Transaction.Lent -> transaction.status == LiabilitiesStatus.PAID
+                        is Transaction.Debt -> transaction.status == LiabilitiesStatus.PAID
+                        else -> false
+                    }
+                }
+
+                Filter.AFFECTED -> {
+                    transaction.getAffectAmount == "Yes"
+                }
+
+                Filter.UN_AFFECTED -> {
+                    transaction.getAffectAmount == "No"
+                }
+
+                else -> targetTypes.isEmpty() || transaction.type in targetTypes
+            }
+        }
+    }
 }

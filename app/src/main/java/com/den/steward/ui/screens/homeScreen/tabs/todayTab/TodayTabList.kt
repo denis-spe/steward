@@ -30,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,6 +44,7 @@ import com.den.steward.R
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.Filter
+import com.den.steward.backend.states.Filter.Companion.icon
 import com.den.steward.backend.states.OrderBy
 import com.den.steward.backend.states.SortBy
 import com.den.steward.backend.states.todayTabState.TodayTabDataState
@@ -129,19 +131,7 @@ fun TodayTabListPanelButtons(
     val iconSize = 20.dp
 
     val filterIcon = if (filter.size == 1) {
-        when (filter.first()) {
-            Filter.ALL -> R.drawable.filter
-            Filter.EARNINGS -> R.drawable.ic_earnings
-            Filter.EXPENSE -> R.drawable.ic_expense
-            Filter.GOAL -> R.drawable.ic_finance_target
-            Filter.SAVINGS -> R.drawable.ic_savings
-            Filter.REPAYMENT -> R.drawable.ic_repayment
-            Filter.SETTLEMENT -> R.drawable.ic_refund
-            Filter.ATTAIN -> R.drawable.ic_attain
-            Filter.LENT -> R.drawable.ic_loan
-            Filter.DEBT -> R.drawable.ic_debt
-            Filter.PLAN -> R.drawable.ic_plan
-        }
+        filter.first().icon
     } else {
         R.drawable.filter
     }
@@ -306,11 +296,7 @@ fun TodayTabLazyList(
         balanceStatStates.flow.formatToAmount()
     }
 
-    val dismissState: SwipeToDismissBoxState = rememberSwipeToDismissBoxState(
-        positionalThreshold = { distance: Float ->
-            distance * 0.5f
-        }
-    )
+    var swipedState by remember { mutableStateOf<SwipeToDismissBoxState?>(null) }
     val scope = rememberCoroutineScope()
 
     LazyColumn(
@@ -356,6 +342,11 @@ fun TodayTabLazyList(
                 key = { index -> "today_${transactions[index].id}" }
             ) { index ->
                 val transaction = transactions[index]
+                val dismissState = rememberSwipeToDismissBoxState(
+                    positionalThreshold = { distance: Float ->
+                        distance * 0.5f
+                    }
+                )
 
                 TodayTabLazyListItem(
                     dismissState = dismissState,
@@ -365,11 +356,20 @@ fun TodayTabLazyList(
                         fadeInSpec = tween(1000),
                     ),
                     onDelete = {
-                        todayViewModel.updateSelectedTransactionToDelete(transaction)
+                        swipedState = dismissState
+                        todayViewModel.updateSelectedTransactionToDelete(it)
                     },
                     onClick = {
                         selectedTransactionForView.value = transaction
                     }
+                )
+            }
+
+            item(
+                key = "Space up"
+            ) {
+                Spacer(
+                    modifier = Modifier.height(55.dp)
                 )
             }
         } else {
@@ -392,9 +392,9 @@ fun TodayTabLazyList(
         onDialogShow = todayUiState.openDeleteDialog,
         onDelete = todayViewModel::deleteTransaction,
     ) {
+        todayViewModel.updateOpenDeleteDialog(false)
         scope.launch {
-            dismissState.reset()
-            todayViewModel.updateOpenDeleteDialog(false)
+            swipedState?.reset()
         }
     }
 }

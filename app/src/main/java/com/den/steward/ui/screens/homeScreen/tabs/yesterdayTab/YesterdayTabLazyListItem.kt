@@ -1,5 +1,5 @@
 // Glory be to LORD our GOD
-package com.den.steward.ui.screens.homeScreen.tabs.todayTab
+package com.den.steward.ui.screens.homeScreen.tabs.yesterdayTab
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
@@ -43,7 +43,7 @@ import com.den.steward.ui.componentExtenison.shimmerEffect
 import com.den.steward.ui.components.SwipeDismiss
 
 @Composable
-fun TodayTabLazyListItem(
+fun YesterdayTabLazyListItem(
     modifier: Modifier = Modifier,
     transaction: Transaction,
     shape: Shape = MaterialTheme.shapes.small,
@@ -318,7 +318,7 @@ fun TodayTabLazyListItem(
 }
 
 @Composable
-fun TodayTabLazyListItemShimmer() {
+fun YesterdayTabLazyListItemShimmer() {
     Surface(
         modifier = Modifier.padding(vertical = 4.dp),
         shape = MaterialTheme.shapes.small,

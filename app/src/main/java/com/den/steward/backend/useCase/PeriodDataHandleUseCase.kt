@@ -8,6 +8,7 @@ import com.den.steward.backend.states.Filter.Companion.toTransactionType
 import com.den.steward.backend.states.OrderBy
 import com.den.steward.backend.states.PeriodType
 import com.den.steward.backend.states.SortBy
+import com.den.steward.helper.filterByListOfFilters
 import com.den.steward.helper.toLocalDateTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -80,10 +81,8 @@ class PeriodDataHandleUseCase @Inject constructor(
                     var filtered = state.data.filter { it.createdAt in startMillis until endMillis }
 
                     // 2. Filter by transaction type
-                    val targetTypes = filter.mapNotNull { it.toTransactionType }
-                    if (targetTypes.isNotEmpty()) {
-                        filtered = filtered.filter { it.type in targetTypes }
-                    }
+                    filtered = filtered.filterByListOfFilters(filter)
+
 
                     val comparator = when (sortBy) {
                         SortBy.TIME -> compareBy<Transaction> { it.createdAt }
@@ -167,22 +166,6 @@ class PeriodDataHandleUseCase @Inject constructor(
                 val end = start.plusYears(1)
                 getTransactionsInRange(start, end, orderBy, filter, sortBy = sortBy)
             }
-        }
-    }
-
-    private fun mapFilterToTransactionType(filter: Filter): TransactionType? {
-        return when (filter) {
-            Filter.EARNINGS -> TransactionType.EARNINGS
-            Filter.EXPENSE -> TransactionType.EXPENSE
-            Filter.GOAL -> TransactionType.GOAL
-            Filter.SAVINGS -> TransactionType.SAVINGS
-            Filter.REPAYMENT -> TransactionType.REPAYMENT
-            Filter.SETTLEMENT -> TransactionType.SETTLEMENT
-            Filter.ATTAIN -> TransactionType.ATTAIN
-            Filter.LENT -> TransactionType.LENT
-            Filter.DEBT -> TransactionType.DEBT
-            Filter.PLAN -> TransactionType.PLAN
-            Filter.ALL -> null
         }
     }
 
