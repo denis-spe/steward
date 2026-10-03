@@ -1,6 +1,7 @@
 // Glory be to LORD our GOD
 package com.den.steward.ui.screens.homeScreen.tabs.planTab
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,7 +49,7 @@ fun PlanTabLazyListItem(
     val typeColor = colorResource(id = transaction.type.color)
     val statusColor = colorResource(id = transaction.status.color)
     val amount = remember(transaction.transactions) {
-        transaction.transactions.calculateFlow
+        transaction.getAmountOrValue ?: 0.0
     }
 
     val color = when {
@@ -89,11 +90,10 @@ fun PlanTabLazyListItem(
                         .background(typeColor.copy(alpha = 0.1f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
+                    Image(
                         painter = painterResource(id = transaction.selectedIcon),
                         contentDescription = null,
                         modifier = Modifier.size(20.dp),
-                        tint = typeColor
                     )
                 }
 

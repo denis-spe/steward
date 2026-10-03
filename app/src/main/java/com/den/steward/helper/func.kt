@@ -3,6 +3,7 @@ package com.den.steward.helper
 
 import com.den.steward.backend.entitles.LiabilitiesStatus
 import com.den.steward.backend.entitles.Transaction
+import com.den.steward.backend.states.Affected
 import com.den.steward.backend.states.Filter
 import com.den.steward.backend.states.Filter.Companion.toTransactionType
 import com.den.steward.backend.states.OrderBy
@@ -84,10 +85,10 @@ fun filterAndSortTodayTransactions(
                         }
                     }
                     Filter.AFFECTED -> {
-                        transaction.getAffectAmount == "Yes"
+                        transaction.getAffectedAmount == Affected.AFFECTED
                     }
                     Filter.UN_AFFECTED -> {
-                        transaction.getAffectAmount == "No"
+                        transaction.getAffectedAmount == Affected.NEUTRAL
                     }
                     else -> targetTypes.isEmpty() || transaction.type in targetTypes
                 }

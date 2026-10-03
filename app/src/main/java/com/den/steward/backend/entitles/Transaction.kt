@@ -2,6 +2,8 @@ package com.den.steward.backend.entitles
 
 import androidx.compose.runtime.Stable
 import com.den.steward.R
+import com.den.steward.backend.states.Affected
+import com.den.steward.helper.calculateFlow
 import com.den.steward.helper.formatToAmount
 import com.den.steward.helper.title
 
@@ -19,14 +21,12 @@ sealed class Transaction {
         val initialValue: Double = 0.0,
         override val type: TransactionType = TransactionType.PLAN,
         override val createdAt: Long = System.currentTimeMillis(),
-        val selectedIcon: Int = R.drawable.ic_plan,
+        val selectedIcon: Int = R.drawable.plan,
         val transactions: List<PlanFulfillment> = emptyList(),
         val plannedAt: Long = System.currentTimeMillis(),
         val endAt: Long = System.currentTimeMillis(),
         val status: PlanStatus = PlanStatus.NOT_YET,
-    ) : Transaction() {
-
-    }
+    ) : Transaction()
 
     @Stable
     data class PlanFulfillment(
@@ -310,7 +310,14 @@ sealed class Transaction {
                 is Settlement -> this.amount
                 is Repayment -> this.amount
                 is Attain -> this.value
-                is Plan -> this.initialValue
+                is Plan -> {
+                    val initialAmount = this.initialValue
+                    if (initialAmount > 0) {
+                        initialAmount + this.transactions.calculateFlow
+                    } else {
+                        this.transactions.calculateFlow
+                    }
+                }
                 is PlanFulfillment -> this.value
                 is Achievement -> this.value
                 is Ramping -> this.amount
@@ -342,13 +349,13 @@ sealed class Transaction {
                     else this.value.toString()
                 }
 
-                is Plan -> this.initialValue.formatToAmount()
+                is Plan -> (this.getAmountOrValue ?: this.initialValue).formatToAmount()
                 is PlanFulfillment -> this.value.formatToAmount()
                 is Ramping -> this.amount.formatToAmount()
             }
         }
 
-    val getAffectAmount: String?
+    val getAffectedAmount: Affected?
         get() {
             val affectAmount = when (this) {
                 is Earnings -> this.affectAmount
@@ -367,7 +374,7 @@ sealed class Transaction {
             }
 
             if (affectAmount == null) return null
-            return if (affectAmount) "Yes" else "No"
+            return if (affectAmount) Affected.AFFECTED else Affected.NEUTRAL
         }
 
     val getIcon: Int

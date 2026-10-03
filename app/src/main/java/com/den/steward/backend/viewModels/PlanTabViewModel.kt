@@ -197,7 +197,12 @@ class PlanTabViewModel @Inject constructor(
             return
         }
 
-        _planTabUiState.update { it.copy(isSaving = true) }
+        _planTabUiState.update { it.copy(
+            isSaving = true,
+            amount = TextFieldState(),
+            label = TextFieldState(),
+            note = TextFieldState(),
+        ) }
 
         viewModelScope.launch {
             try {

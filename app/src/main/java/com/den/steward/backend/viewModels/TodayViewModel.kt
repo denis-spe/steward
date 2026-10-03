@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.den.steward.backend.entitles.PaymentMethod
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
+import com.den.steward.backend.states.Affected
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.Filter
 import com.den.steward.backend.states.OrderBy
@@ -119,7 +120,7 @@ class TodayViewModel @Inject constructor(
         val flow = todayTransaction.calculateFlow
 
         transactions.forEach { transaction ->
-            if (transaction.getAffectAmount == "Yes") {
+            if (transaction.getAffectedAmount == Affected.AFFECTED) {
                 val method = transaction.getPaymentMethodOrNull ?: return@forEach
                 val amount = transaction.getAmountOrValue ?: 0.0
                 val current = paymentMethodStat.getOrDefault(method, 0.0)
@@ -183,7 +184,7 @@ class TodayViewModel @Inject constructor(
     private fun handleDonutChart(todayTransactions: List<Transaction>): ImmutableList<DonutChartData> {
         return todayTransactions
             .filter { it.type != TransactionType.GOAL && it.type != TransactionType.ATTAIN }
-            .filter { (it.getAffectAmount?.lowercase() ?: "no") == "yes" }
+            .filter { (it.getAffectedAmount ?: Affected.NEUTRAL) == Affected.AFFECTED }
             .groupBy { it.type }
             .map { (type, groupedTransactions) ->
                 val color = Color(ContextCompat.getColor(context, type.color))

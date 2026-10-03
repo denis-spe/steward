@@ -1,11 +1,10 @@
 package com.den.steward.backend.states.allTabState
 
-import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.Immutable
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.states.OrderBy
 import com.den.steward.backend.states.PeriodType
-import com.den.steward.backend.states.SortBy
 import java.time.LocalDate
 import java.time.temporal.IsoFields
 
@@ -21,5 +20,8 @@ data class AllUiState(
     val selectedTransactionToDelete: Transaction? = null,
     val selectedTransactionToEdit: Transaction? = null,
     val openDeleteDialog: Boolean = false,
-    val openEditDialog: Boolean = false
+    val openEditDialog: Boolean = false,
+    val search: TextFieldState = TextFieldState(),
+    val isSearchExpanded: Boolean = false,
+    val isRecentSearchExpanded: Boolean = false,
 )

@@ -37,7 +37,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.den.steward.backend.entitles.Transaction
+import com.den.steward.backend.states.Affected
 import com.den.steward.helper.formattedTime
+import com.den.steward.helper.title
 import com.den.steward.helper.toLocalDateTime
 import com.den.steward.ui.componentExtenison.shimmerEffect
 import com.den.steward.ui.components.SwipeDismiss
@@ -63,7 +65,7 @@ fun TodayTabLazyListItem(
         object {
             val amount = transaction.getFormattedAmountOrValue
             val paymentMethod = transaction.getPaymentMethodOrNull
-            val affectAmount = transaction.getAffectAmount
+            val affectAmount = transaction.getAffectedAmount?.label
             val parent = transaction.getParentTransaction
             val typeColorRes = transaction.type.color
         }
@@ -181,9 +183,9 @@ fun TodayTabLazyListItem(
                                                     .padding(horizontal = 6.dp, vertical = 2.dp)
                                             ) {
                                                 Text(
-                                                    text = if (uiData.affectAmount == "Yes") "Affected" else "Neutral",
+                                                    text = uiData.affectAmount,
                                                     style = MaterialTheme.typography.labelSmall,
-                                                    color = if (uiData.affectAmount == "Yes")
+                                                    color = if (uiData.affectAmount == Affected.AFFECTED.label)
                                                         typeColor
                                                     else MaterialTheme.colorScheme.onSurfaceVariant
                                                 )

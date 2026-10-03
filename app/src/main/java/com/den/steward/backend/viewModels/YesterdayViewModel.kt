@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
+import com.den.steward.backend.states.Affected
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.yesterdayTabState.YesterdayTransactionSummary
 import com.den.steward.backend.states.Filter
@@ -140,7 +141,7 @@ class YesterdayViewModel @Inject constructor(
         val filterNoneAmount = transactions.filter {
             it.type != TransactionType.GOAL &&
                     it.type != TransactionType.ATTAIN
-        }.filter { (it.getAffectAmount?.lowercase() ?: "no") == "yes" }
+        }.filter { (it.getAffectedAmount ?: Affected.NEUTRAL) == Affected.AFFECTED }
 
         // 2. Find all unique hours that have any activity across any transaction type
         val allUniqueHours = filterNoneAmount.map {

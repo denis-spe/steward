@@ -168,7 +168,7 @@ private fun TransactionCard(
             value = paymentMethod.toString()
         )
         TransactionRow(
-            key = "Affect Amount",
+            key = "Affected Amount",
             value = if (affectAmount) "Yes" else "No"
         )
 

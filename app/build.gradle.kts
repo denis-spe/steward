@@ -118,6 +118,13 @@ dependencies {
     implementation(libs.androidx.profileinstaller)
     implementation(libs.exp4j)
     implementation(libs.kotlinx.collections.immutable)
+    implementation(libs.compose)
+    // Jetpack DataStore Preferences
+    implementation(libs.androidx.datastore.preferences)
+
+    // Lifecycle components for collecting state in Compose safely
+    implementation(libs.androidx.lifecycle.runtime.compose.v2110)
+    implementation(libs.androidx.lifecycle.viewmodel.compose.v2110)
 
     // When using Kotlin.
     ksp(libs.hilt.android.compiler)
@@ -151,6 +158,4 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.runner)
     debugImplementation(libs.androidx.compose.ui.tooling)
-
-    implementation(libs.compose)
 }

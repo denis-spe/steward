@@ -1,12 +1,16 @@
 package com.den.steward.backend.viewModels
 
 import android.content.Context
+import androidx.compose.foundation.text.input.clearText
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.den.steward.backend.datastore.SearchHistoryManager
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
+import com.den.steward.backend.states.Affected
 import com.den.steward.backend.states.allTabState.AllTransactionSummary
 import com.den.steward.backend.states.allTabState.AllUiState
 import com.den.steward.backend.states.DataState
@@ -33,6 +37,7 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -46,6 +51,7 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.time.debounce
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.IsoFields
@@ -62,11 +68,25 @@ private data class TimedTransaction(
     val dateTime: LocalDateTime
 )
 
-private data class SortFilterControllers(
+// 1. Define distinct data classes for your criteria
+private data class FilterCriteria(val filter: Filter, val orderBy: OrderBy, val sortBy: SortBy)
+private data class UiCriteria(
+    val selectedDate: LocalDate,
+    val periodType: PeriodType,
+    val weekNumber: Int?
+)
+private data class TransactionCriteria(
+    val selectedDate: LocalDate,
+    val periodType: PeriodType,
+    val isTransactionListSort: OrderBy,
+)
+
+private data class Controllers(
     val selectedDate: LocalDate,
     val periodType: PeriodType,
     val triple: Triple<List<Filter>, OrderBy, SortBy>,
-    val isTransactionListSort: OrderBy
+    val isTransactionListSort: OrderBy,
+    val search: String
 )
 
 @HiltViewModel
@@ -74,6 +94,7 @@ class AllViewModel @Inject constructor(
     private val periodDataHandleUseCase: PeriodDataHandleUseCase,
     private val deletionUseCase: DataDeletionUseCase,
     dataFetchUseCase: DataFetchUseCase,
+    private val searchHistoryManager: SearchHistoryManager,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
     private val _allUiState = MutableStateFlow(AllUiState())
@@ -88,12 +109,26 @@ class AllViewModel @Inject constructor(
         .distinctUntilChanged()
 
     private val allUiStateCriteriaFlow = _allUiState
-        .map { Triple(it.selectedDate, it.periodType, it.weekNumber) }
+        .map { UiCriteria(
+            it.selectedDate,
+            it.periodType,
+            it.weekNumber,
+        ) }
         .distinctUntilChanged()
 
     private val allUiStateCriteriaFlowForTransaction = _allUiState
-        .map { Triple(it.selectedDate, it.periodType, it.isTransactionListSort) }
+        .map { TransactionCriteria(
+            it.selectedDate,
+            it.periodType,
+            it.isTransactionListSort,
+        ) }
         .distinctUntilChanged()
+
+    @OptIn(FlowPreview::class)
+    private val debouncedSearchQueryFlow = snapshotFlow { _allUiState.value.search.text }
+        .map { it.toString().trim() } // Convert CharSequence to String and trim spaces
+        .distinctUntilChanged()       // Don't re-trigger if text variations match
+        .debounce(java.time.Duration.ofMillis(300))
 
     // Color/label resolution for each TransactionType is fixed for the lifetime of the
     // ViewModel (context doesn't change), so resolve it once instead of on every chart
@@ -245,19 +280,60 @@ class AllViewModel @Inject constructor(
         }
     }
 
+    fun updateIsSearchExpanded(show: Boolean) {
+        if (!show) {
+            _allUiState.value.search.clearText()
+        }
+        _allUiState.update {
+            it.copy(isSearchExpanded = show)
+        }
+    }
+
+    fun updateIsRecentSearchExpanded(show: Boolean) {
+        _allUiState.update {
+            it.copy(isRecentSearchExpanded = show)
+        }
+    }
+
+    fun saveSearchQuery(query: String) {
+        viewModelScope.launch {
+            searchHistoryManager.saveSearchQuery(query)
+        }
+    }
+
+    fun clearRecentSearches() {
+        viewModelScope.launch {
+            searchHistoryManager.clearRecentSearches()
+        }
+    }
+
+    val recentSearches = searchHistoryManager.recentSearches
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList<String>().toImmutableList()
+        )
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val allTabDataState: StateFlow<DataState<AllTabDataState>> = combine(
-        allUiStateCriteriaFlow, filterCriteriaFlow
-    ) { (selectedDate, periodType, _), (filter, orderBy, sortBy) ->
-        Triple(selectedDate, periodType, Triple(filter, orderBy, sortBy))
-    }.flatMapLatest { (selectedDate, periodType, sortAndFilter) ->
+        debouncedSearchQueryFlow, allUiStateCriteriaFlow, filterCriteriaFlow
+    ) {search, (selectedDate, periodType, _,), (filter, orderBy, sortBy) ->
+        Controllers(
+            selectedDate,
+            periodType,
+            Triple(filter, orderBy, sortBy),
+            OrderBy.DESCENDING,
+            search
+        )
+    }.flatMapLatest { (selectedDate, periodType, sortAndFilter, _, search) ->
         val (filter, orderBy, sortBy) = sortAndFilter
         periodDataHandleUseCase.getTransactionsForPeriod(
             date = selectedDate,
             periodType = periodType,
             orderBy = orderBy,
+            filter = filter,
             sortBy = sortBy,
-            filter = filter
+            search = search
         )
             .distinctUntilChanged()
             .map { stateResult ->
@@ -267,7 +343,7 @@ class AllViewModel @Inject constructor(
 
                         // Parse each transaction's date/time exactly once, then reuse
                         // it for grouping, the summary calc, and the chart builder
-                        // instead of re-parsing per pass.
+                        // instead of reparsing per pass.
                         val timedTransactions = data.map {
                             TimedTransaction(it, it.createdAt.toLocalDateTime())
                         }
@@ -320,22 +396,24 @@ class AllViewModel @Inject constructor(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val transactions: StateFlow<DataState<ImmutableMap<String, List<Transaction>>>> = combine(
-        allUiStateCriteriaFlowForTransaction, filterCriteriaFlow
-    ) { (selectedDate, periodType, isTransactionListSort), (filter, orderBy, sortBy) ->
-        SortFilterControllers(
+        debouncedSearchQueryFlow,allUiStateCriteriaFlowForTransaction, filterCriteriaFlow
+    ) { search, (selectedDate, periodType, isTransactionListSort), (filter, orderBy, sortBy) ->
+        Controllers(
             selectedDate,
             periodType,
             Triple(filter, orderBy, sortBy),
-            isTransactionListSort
+            isTransactionListSort,
+            search
         )
-    }.flatMapLatest { (selectedDate, periodType, sortAndFilter, isTransactionListSort) ->
+    }.flatMapLatest { (selectedDate, periodType, sortAndFilter, isTransactionListSort, search) ->
         val (filter, orderBy, sortBy) = sortAndFilter
         periodDataHandleUseCase.getTransactionsForPeriod(
             date = selectedDate,
             periodType = periodType,
             orderBy = orderBy,
             sortBy = sortBy,
-            filter = filter
+            filter = filter,
+            search = search
         )
             .distinctUntilChanged()
             .map { stateResult ->
@@ -406,10 +484,22 @@ class AllViewModel @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     fun transactionCounts(page: Int): StateFlow<ImmutableList<Pair<Int?, Int>>> =
         countsCache.getOrPut(page) {
-            filterCriteriaFlow.flatMapLatest { (filter, orderBy, sortBy) ->
+            combine(
+                debouncedSearchQueryFlow,allUiStateCriteriaFlowForTransaction, filterCriteriaFlow
+            ) { search, (selectedDate, periodType, isTransactionListSort), (filter, orderBy, sortBy) ->
+                Controllers(
+                    selectedDate,
+                    periodType,
+                    Triple(filter, orderBy, sortBy),
+                    isTransactionListSort,
+                    search
+                )
+            }.flatMapLatest { (_, _, sortAndFilter, _, search) ->
+                val (filter, orderBy, sortBy) = sortAndFilter
+
                 val weekDate = getWeekDaysForPage(page).first()
                 periodDataHandleUseCase.weeklyTransactions(
-                    now = weekDate, orderBy = orderBy, filter = filter, sortBy = sortBy
+                    now = weekDate, orderBy = orderBy, filter = filter, sortBy = sortBy, search = search
                 ).distinctUntilChanged().map { stateResult ->
                     when (stateResult) {
                         is DataState.Success -> {
@@ -436,7 +526,6 @@ class AllViewModel @Inject constructor(
                 )
         }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     val transactionCountsByDate: StateFlow<Pair<Map<LocalDate, Int>, Map<LocalDate, Int>>> =
         dataFetchUseCase.fetchAllTransactions.distinctUntilChanged().map { stateResult ->
             when (stateResult) {
@@ -474,7 +563,7 @@ class AllViewModel @Inject constructor(
         var totalSavings = 0.0
 
         timedTransactions.forEach { (transaction, _) ->
-            if (transaction.getAffectAmount == "Yes") {
+            if (transaction.getAffectedAmount == Affected.AFFECTED) {
                 when (transaction) {
                     is Transaction.Earnings -> totalReceived += transaction.amount
                     is Transaction.Savings -> totalSavings += transaction.amount
@@ -518,7 +607,7 @@ class AllViewModel @Inject constructor(
         val filtered = timedTransactions.filter { (transaction, _) ->
             transaction.type != TransactionType.GOAL &&
                     transaction.type != TransactionType.ATTAIN &&
-                    transaction.getAffectAmount.equals("yes", ignoreCase = true)
+                    transaction.getAffectedAmount == Affected.AFFECTED
         }
 
         val allUniqueKeys = filtered.map { keyOf(it.dateTime) }.distinct().sorted()

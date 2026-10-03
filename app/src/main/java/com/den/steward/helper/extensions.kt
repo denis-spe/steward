@@ -3,22 +3,18 @@ package com.den.steward.helper
 
 import android.util.Log
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextRange
-import androidx.core.content.ContextCompat
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import com.den.steward.backend.entitles.LiabilitiesStatus
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
+import com.den.steward.backend.states.Affected
 import com.den.steward.backend.states.Filter
 import com.den.steward.backend.states.Filter.Companion.toTransactionType
 import com.den.steward.backend.states.Filter.PAID
 import com.den.steward.backend.states.Filter.UNPAID
-import com.den.steward.ui.components.charts.collections.ChartData
-import com.den.steward.ui.components.charts.collections.ChartDataCollection
 import net.objecthunter.exp4j.ExpressionBuilder
-import okhttp3.internal.toImmutableList
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.text.DecimalFormat
@@ -29,8 +25,6 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.util.Locale
-import kotlin.collections.component1
-import kotlin.collections.component2
 import kotlin.collections.sumOf
 import kotlin.math.abs
 import kotlin.math.log10
@@ -407,7 +401,7 @@ val List<Transaction>.calculateFlow: Double get() {
     var outgoing = 0.0
 
     this.forEach { transaction ->
-        if (transaction.getAffectAmount == "Yes") {
+        if (transaction.getAffectedAmount == Affected.AFFECTED) {
             val amount = transaction.getAmountOrValue ?: 0.0
             when (transaction.type) {
                 TransactionType.EARNINGS,
@@ -463,11 +457,11 @@ fun List<Transaction>.filterByListOfFilters(filters: List<Filter>): List<Transac
                 }
 
                 Filter.AFFECTED -> {
-                    transaction.getAffectAmount == "Yes"
+                    transaction.getAffectedAmount == Affected.AFFECTED
                 }
 
                 Filter.UN_AFFECTED -> {
-                    transaction.getAffectAmount == "No"
+                    transaction.getAffectedAmount == Affected.NEUTRAL
                 }
 
                 else -> targetTypes.isEmpty() || transaction.type in targetTypes

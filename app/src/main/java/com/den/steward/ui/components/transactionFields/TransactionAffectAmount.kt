@@ -23,7 +23,7 @@ fun TransactionAffectAmount(
     val color = colorResource(id = colorResId)
 
     TransactionFieldCard(
-        title = "Affect Amount",
+        title = "Affected Amount",
         modifier = modifier,
         leadingContent = {
             Image(

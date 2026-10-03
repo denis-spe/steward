@@ -126,7 +126,7 @@ fun PlanFulfillmentBottomDrawerSheet(
     // We use remember keyed to the 'transactions' list so it only recalculates
     // the math when the actual list of transactions changes.
     val amount = remember(parentTransaction.transactions) {
-        parentTransaction.transactions.calculateFlow
+        parentTransaction.getAmountOrValue ?: 0.0
     }
 
     // 2. Derive the color directly from the amount
@@ -224,9 +224,6 @@ fun PlanFulfillmentBottomDrawerSheet(
                                                     painter = painterResource(id = parentTransaction.selectedIcon),
                                                     contentDescription = null,
                                                     modifier = Modifier.size(25.dp),
-                                                    colorFilter = ColorFilter.tint(
-                                                        transactionTypeColor
-                                                    )
                                                 )
                                             }
                                         }

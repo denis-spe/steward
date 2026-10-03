@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
+import com.den.steward.backend.states.Affected
 import com.den.steward.backend.states.DataState
 import com.den.steward.helper.toLocalDateTime
 import com.den.steward.ui.components.charts.DonutChartData
@@ -39,7 +40,7 @@ class ChartUseCase @Inject constructor (
                                 it.type != TransactionType.ATTAIN
                     }
                     val group = filterNoneAmount
-                        .filter { (it.getAffectAmount?.lowercase() ?: "no") == "yes" }
+                        .filter { (it.getAffectedAmount ?: Affected.NEUTRAL) == Affected.AFFECTED }
                         .groupBy { it.type }
 
                     val data = group.map { (type, groupedTransactions) ->
@@ -69,7 +70,7 @@ class ChartUseCase @Inject constructor (
 
             if (state is DataState.Success) {
                 state.data.forEach { transaction ->
-                    if (transaction.getAffectAmount == "Yes") {
+                    if (transaction.getAffectedAmount == Affected.AFFECTED) {
                         when (transaction.type) {
                             TransactionType.EARNINGS,
                             TransactionType.DEBT,
@@ -102,7 +103,7 @@ class ChartUseCase @Inject constructor (
                     val filterNoneAmount = transactions.filter {
                         it.type != TransactionType.GOAL &&
                                 it.type != TransactionType.ATTAIN
-                    }.filter { (it.getAffectAmount?.lowercase() ?: "no") == "yes" }
+                    }.filter { (it.getAffectedAmount ?: Affected.NEUTRAL) == Affected.AFFECTED }
 
                     // 2. Find all unique hours that have any activity across any transaction type
                     val allUniqueHours = filterNoneAmount.map { 

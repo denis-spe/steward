@@ -1,14 +1,13 @@
 package com.den.steward.backend.useCase
 
 import com.den.steward.backend.entitles.Transaction
-import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.Filter
-import com.den.steward.backend.states.Filter.Companion.toTransactionType
 import com.den.steward.backend.states.OrderBy
 import com.den.steward.backend.states.PeriodType
 import com.den.steward.backend.states.SortBy
 import com.den.steward.helper.filterByListOfFilters
+import com.den.steward.helper.title
 import com.den.steward.helper.toLocalDateTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -69,7 +68,8 @@ class PeriodDataHandleUseCase @Inject constructor(
         endDate: LocalDate, // Exclusive
         orderBy: OrderBy = OrderBy.ASCENDING,
         filter: List<Filter> = emptyList(),
-        sortBy: SortBy
+        sortBy: SortBy,
+        search: String
     ): Flow<DataState<List<Transaction>>> {
         val startMillis = startDate.atStartOfDay(zoneId).toInstant().toEpochMilli()
         val endMillis = endDate.atStartOfDay(zoneId).toInstant().toEpochMilli()
@@ -82,6 +82,15 @@ class PeriodDataHandleUseCase @Inject constructor(
 
                     // 2. Filter by transaction type
                     filtered = filtered.filterByListOfFilters(filter)
+                        .filter { transaction ->
+                            transaction.getLabel.contains(search, ignoreCase = true) ||
+                            transaction.getNote.contains(search, ignoreCase = true) ||
+                            transaction.getAmountOrValue?.toString()?.contains(search, ignoreCase = true) == true ||
+                            transaction.getPaymentMethodOrNull?.label?.contains(search, ignoreCase = true) == true ||
+                            transaction.getAffectedAmount?.label?.contains(search, ignoreCase = true) == true ||
+                            transaction.getStatus?.contains(search, ignoreCase = true) == true ||
+                            transaction.type.toString().contains(search, ignoreCase = true)
+                        }
 
 
                     val comparator = when (sortBy) {
@@ -122,7 +131,8 @@ class PeriodDataHandleUseCase @Inject constructor(
         orderBy: OrderBy = OrderBy.ASCENDING,
         filterForDayOfWeek: DayOfWeek? = null,
         filter: List<Filter> = emptyList(),
-        sortBy: SortBy
+        sortBy: SortBy,
+        search: String
     ): Flow<DataState<List<Transaction>>> {
         val startOfWeek = now.with(TemporalAdjusters.previousOrSame(firstDayOfWeek))
         
@@ -130,14 +140,16 @@ class PeriodDataHandleUseCase @Inject constructor(
             val selectedDate = startOfWeek.with(TemporalAdjusters.nextOrSame(filterForDayOfWeek))
             getTransactionsInRange(
                 selectedDate, selectedDate.plusDays(1),
-                orderBy, filter, sortBy = sortBy)
+                orderBy, filter, sortBy = sortBy, search = search
+            )
         } else {
             getTransactionsInRange(
                 startOfWeek,
                 startOfWeek.plusDays(7),
                 orderBy, filter,
-                sortBy = sortBy
-                )
+                sortBy = sortBy,
+                search = search
+            )
         }
     }
 
@@ -149,22 +161,23 @@ class PeriodDataHandleUseCase @Inject constructor(
         periodType: PeriodType,
         orderBy: OrderBy = OrderBy.ASCENDING,
         filter: List<Filter> = emptyList(),
-        sortBy: SortBy
+        sortBy: SortBy,
+        search: String
     ): Flow<DataState<List<Transaction>>> {
         return when (periodType) {
             PeriodType.DAY -> getTransactionsInRange(
-                date, date.plusDays(1), orderBy, filter, sortBy = sortBy
+                date, date.plusDays(1), orderBy, filter, sortBy = sortBy, search = search
             )
-            PeriodType.WEEK -> weeklyTransactions(date, orderBy, null, filter, sortBy = sortBy)
+            PeriodType.WEEK -> weeklyTransactions(date, orderBy, null, filter, sortBy = sortBy, search = search)
             PeriodType.MONTH -> {
                 val start = date.with(TemporalAdjusters.firstDayOfMonth())
                 val end = start.plusMonths(1)
-                getTransactionsInRange(start, end, orderBy, filter, sortBy = sortBy)
+                getTransactionsInRange(start, end, orderBy, filter, sortBy = sortBy, search = search)
             }
             PeriodType.YEAR -> {
                 val start = date.with(TemporalAdjusters.firstDayOfYear())
                 val end = start.plusYears(1)
-                getTransactionsInRange(start, end, orderBy, filter, sortBy = sortBy)
+                getTransactionsInRange(start, end, orderBy, filter, sortBy = sortBy, search = search)
             }
         }
     }
