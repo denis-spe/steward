@@ -50,6 +50,7 @@ fun AllTab(
     val transactions by allViewModel.transactions.collectAsStateWithLifecycle()
     val homeUiState by homeViewModel.homeUiState.collectAsStateWithLifecycle()
     val recentSearches by allViewModel.recentSearches.collectAsStateWithLifecycle()
+    val dataUpdateState by allViewModel.dataUpdateState.collectAsStateWithLifecycle()
 
     LaunchedEffect(homeUiState.allTabFilter) {
         homeUiState.allTabFilter?.let {
@@ -170,6 +171,7 @@ fun AllTab(
         )
 
         AllTabLazyList(
+            dataUpdateState = dataUpdateState,
             allTabDataState = allTabDataState,
             transactions = transactions,
             selectedDate = allUiState.selectedDate,
@@ -189,7 +191,18 @@ fun AllTab(
             updatePeriodType = allViewModel::updatePeriodType,
             updateSelectedTransactionToDelete = allViewModel::updateSelectedTransactionToDelete,
             updateOpenDeleteDialog = allViewModel::updateOpenDeleteDialog,
-            onDeleteTransaction = allViewModel::deleteTransaction
+            onUpdateTransaction = allViewModel::onUpdateTransaction,
+            updateSelectedTransactionForUpdate = allViewModel.updateTransaction::updateSelectedTransaction,
+            onResetUpdateBottomSheet = allViewModel.updateTransaction::onReset,
+            onDeleteTransaction = allViewModel::deleteTransaction,
+            updateCorrectLabel = allViewModel.updateTransaction::updateCurrentLabel,
+            updateIsAmountCorrect = allViewModel.updateTransaction::updateIsAmountCorrect,
+            updateSelectedIcon = allViewModel.updateTransaction::updateSelectedIcon,
+            updateCorrectNote = allViewModel.updateTransaction::updateCurrentNote,
+            updateCorrectAmount = allViewModel.updateTransaction::updateCurrentAmount,
+            updatePaymentMethod = allViewModel.updateTransaction::updatePaymentMethod,
+            updateIsLabelCorrect = allViewModel.updateTransaction::updateIsLabelCorrect,
+            updateIsAffectingAmount = allViewModel.updateTransaction::updateIsAffectingAmount,
         )
     }
 }

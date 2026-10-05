@@ -42,7 +42,7 @@ import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.den.steward.R
 
-private val icons = mapOf(
+val icons = mapOf(
     "Apple" to R.drawable.apple,
     "Banana" to R.drawable.banana,
     "Achievement" to R.drawable.achievement,

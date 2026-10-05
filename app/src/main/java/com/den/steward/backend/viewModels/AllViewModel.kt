@@ -23,6 +23,7 @@ import com.den.steward.backend.states.SortBy
 import com.den.steward.backend.states.allTabState.AllTabDataState
 import com.den.steward.backend.useCase.DataDeletionUseCase
 import com.den.steward.backend.useCase.DataFetchUseCase
+import com.den.steward.backend.useCase.UpdateTransactionUseCase
 import com.den.steward.helper.calculateFlow
 import com.den.steward.helper.formattedDate
 import com.den.steward.helper.toLocalDateTime
@@ -94,11 +95,14 @@ class AllViewModel @Inject constructor(
     private val periodDataHandleUseCase: PeriodDataHandleUseCase,
     private val deletionUseCase: DataDeletionUseCase,
     dataFetchUseCase: DataFetchUseCase,
+    val updateTransaction: UpdateTransactionUseCase,
     private val searchHistoryManager: SearchHistoryManager,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
     private val _allUiState = MutableStateFlow(AllUiState())
     val allUiState = _allUiState.asStateFlow()
+
+    val dataUpdateState = updateTransaction.dataUpdateState
 
     private val _sortAndFilterState = MutableStateFlow(SortAndFilterState())
     val sortAndFilterState = _sortAndFilterState.asStateFlow()
@@ -154,6 +158,13 @@ class AllViewModel @Inject constructor(
                 periodType = PeriodType.WEEK,
                 weekNumber = localDates[0].get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)
             )
+        }
+    }
+
+    fun onUpdateTransaction() {
+        viewModelScope.launch {
+            updateTransaction.updateTransaction()
+            updateTransaction.onReset()
         }
     }
 

@@ -31,9 +31,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.den.steward.R
+import com.den.steward.backend.entitles.PaymentMethod
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.states.allTabState.AllUiState
 import com.den.steward.backend.states.DataState
+import com.den.steward.backend.states.DataUpdateState
 import com.den.steward.backend.states.PeriodType
 import com.den.steward.backend.states.Filter
 import com.den.steward.backend.states.OrderBy
@@ -46,6 +48,9 @@ import com.den.steward.ui.components.SortByBottomSheet
 import com.den.steward.backend.states.allTabState.AllTabDataState
 import com.den.steward.ui.components.TransactionViewDialog
 import com.den.steward.ui.components.DataDeletionDialog
+import com.den.steward.ui.components.SelectedIcon
+import com.den.steward.ui.components.transactionFields.TransactionFieldState
+import com.den.steward.ui.dataUpdate.UpdateTransactionBottomDrawerSheet
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -57,6 +62,7 @@ fun AllTabLazyList(
     sortAndFilterState: SortAndFilterState,
     selectedDate: LocalDate,
     periodType: PeriodType,
+    dataUpdateState: DataUpdateState,
     updateSelectedTransactionForView: (Transaction?) -> Unit,
     updateFilter: (Filter) -> Unit,
     updateSort: (OrderBy) -> Unit,
@@ -71,7 +77,18 @@ fun AllTabLazyList(
     onDeleteTransaction: () -> Unit,
     transactions: DataState<ImmutableMap<String, List<Transaction>>>,
     updateIsTransactionListOrder: (OrderBy) -> Unit,
-    updateIsTransactionListOrderExpanded: (Boolean) -> Unit
+    updateIsTransactionListOrderExpanded: (Boolean) -> Unit,
+    onUpdateTransaction: () -> Unit,
+    updateSelectedTransactionForUpdate: (transition: Transaction?) -> Unit,
+    onResetUpdateBottomSheet: () -> Unit,
+    updateCorrectLabel: (String) -> Unit,
+    updateIsAmountCorrect: (TransactionFieldState) -> Unit,
+    updateSelectedIcon: (SelectedIcon) -> Unit,
+    updateCorrectNote: (String) -> Unit,
+    updateCorrectAmount: (String) -> Unit,
+    updatePaymentMethod: (PaymentMethod) -> Unit,
+    updateIsLabelCorrect: (TransactionFieldState) -> Unit,
+    updateIsAffectingAmount: (Boolean) -> Unit,
 ) {
     val (chartDataState, summaryState) = remember(allTabDataState) {
         when (allTabDataState) {
@@ -163,6 +180,10 @@ fun AllTabLazyList(
                                     transaction = transaction,
                                     onClick = {
                                         updateSelectedTransactionForView(transaction)
+                                    },
+                                    onUpdate = {
+                                        swipedState = dismissState
+                                        updateSelectedTransactionForUpdate(transaction)
                                     },
                                     onDelete = {
                                         swipedState = dismissState
@@ -279,6 +300,30 @@ fun AllTabLazyList(
         onDelete = onDeleteTransaction,
         onDismissRequest = {
             updateOpenDeleteDialog(false)
+            scope.launch {
+                swipedState?.reset()
+            }
+        }
+    )
+
+    UpdateTransactionBottomDrawerSheet(
+        dataUpdateState = dataUpdateState,
+        updateCorrectLabel = updateCorrectLabel,
+        updateIsAmountCorrect = updateIsAmountCorrect,
+        updateSelectedIcon = updateSelectedIcon,
+        updateCorrectNote = updateCorrectNote,
+        updateCorrectAmount = updateCorrectAmount,
+        updatePaymentMethod = updatePaymentMethod,
+        updateIsLabelCorrect = updateIsLabelCorrect,
+        updateIsAffectingAmount = updateIsAffectingAmount,
+        onTransactionUpdate = {
+            onUpdateTransaction()
+            scope.launch {
+                swipedState?.reset()
+            }
+        },
+        reset = {
+            onResetUpdateBottomSheet()
             scope.launch {
                 swipedState?.reset()
             }

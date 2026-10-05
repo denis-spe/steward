@@ -14,13 +14,13 @@ class UpdateDateUseCase @Inject constructor(
 
     suspend fun updateTransactionFulfillment(
         transactionId: String,
-        oldFulfillment: String,
+        oldFulfillmentId: String,
         newFulfillment: Transaction,
     ) {
         storageService.updateTransactionFulfillment(
             user,
             transactionId = transactionId,
-            oldFulfillmentId = oldFulfillment,
+            oldFulfillmentId = oldFulfillmentId,
             newFulfillment = newFulfillment,
         )
     }

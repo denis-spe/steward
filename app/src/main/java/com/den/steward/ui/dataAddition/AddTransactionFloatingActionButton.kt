@@ -43,7 +43,6 @@ import com.den.steward.ui.components.transactionFields.TransactionTimeField
 import com.den.steward.ui.components.transactionbuttons.TransactionButtons
 import com.den.steward.ui.theme.ExtendedTheme
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTransactionFloatingActionButton(
     modifier: Modifier = Modifier,
@@ -101,7 +100,7 @@ fun AddTransactionFloatingActionButton(
 
 
 @Composable
-fun TransactionBottomDrawerSheet(
+private fun TransactionBottomDrawerSheet(
     dataAdditionViewModel: DataAdditionViewModel,
     dataAdditionState: DataAdditionState,
 ) {
@@ -213,9 +212,7 @@ fun TransactionBottomDrawerSheet(
                 transactionType = type,
                 isErrors = dataAdditionState.isLabelCorrect is TransactionFieldState.Error ||
                         dataAdditionState.isAmountCorrect is TransactionFieldState.Error ||
-                        (if (type == TransactionType.GOAL) 
-                            dataAdditionState.isStartNotEqualToEndDateTime is TransactionFieldState.Error 
-                        else false),
+                        (type == TransactionType.GOAL && dataAdditionState.isStartNotEqualToEndDateTime is TransactionFieldState.Error),
                 isLoading = dataAdditionState.isSaving,
                 onClick = dataAdditionViewModel::addCoreEntriesTransaction
             )
