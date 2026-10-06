@@ -392,4 +392,25 @@ class DataAdditionViewModel @Inject constructor(
             }
         }
     }
+
+    fun updateShowRampingBottomSheet(show: Boolean) {
+        if (!show) {
+            _dataAdditionState.update {
+                DataAdditionState()
+            }
+        }
+        _dataAdditionState.update { it.copy(showRampingBottomSheet = show) }
+    }
+
+    fun onExchange() {
+        val fromPayment = _dataAdditionState.value.fromPayment
+        val toPayment = _dataAdditionState.value.toPayment
+
+        _dataAdditionState.update {
+            it.copy(
+                fromPayment = toPayment,
+                toPayment = fromPayment
+            )
+        }
+    }
 }

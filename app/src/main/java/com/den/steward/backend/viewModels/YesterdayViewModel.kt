@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import com.den.steward.backend.useCase.DataFetchUseCase
+import com.den.steward.backend.useCase.UpdateTransactionUseCase
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
@@ -47,6 +48,7 @@ import javax.inject.Inject
 class YesterdayViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val dataDeletionUseCase: DataDeletionUseCase,
+    val updateTransaction: UpdateTransactionUseCase,
     dataFetchUseCase: DataFetchUseCase
 ) : ViewModel() {
 
@@ -55,6 +57,8 @@ class YesterdayViewModel @Inject constructor(
 
     private val _sortAndFilterState = MutableStateFlow(SortAndFilterState())
     val sortAndFilterState = _sortAndFilterState.asStateFlow()
+
+    val dataUpdateState = updateTransaction.dataUpdateState
 
     private val filterCriteriaFlow = _sortAndFilterState
         .map { Triple(it.filter, it.orderBy, it.sortBy) }
@@ -257,6 +261,14 @@ class YesterdayViewModel @Inject constructor(
     fun updateOpenDeleteDialog(show: Boolean) {
         _yesterdayUiState.update {
             it.copy(openDeleteDialog = show)
+        }
+    }
+
+    // ===================== Update Transaction =========================
+    fun onUpdateTransaction() {
+        viewModelScope.launch {
+            updateTransaction.updateTransaction()
+            updateTransaction.onReset()
         }
     }
 }

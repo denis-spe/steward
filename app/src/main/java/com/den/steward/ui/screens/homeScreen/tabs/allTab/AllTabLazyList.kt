@@ -31,64 +31,32 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.den.steward.R
-import com.den.steward.backend.entitles.PaymentMethod
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.states.allTabState.AllUiState
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.DataUpdateState
-import com.den.steward.backend.states.PeriodType
-import com.den.steward.backend.states.Filter
-import com.den.steward.backend.states.OrderBy
 import com.den.steward.backend.states.SortAndFilterState
-import com.den.steward.backend.states.SortBy
 import com.den.steward.ui.components.FilterBottomSheet
 import com.den.steward.ui.components.OrderByBottomSheet
 import com.den.steward.ui.components.PeriodTypeBottomSelector
 import com.den.steward.ui.components.SortByBottomSheet
 import com.den.steward.backend.states.allTabState.AllTabDataState
+import com.den.steward.backend.viewModels.AllViewModel
 import com.den.steward.ui.components.TransactionViewDialog
 import com.den.steward.ui.components.DataDeletionDialog
-import com.den.steward.ui.components.SelectedIcon
-import com.den.steward.ui.components.transactionFields.TransactionFieldState
 import com.den.steward.ui.dataUpdate.UpdateTransactionBottomDrawerSheet
+import com.den.steward.ui.dataUpdate.UpdateTransactionInf
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 
 @Composable
 fun AllTabLazyList(
     allTabDataState: DataState<AllTabDataState>,
     allUiState: AllUiState,
-    sortAndFilterState: SortAndFilterState,
-    selectedDate: LocalDate,
-    periodType: PeriodType,
-    dataUpdateState: DataUpdateState,
-    updateSelectedTransactionForView: (Transaction?) -> Unit,
-    updateFilter: (Filter) -> Unit,
-    updateSort: (OrderBy) -> Unit,
-    updateSortType: (SortBy) -> Unit,
-    updatePeriodType: (PeriodType) -> Unit,
-    updateIsPeriodTypeExpanded: (Boolean) -> Unit,
-    updateIsFilterExpanded: (Boolean) -> Unit,
-    updateIsOrderByExpanded: (Boolean) -> Unit,
-    updateIsSortByExpanded: (Boolean) -> Unit,
-    updateSelectedTransactionToDelete: (Transaction?) -> Unit,
-    updateOpenDeleteDialog: (Boolean) -> Unit,
-    onDeleteTransaction: () -> Unit,
     transactions: DataState<ImmutableMap<String, List<Transaction>>>,
-    updateIsTransactionListOrder: (OrderBy) -> Unit,
-    updateIsTransactionListOrderExpanded: (Boolean) -> Unit,
-    onUpdateTransaction: () -> Unit,
-    updateSelectedTransactionForUpdate: (transition: Transaction?) -> Unit,
-    onResetUpdateBottomSheet: () -> Unit,
-    updateCorrectLabel: (String) -> Unit,
-    updateIsAmountCorrect: (TransactionFieldState) -> Unit,
-    updateSelectedIcon: (SelectedIcon) -> Unit,
-    updateCorrectNote: (String) -> Unit,
-    updateCorrectAmount: (String) -> Unit,
-    updatePaymentMethod: (PaymentMethod) -> Unit,
-    updateIsLabelCorrect: (TransactionFieldState) -> Unit,
-    updateIsAffectingAmount: (Boolean) -> Unit,
+    dataUpdateState: DataUpdateState,
+    allViewModel: AllViewModel,
+    sortAndFilterState: SortAndFilterState,
 ) {
     val (chartDataState, summaryState) = remember(allTabDataState) {
         when (allTabDataState) {
@@ -116,8 +84,8 @@ fun AllTabLazyList(
                 AllTabSummaryCard(
                     allTransactionChartData = chartDataState,
                     allTransactionSummary = summaryState,
-                    selectedDate = selectedDate,
-                    periodType = periodType
+                    selectedDate = allUiState.selectedDate,
+                    periodType = allUiState.periodType
                 )
             }
 
@@ -179,15 +147,15 @@ fun AllTabLazyList(
                                     dismissState = dismissState,
                                     transaction = transaction,
                                     onClick = {
-                                        updateSelectedTransactionForView(transaction)
+                                        allViewModel.updateSelectedTransactionForView(transaction)
                                     },
                                     onUpdate = {
                                         swipedState = dismissState
-                                        updateSelectedTransactionForUpdate(transaction)
+                                        allViewModel.updateTransaction.updateSelectedTransaction(transaction)
                                     },
                                     onDelete = {
                                         swipedState = dismissState
-                                        updateSelectedTransactionToDelete(transaction)
+                                        allViewModel.updateSelectedTransactionToDelete(transaction)
                                     }
                                 )
                             }
@@ -241,9 +209,9 @@ fun AllTabLazyList(
         isExpanded = sortAndFilterState.isFilterExpanded,
         selected = sortAndFilterState.filter,
         onFilterSelected = {
-            updateFilter(it)
+            allViewModel.updateFilter(it)
         },
-        onDismiss = { updateIsFilterExpanded(false) }
+        onDismiss = { allViewModel.updateIsFilterExpanded(false) }
     )
 
     OrderByBottomSheet(
@@ -251,38 +219,38 @@ fun AllTabLazyList(
         selected = allUiState.isTransactionListSort,
         isOrderByTimeLine = true,
         onSortSelected = {
-            updateIsTransactionListOrder(it)
-            updateIsTransactionListOrderExpanded(false)
+            allViewModel.updateIsTransactionListOrder(it)
+            allViewModel.updateIsTransactionListOrderExpanded(false)
         },
-        onDismiss = { updateIsTransactionListOrderExpanded(false) }
+        onDismiss = { allViewModel.updateIsTransactionListOrderExpanded(false) }
     )
 
     OrderByBottomSheet(
         isExpanded = sortAndFilterState.isOrderByExpanded,
         selected = sortAndFilterState.orderBy,
         onSortSelected = {
-            updateSort(it)
-            updateIsOrderByExpanded(false)
+            allViewModel.updateSort(it)
+            allViewModel.updateIsOrderByExpanded(false)
         },
-        onDismiss = { updateIsOrderByExpanded(false) }
+        onDismiss = { allViewModel.updateIsOrderByExpanded(false) }
     )
 
     SortByBottomSheet(
         isExpanded = sortAndFilterState.isSortByExpanded,
         selected = sortAndFilterState.sortBy,
         onSortSelected = {
-            updateSortType(it)
-            updateIsSortByExpanded(false)
+            allViewModel.updateSortType(it)
+            allViewModel.updateIsSortByExpanded(false)
         },
-        onDismiss = { updateIsSortByExpanded(false) }
+        onDismiss = { allViewModel.updateIsSortByExpanded(false) }
     )
 
     PeriodTypeBottomSelector(
         isExpanded = allUiState.isPeriodTypeExpanded,
         currentPeriodType = allUiState.periodType,
-        onPeriodTypeChange = updatePeriodType,
+        onPeriodTypeChange = allViewModel::updatePeriodType,
         onDismiss = {
-            updateIsPeriodTypeExpanded(false)
+            allViewModel.updateIsPeriodTypeExpanded(false)
         }
     )
 
@@ -290,16 +258,18 @@ fun AllTabLazyList(
         TransactionViewDialog(
             transaction = transaction,
             onShow = true,
-            onDismissRequest = { updateSelectedTransactionForView(null) }
+            onDismissRequest = { allViewModel.updateSelectedTransactionForView(null) }
         )
     }
+
+
 
     DataDeletionDialog(
         transaction = allUiState.selectedTransactionToDelete,
         onDialogShow = allUiState.openDeleteDialog,
-        onDelete = onDeleteTransaction,
+        onDelete = allViewModel::deleteTransaction,
         onDismissRequest = {
-            updateOpenDeleteDialog(false)
+            allViewModel.updateOpenDeleteDialog(false)
             scope.launch {
                 swipedState?.reset()
             }
@@ -308,22 +278,24 @@ fun AllTabLazyList(
 
     UpdateTransactionBottomDrawerSheet(
         dataUpdateState = dataUpdateState,
-        updateCorrectLabel = updateCorrectLabel,
-        updateIsAmountCorrect = updateIsAmountCorrect,
-        updateSelectedIcon = updateSelectedIcon,
-        updateCorrectNote = updateCorrectNote,
-        updateCorrectAmount = updateCorrectAmount,
-        updatePaymentMethod = updatePaymentMethod,
-        updateIsLabelCorrect = updateIsLabelCorrect,
-        updateIsAffectingAmount = updateIsAffectingAmount,
+        updateCorrectNote = allViewModel.updateTransaction::updateCurrentNote,
+        updateCorrectLabel = allViewModel.updateTransaction::updateCurrentLabel,
+        updateSelectedIcon = allViewModel.updateTransaction::updateSelectedIcon,
+        updatePaymentMethod = allViewModel.updateTransaction::updatePaymentMethod,
+        updateCorrectAmount = allViewModel.updateTransaction::updateCurrentAmount,
+        updateIsLabelCorrect = allViewModel.updateTransaction::updateIsLabelCorrect,
+        updateIsAmountCorrect = allViewModel.updateTransaction::updateIsAmountCorrect,
+        updateIsAffectingAmount = allViewModel.updateTransaction::updateIsAffectingAmount,
+        onLocalTimeChange = allViewModel.updateTransaction::onLocalTimeChangeUpdate,
+        onLocalDateChange = allViewModel.updateTransaction::onLocalDateChangeUpdate,
         onTransactionUpdate = {
-            onUpdateTransaction()
+            allViewModel.onUpdateTransaction()
             scope.launch {
                 swipedState?.reset()
             }
         },
-        reset = {
-            onResetUpdateBottomSheet()
+        reset =  {
+            allViewModel.updateTransaction.onReset()
             scope.launch {
                 swipedState?.reset()
             }

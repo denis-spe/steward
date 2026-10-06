@@ -23,35 +23,34 @@ import com.den.steward.ui.components.transactionFields.TransactionIconSelector
 import com.den.steward.ui.components.transactionFields.TransactionLabelField
 import com.den.steward.ui.components.transactionFields.TransactionNoteField
 import com.den.steward.ui.components.transactionFields.TransactionPaymentMethodField
-import com.den.steward.ui.components.transactionFields.TransactionRecurrenceField
 import com.den.steward.ui.components.transactionFields.TransactionTimeField
-import com.den.steward.ui.components.transactionbuttons.TransactionButtons
+import com.den.steward.ui.components.transactionbuttons.TransactionUpdateButtons
+import java.time.LocalDate
+import java.time.LocalTime
 
-
-@Composable
-private fun UpdateTransactionBottomDrawer() {
-
-}
 
 @Composable
 fun UpdateTransactionBottomDrawerSheet(
     dataUpdateState: DataUpdateState,
     updateCorrectLabel: (displayLabel: String) -> Unit,
-    updateIsAmountCorrect: (transactionFieldState: TransactionFieldState) -> Unit,
+    updateIsLabelCorrect: (transactionFieldState: TransactionFieldState) -> Unit,
     updateIsAffectingAmount: (isAffectingAmount: Boolean) -> Unit,
     updateSelectedIcon: (selectedIcon: SelectedIcon) -> Unit,
-    updateIsLabelCorrect: (transactionFieldState: TransactionFieldState) -> Unit,
+    updateIsAmountCorrect: (transactionFieldState: TransactionFieldState) -> Unit,
     updateCorrectNote: (displayNote: String) -> Unit,
     updateCorrectAmount: (displayAmount: String) -> Unit,
     updatePaymentMethod: (paymentMethod: PaymentMethod) -> Unit,
-    reset: () -> Unit,
-    onTransactionUpdate: () -> Unit
+    onTransactionUpdate: () -> Unit,
+    onLocalTimeChange: (LocalTime) -> Unit,
+    onLocalDateChange: (LocalDate) -> Unit,
+    reset: () -> Unit
 ) {
     val transaction = dataUpdateState.selectedTransaction ?: return
     val transactionType = transaction.type
+    val label = stringResource(id = transactionType.label)
 
     BottomDrawerSheet(
-        title = stringResource(id = transactionType.label),
+        title = label,
         description = stringResource(id = transactionType.description),
         show = dataUpdateState.showBottomSheet,
         transactionType = transactionType,
@@ -64,7 +63,7 @@ fun UpdateTransactionBottomDrawerSheet(
         ) {
             TransactionLabelField(
                 title = "Title",
-                description = "update your ${stringResource(transactionType.label).lowercase()} a label",
+                description = "update your ${label.lowercase()} a label",
                 state = dataUpdateState.label,
                 displayText = dataUpdateState.currentLabel,
                 onDisplayTextChange = updateCorrectLabel,
@@ -106,6 +105,20 @@ fun UpdateTransactionBottomDrawerSheet(
                 colorResId = transactionType.color,
             )
 
+            TransactionDateField(
+                title = label,
+                colorResId = transactionType.color,
+                localDateState = dataUpdateState.localDateCreatedAt,
+                onLocalDateChange = onLocalDateChange
+            )
+
+            TransactionTimeField(
+                title = label,
+                colorResId = transactionType.color,
+                localTime = dataUpdateState.localTimeCreatedAt,
+                onLocalTimeChange = onLocalTimeChange
+            )
+
             TransactionIconSelector(
                 colorResId = transactionType.color,
                 selectedIcon = dataUpdateState.selectedIcon,
@@ -121,7 +134,7 @@ fun UpdateTransactionBottomDrawerSheet(
                 )
             }
 
-            TransactionButtons(
+            TransactionUpdateButtons(
                 colorResId = transactionType.color,
                 modifier = Modifier.padding(vertical = 16.dp),
                 transactionType = transactionType,

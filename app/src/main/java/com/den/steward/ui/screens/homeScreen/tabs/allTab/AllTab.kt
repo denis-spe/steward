@@ -171,38 +171,12 @@ fun AllTab(
         )
 
         AllTabLazyList(
-            dataUpdateState = dataUpdateState,
+            sortAndFilterState = sortAndFilterState,
             allTabDataState = allTabDataState,
             transactions = transactions,
-            selectedDate = allUiState.selectedDate,
-            periodType = allUiState.periodType,
             allUiState = allUiState,
-            sortAndFilterState = sortAndFilterState,
-            updateFilter = allViewModel::updateFilter,
-            updateSort = allViewModel::updateSort,
-            updateIsTransactionListOrder = allViewModel::updateIsTransactionListOrder,
-            updateIsTransactionListOrderExpanded = allViewModel::updateIsTransactionListOrderExpanded,
-            updateSortType = allViewModel::updateSortType,
-            updateIsFilterExpanded = allViewModel::updateIsFilterExpanded,
-            updateIsOrderByExpanded = allViewModel::updateIsOrderByExpanded,
-            updateIsSortByExpanded = allViewModel::updateIsSortByExpanded,
-            updateSelectedTransactionForView = allViewModel::updateSelectedTransactionForView,
-            updateIsPeriodTypeExpanded = allViewModel::updateIsPeriodTypeExpanded,
-            updatePeriodType = allViewModel::updatePeriodType,
-            updateSelectedTransactionToDelete = allViewModel::updateSelectedTransactionToDelete,
-            updateOpenDeleteDialog = allViewModel::updateOpenDeleteDialog,
-            onUpdateTransaction = allViewModel::onUpdateTransaction,
-            updateSelectedTransactionForUpdate = allViewModel.updateTransaction::updateSelectedTransaction,
-            onResetUpdateBottomSheet = allViewModel.updateTransaction::onReset,
-            onDeleteTransaction = allViewModel::deleteTransaction,
-            updateCorrectLabel = allViewModel.updateTransaction::updateCurrentLabel,
-            updateIsAmountCorrect = allViewModel.updateTransaction::updateIsAmountCorrect,
-            updateSelectedIcon = allViewModel.updateTransaction::updateSelectedIcon,
-            updateCorrectNote = allViewModel.updateTransaction::updateCurrentNote,
-            updateCorrectAmount = allViewModel.updateTransaction::updateCurrentAmount,
-            updatePaymentMethod = allViewModel.updateTransaction::updatePaymentMethod,
-            updateIsLabelCorrect = allViewModel.updateTransaction::updateIsLabelCorrect,
-            updateIsAffectingAmount = allViewModel.updateTransaction::updateIsAffectingAmount,
+            dataUpdateState = dataUpdateState,
+            allViewModel = allViewModel
         )
     }
 }

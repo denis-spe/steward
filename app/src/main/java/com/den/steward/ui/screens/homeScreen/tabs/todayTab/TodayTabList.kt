@@ -55,6 +55,7 @@ import com.den.steward.helper.formatToAmount
 import com.den.steward.ui.componentExtenison.shimmerEffect
 import com.den.steward.ui.components.TransactionViewDialog
 import com.den.steward.ui.components.DataDeletionDialog
+import com.den.steward.ui.dataUpdate.UpdateTransactionBottomDrawerSheet
 import com.den.steward.ui.theme.ExtendedTheme
 import kotlinx.coroutines.launch
 
@@ -283,6 +284,7 @@ fun TodayTabLazyList(
     val sortAndFilterState by todayViewModel.sortAndFilterState.collectAsStateWithLifecycle()
     val todayUiState by todayViewModel.todayUiState.collectAsStateWithLifecycle()
     val selectedTransactionForView = remember { mutableStateOf<Transaction?>(null) }
+    val dataUpdateState by todayViewModel.dataUpdateState.collectAsStateWithLifecycle()
 
     val (
         transactions,
@@ -361,6 +363,10 @@ fun TodayTabLazyList(
                     },
                     onClick = {
                         selectedTransactionForView.value = transaction
+                    },
+                    onUpdate = {
+                        swipedState = dismissState
+                        todayViewModel.updateTransaction.updateSelectedTransaction(transaction)
                     }
                 )
             }
@@ -397,6 +403,32 @@ fun TodayTabLazyList(
             swipedState?.reset()
         }
     }
+
+    UpdateTransactionBottomDrawerSheet(
+        dataUpdateState = dataUpdateState,
+        updateCorrectNote = todayViewModel.updateTransaction::updateCurrentNote,
+        updateCorrectLabel = todayViewModel.updateTransaction::updateCurrentLabel,
+        updateSelectedIcon = todayViewModel.updateTransaction::updateSelectedIcon,
+        updatePaymentMethod = todayViewModel.updateTransaction::updatePaymentMethod,
+        updateCorrectAmount = todayViewModel.updateTransaction::updateCurrentAmount,
+        updateIsLabelCorrect = todayViewModel.updateTransaction::updateIsLabelCorrect,
+        updateIsAmountCorrect = todayViewModel.updateTransaction::updateIsAmountCorrect,
+        updateIsAffectingAmount = todayViewModel.updateTransaction::updateIsAffectingAmount,
+        onLocalTimeChange = todayViewModel.updateTransaction::onLocalTimeChangeUpdate,
+        onLocalDateChange = todayViewModel.updateTransaction::onLocalDateChangeUpdate,
+        onTransactionUpdate = {
+            todayViewModel.onUpdateTransaction()
+            scope.launch {
+                swipedState?.reset()
+            }
+        },
+        reset =  {
+            todayViewModel.updateTransaction.onReset()
+            scope.launch {
+                swipedState?.reset()
+            }
+        }
+    )
 }
 
 @Composable

@@ -47,6 +47,7 @@ import com.den.steward.backend.viewModels.YesterdayViewModel
 import com.den.steward.ui.componentExtenison.shimmerEffect
 import com.den.steward.ui.components.charts.collections.ChartDataCollection
 import com.den.steward.ui.components.DataDeletionDialog
+import com.den.steward.ui.dataUpdate.UpdateTransactionBottomDrawerSheet
 import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabListEmpty
 import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabListError
 import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabListPanelButton
@@ -137,6 +138,7 @@ fun YesterdayTabLazyList(
     var swipedState by remember { mutableStateOf<SwipeToDismissBoxState?>(null) }
     val scope = rememberCoroutineScope()
     val yesterdayUiState by yesterdayViewModel.yesterdayUiState.collectAsStateWithLifecycle()
+    val dataUpdateState by yesterdayViewModel.dataUpdateState.collectAsStateWithLifecycle()
 
     LazyColumn(
         modifier = modifier,
@@ -195,6 +197,10 @@ fun YesterdayTabLazyList(
                         swipedState = yesterdayItemDismissState
                         yesterdayViewModel.updateSelectedTransactionToDelete(it)
                     },
+                    onUpdate = {
+                        swipedState = yesterdayItemDismissState
+                        yesterdayViewModel.updateTransaction.updateSelectedTransaction(transaction)
+                    }
                 )
             }
             item(
@@ -217,6 +223,32 @@ fun YesterdayTabLazyList(
         onDelete = yesterdayViewModel::deleteTransaction,
         onDismissRequest = {
             yesterdayViewModel.updateOpenDeleteDialog(false)
+            scope.launch {
+                swipedState?.reset()
+            }
+        }
+    )
+
+    UpdateTransactionBottomDrawerSheet(
+        dataUpdateState = dataUpdateState,
+        updateCorrectNote = yesterdayViewModel.updateTransaction::updateCurrentNote,
+        updateCorrectLabel = yesterdayViewModel.updateTransaction::updateCurrentLabel,
+        updateSelectedIcon = yesterdayViewModel.updateTransaction::updateSelectedIcon,
+        updatePaymentMethod = yesterdayViewModel.updateTransaction::updatePaymentMethod,
+        updateCorrectAmount = yesterdayViewModel.updateTransaction::updateCurrentAmount,
+        updateIsLabelCorrect = yesterdayViewModel.updateTransaction::updateIsLabelCorrect,
+        updateIsAmountCorrect = yesterdayViewModel.updateTransaction::updateIsAmountCorrect,
+        updateIsAffectingAmount = yesterdayViewModel.updateTransaction::updateIsAffectingAmount,
+        onLocalTimeChange = yesterdayViewModel.updateTransaction::onLocalTimeChangeUpdate,
+        onLocalDateChange = yesterdayViewModel.updateTransaction::onLocalDateChangeUpdate,
+        onTransactionUpdate = {
+            yesterdayViewModel.onUpdateTransaction()
+            scope.launch {
+                swipedState?.reset()
+            }
+        },
+        reset =  {
+            yesterdayViewModel.updateTransaction.onReset()
             scope.launch {
                 swipedState?.reset()
             }

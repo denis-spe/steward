@@ -75,13 +75,14 @@ fun AddTransactionFloatingActionButton(
         onDismissRequest = {dataAdditionViewModel.updateShowTransactionTypeBottomSheet(false)},
     ) {
         dataAdditionState.coreEntries.forEach { type ->
+            val label = stringResource(id = type.label)
             BottomDrawerSheetItem(
-                title = stringResource(id = type.label),
+                title = label,
                 description = stringResource(id = type.description),
                 icon = {
                     Icon(
                         painter = painterResource(id = type.icon),
-                        contentDescription = stringResource(id = type.label),
+                        contentDescription = label,
                         tint = colorResource(id = type.color)
                     )
                 }
@@ -105,10 +106,10 @@ private fun TransactionBottomDrawerSheet(
     dataAdditionState: DataAdditionState,
 ) {
     val type = dataAdditionState.selectedTransactionType ?: return
-
+    val label = stringResource(id = type.label)
 
     BottomDrawerSheet(
-        title = stringResource(id = type.label),
+        title = label,
         description = stringResource(id = type.description),
         show = dataAdditionState.showTransactionAdditionBottomSheet,
         transactionType = type,
@@ -121,7 +122,7 @@ private fun TransactionBottomDrawerSheet(
         ) {
             TransactionLabelField(
                 title = "Title",
-                description = "Give your ${stringResource(type.label).lowercase()} a label",
+                description = "Give your ${label.lowercase()} a label",
                 state = dataAdditionState.label,
                 displayText = dataAdditionState.currentLabel,
                 onDisplayTextChange = dataAdditionViewModel::updateCorrectLabel,
@@ -164,14 +165,14 @@ private fun TransactionBottomDrawerSheet(
             )
 
             TransactionDateField(
-                title = stringResource(type.label),
+                title = label,
                 colorResId = type.color,
                 localDateState = dataAdditionState.localDateCreatedAt,
                 onLocalDateChange = dataAdditionViewModel::updateLocalDateCreatedAt
             )
 
             TransactionTimeField(
-                title = stringResource(type.label),
+                title = label,
                 colorResId = type.color,
                 localTime = dataAdditionState.localTimeCreatedAt,
                 onLocalTimeChange = dataAdditionViewModel::updateLocalTimeCreatedAt

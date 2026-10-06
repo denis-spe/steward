@@ -16,6 +16,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
@@ -31,17 +33,17 @@ import com.den.steward.backend.entitles.Transaction
 fun DataDeletionDialog(
     transaction: Transaction? = null,
     onDialogShow: Boolean,
-    onDelete: () -> Unit,
+    onDelete: () -> Unit = {},
     onDismissRequest: () -> Unit,
 ) {
     if (onDialogShow && transaction != null) {
         Dialog(
-            onDismissRequest = onDismissRequest
+            onDismissRequest = onDismissRequest,
         ) {
             DataDeletionContent(
                 transaction = transaction,
                 onDelete = onDelete,
-                onDismissRequest = onDismissRequest
+                onDismissRequest = onDismissRequest,
             )
         }
     }
@@ -51,7 +53,7 @@ fun DataDeletionDialog(
 fun DataDeletionContent(
     transaction: Transaction,
     onDelete: () -> Unit = {},
-    onDismissRequest: () -> Unit
+    onDismissRequest: () -> Unit,
 ) {
 
     Card {

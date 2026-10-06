@@ -20,6 +20,7 @@ import com.den.steward.backend.states.todayTabState.TodayTabDataState
 import com.den.steward.backend.states.todayTabState.TodayUiState
 import com.den.steward.backend.useCase.DataDeletionUseCase
 import com.den.steward.backend.useCase.DataFetchUseCase
+import com.den.steward.backend.useCase.UpdateTransactionUseCase
 import com.den.steward.helper.calculateFlow
 import com.den.steward.helper.filterAndSortTodayTransactions
 import com.den.steward.helper.formatToAmount
@@ -48,6 +49,7 @@ import javax.inject.Inject
 class TodayViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val deletionUseCase: DataDeletionUseCase,
+    val updateTransaction: UpdateTransactionUseCase,
     dataFetchUseCase: DataFetchUseCase
 ) : ViewModel() {
 
@@ -56,6 +58,8 @@ class TodayViewModel @Inject constructor(
 
     private val _todayUiState = MutableStateFlow(TodayUiState())
     val todayUiState = _todayUiState.asStateFlow()
+
+    val dataUpdateState = updateTransaction.dataUpdateState
 
 
     // Extract ONLY query criteria to avoid re-triggering calculations on sheet expansion toggles
@@ -285,6 +289,15 @@ class TodayViewModel @Inject constructor(
     fun updateOpenDeleteDialog(show: Boolean) {
         _todayUiState.update {
             it.copy(openDeleteDialog = show)
+        }
+    }
+
+
+    // ===================== Update Transaction =========================
+    fun onUpdateTransaction() {
+        viewModelScope.launch {
+            updateTransaction.updateTransaction()
+            updateTransaction.onReset()
         }
     }
 }

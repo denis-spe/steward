@@ -79,13 +79,14 @@ fun AddFulfillmentTransactionFloatingActionButton(
                     it == TransactionType.SETTLEMENT ||
                     it == TransactionType.ATTAIN
         }.forEach { type ->
+            val label = stringResource(id = type.label)
             BottomDrawerSheetItem(
-                title = stringResource(id = type.label),
+                title = label,
                 description = stringResource(id = type.description),
                 icon = {
                     Icon(
                         painter = painterResource(id = type.icon),
-                        contentDescription = stringResource(id = type.label),
+                        contentDescription = label,
                         tint = colorResource(type.color)
                     )
                 },
@@ -142,8 +143,10 @@ fun FulfillmentTransactionBottomDrawerSheet(
         }
     }
 
+    val selectedTypeLabel = stringResource(id = selectedTransactionType.label)
+
     BottomDrawerSheet(
-        title = stringResource(id = selectedTransactionType.label),
+        title = selectedTypeLabel,
         description = stringResource(id = selectedTransactionType.description),
         show = dataAdditionState.showFulfillmentTransactionAdditionBottomSheet,
         transactionType = selectedTransactionType,
@@ -196,14 +199,14 @@ fun FulfillmentTransactionBottomDrawerSheet(
                 )
 
                 TransactionDateField(
-                    title = stringResource(selectedTransactionType.label),
+                    title = selectedTypeLabel,
                     colorResId = selectedTransactionType.color,
                     localDateState = dataAdditionState.localDateCreatedAt,
                     onLocalDateChange = dataAdditionViewModel::updateLocalDateCreatedAt
                 )
 
                 TransactionTimeField(
-                    title = stringResource(selectedTransactionType.label),
+                    title = selectedTypeLabel,
                     colorResId = selectedTransactionType.color,
                     localTime = dataAdditionState.localTimeCreatedAt,
                     onLocalTimeChange = dataAdditionViewModel::updateLocalTimeCreatedAt

@@ -5,11 +5,14 @@ import com.den.steward.backend.entitles.PaymentMethod
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataUpdateState
+import com.den.steward.helper.combine
 import com.den.steward.ui.components.SelectedIcon
 import com.den.steward.ui.components.transactionFields.TransactionFieldState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import java.time.LocalDate
+import java.time.LocalTime
 import javax.inject.Inject
 
 class UpdateTransactionUseCase @Inject constructor(
@@ -110,15 +113,36 @@ class UpdateTransactionUseCase @Inject constructor(
         }
     }
 
+    fun onLocalTimeChangeUpdate(time: LocalTime) {
+        _dataUpdateState.update {
+            it.copy(
+                localTimeCreatedAt = time
+            )
+        }
+    }
+
+    fun onLocalDateChangeUpdate(date: LocalDate) {
+        _dataUpdateState.update {
+            it.copy(
+                localDateCreatedAt = date
+            )
+        }
+    }
+
     suspend fun updateTransaction() {
         val transaction = dataUpdateState.value.selectedTransaction ?: return
         val adjustmentEntries: List<TransactionType> = listOf(
             TransactionType.REPAYMENT,
             TransactionType.SETTLEMENT,
             TransactionType.ATTAIN,
+            TransactionType.ACHIEVEMENT
         )
 
         updateShowBottomSheet(false)
+
+        val createdAt = dataUpdateState.value.localDateCreatedAt
+            .combine(dataUpdateState.value.localTimeCreatedAt)
+
 
         if (transaction.type in adjustmentEntries) {
             val parentTransaction = transaction.getParentTransaction ?: return
@@ -130,7 +154,8 @@ class UpdateTransactionUseCase @Inject constructor(
                         label = dataUpdateState.value.label.text.toString(),
                         note = dataUpdateState.value.note.text.toString(),
                         paymentMethod = dataUpdateState.value.paymentMethod,
-                        affectAmount = dataUpdateState.value.isAffectingAmount
+                        affectAmount = dataUpdateState.value.isAffectingAmount,
+                        createdAt = createdAt
                     )
                 }
                 TransactionType.SETTLEMENT -> {
@@ -139,12 +164,20 @@ class UpdateTransactionUseCase @Inject constructor(
                         label = dataUpdateState.value.label.text.toString(),
                         note = dataUpdateState.value.note.text.toString(),
                         paymentMethod = dataUpdateState.value.paymentMethod,
-                        affectAmount = dataUpdateState.value.isAffectingAmount
+                        affectAmount = dataUpdateState.value.isAffectingAmount,
+                        createdAt = createdAt
                     )
                 }
                 TransactionType.ATTAIN -> {
                     val attain = transaction as Transaction.Attain
                     attain.copy(
+                        value = dataUpdateState.value.amount.text.toString().toDoubleOrNull() ?: 0.0,
+                    )
+                }
+
+                TransactionType.ACHIEVEMENT -> {
+                    val achievement = transaction as Transaction.Achievement
+                    achievement.copy(
                         value = dataUpdateState.value.amount.text.toString().toDoubleOrNull() ?: 0.0,
                     )
                 }
@@ -165,7 +198,9 @@ class UpdateTransactionUseCase @Inject constructor(
                         note = dataUpdateState.value.note.text.toString(),
                         amount = dataUpdateState.value.amount.text.toString().toDoubleOrNull() ?: 0.0,
                         paymentMethod = dataUpdateState.value.paymentMethod,
-                        affectAmount = dataUpdateState.value.isAffectingAmount
+                        affectAmount = dataUpdateState.value.isAffectingAmount,
+                        selectedIcon = dataUpdateState.value.selectedIcon.icon,
+                        createdAt = createdAt
                     )
                 }
                 TransactionType.EXPENSE -> {
@@ -175,7 +210,9 @@ class UpdateTransactionUseCase @Inject constructor(
                         note = dataUpdateState.value.note.text.toString(),
                         amount = dataUpdateState.value.amount.text.toString().toDoubleOrNull() ?: 0.0,
                         paymentMethod = dataUpdateState.value.paymentMethod,
-                        affectAmount = dataUpdateState.value.isAffectingAmount
+                        affectAmount = dataUpdateState.value.isAffectingAmount,
+                        selectedIcon = dataUpdateState.value.selectedIcon.icon,
+                        createdAt = createdAt
                     )
                 }
 
@@ -186,7 +223,9 @@ class UpdateTransactionUseCase @Inject constructor(
                         note = dataUpdateState.value.note.text.toString(),
                         amount = dataUpdateState.value.amount.text.toString().toDoubleOrNull() ?: 0.0,
                         paymentMethod = dataUpdateState.value.paymentMethod,
-                        affectAmount = dataUpdateState.value.isAffectingAmount
+                        affectAmount = dataUpdateState.value.isAffectingAmount,
+                        selectedIcon = dataUpdateState.value.selectedIcon.icon,
+                        createdAt = createdAt
                     )
                 }
 
@@ -197,7 +236,9 @@ class UpdateTransactionUseCase @Inject constructor(
                         note = dataUpdateState.value.note.text.toString(),
                         amount = dataUpdateState.value.amount.text.toString().toDoubleOrNull() ?: 0.0,
                         paymentMethod = dataUpdateState.value.paymentMethod,
-                        affectAmount = dataUpdateState.value.isAffectingAmount
+                        affectAmount = dataUpdateState.value.isAffectingAmount,
+                        selectedIcon = dataUpdateState.value.selectedIcon.icon,
+                        createdAt = createdAt
                     )
                 }
 
@@ -208,7 +249,9 @@ class UpdateTransactionUseCase @Inject constructor(
                         note = dataUpdateState.value.note.text.toString(),
                         amount = dataUpdateState.value.amount.text.toString().toDoubleOrNull() ?: 0.0,
                         paymentMethod = dataUpdateState.value.paymentMethod,
-                        affectAmount = dataUpdateState.value.isAffectingAmount
+                        affectAmount = dataUpdateState.value.isAffectingAmount,
+                        selectedIcon = dataUpdateState.value.selectedIcon.icon,
+                        createdAt = createdAt
                     )
                 }
 
@@ -218,6 +261,8 @@ class UpdateTransactionUseCase @Inject constructor(
                         label = dataUpdateState.value.label.text.toString(),
                         note = dataUpdateState.value.note.text.toString(),
                         value = dataUpdateState.value.amount.text.toString().toDoubleOrNull() ?: 0.0,
+                        selectedIcon = dataUpdateState.value.selectedIcon.icon,
+                        createdAt = createdAt
                     )
                 }
                 else -> return

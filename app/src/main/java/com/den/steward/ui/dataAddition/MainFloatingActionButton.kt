@@ -72,6 +72,34 @@ fun MainFloatingActionButton(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 horizontalAlignment = Alignment.End
             ) {
+                // Exchange FAB with Label
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                        shape = MaterialTheme.shapes.small,
+                        onClick = {
+                            dataAdditionViewModel.updateShowTransactionTypeBottomSheet(true)
+                        }
+                    ) {
+                        Text(
+                            text = "Exchange Amount",
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+                    }
+                    AddAmountExchangeButton(
+                        modifier = Modifier.size(subFabSize),
+                        elevation = FloatingActionButtonDefaults.elevation(2.dp),
+                        dataAdditionViewModel = dataAdditionViewModel
+                    )
+                }
+
                 // Transaction FAB with Label
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
