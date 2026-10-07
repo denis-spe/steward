@@ -288,6 +288,7 @@ fun AllTabLazyList(
         updateIsAffectingAmount = allViewModel.updateTransaction::updateIsAffectingAmount,
         onLocalTimeChange = allViewModel.updateTransaction::onLocalTimeChangeUpdate,
         onLocalDateChange = allViewModel.updateTransaction::onLocalDateChangeUpdate,
+        onExchange = allViewModel.updateTransaction::onExchange,
         onTransactionUpdate = {
             allViewModel.onUpdateTransaction()
             scope.launch {

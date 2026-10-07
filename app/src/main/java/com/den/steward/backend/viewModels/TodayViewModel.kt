@@ -124,7 +124,18 @@ class TodayViewModel @Inject constructor(
         val flow = todayTransaction.calculateFlow
 
         transactions.forEach { transaction ->
-            if (transaction.getAffectedAmount == Affected.AFFECTED) {
+            if (transaction is Transaction.Ramping) {
+                val amount = transaction.amount
+                val fromPaymentMethod = transaction.from
+                val toPaymentMethod = transaction.to
+
+                val currentFrom = paymentMethodStat.getOrDefault(fromPaymentMethod, 0.0)
+                val currentTo = paymentMethodStat.getOrDefault(toPaymentMethod, 0.0)
+
+                paymentMethodStat[fromPaymentMethod] = currentFrom - amount
+                paymentMethodStat[toPaymentMethod] = currentTo + amount
+
+            } else if (transaction.getAffectedAmount == Affected.AFFECTED) {
                 val method = transaction.getPaymentMethodOrNull ?: return@forEach
                 val amount = transaction.getAmountOrValue ?: 0.0
                 val current = paymentMethodStat.getOrDefault(method, 0.0)
@@ -141,6 +152,7 @@ class TodayViewModel @Inject constructor(
 
                     else -> current
                 }
+
                 paymentMethodStat[method] = updated
             }
         }

@@ -116,6 +116,7 @@ fun TransactionAmountField(
 
     if (onDialogShow.value) {
         LaunchedEffect(Unit) {
+            state.setTextAndPlaceCursorAtEnd(state.text.toString())
             focusRequester.requestFocus()
         }
 

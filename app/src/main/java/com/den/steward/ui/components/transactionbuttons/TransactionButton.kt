@@ -97,15 +97,13 @@ fun TransactionButtons(
 
 @Composable
 fun TransactionUpdateButtons(
-    colorResId: Int,
+    color: Color,
     modifier: Modifier = Modifier,
     transactionType: TransactionType,
     isErrors: Boolean = false,
     isLoading: Boolean = false,
     onClick: () -> Unit
 ) {
-
-    val color = colorResource(id = colorResId)
 
     val desc = when (transactionType) {
         TransactionType.EARNINGS -> "Update your earnings"
@@ -118,6 +116,7 @@ fun TransactionUpdateButtons(
         TransactionType.SETTLEMENT -> "Update settlement"
         TransactionType.SAVINGS -> "Update your savings"
         TransactionType.PLAN -> "Update your plan"
+        TransactionType.RAMPING -> "Update your exchange"
         else -> ""
     }
 
@@ -132,6 +131,7 @@ fun TransactionUpdateButtons(
         TransactionType.SETTLEMENT -> "Settlement"
         TransactionType.SAVINGS -> "Save"
         TransactionType.PLAN -> "Plan"
+        TransactionType.RAMPING -> "Exchange"
         else -> ""
     }
 

@@ -70,5 +70,17 @@ data class DataUpdateState (
     val localTimeCreatedAt: LocalTime = selectedTransaction?.createdAt
         ?.toLocalDateTime()?.toLocalTime() ?: LocalTime.now(),
     val localDateCreatedAt: LocalDate = selectedTransaction?.createdAt
-        ?.toLocalDateTime()?.toLocalDate() ?: LocalDate.now()
+        ?.toLocalDateTime()?.toLocalDate() ?: LocalDate.now(),
+
+    val fromPayment: PaymentMethod = if (selectedTransaction is Transaction.Ramping) {
+        selectedTransaction.from
+    } else {
+        PaymentMethod.CASH
+    },
+
+    val toPaymentMethod: PaymentMethod = if (selectedTransaction is Transaction.Ramping) {
+        selectedTransaction.to
+    } else {
+        PaymentMethod.CASH
+    },
 )

@@ -82,7 +82,7 @@ fun MainFloatingActionButton(
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                         shape = MaterialTheme.shapes.small,
                         onClick = {
-                            dataAdditionViewModel.updateShowTransactionTypeBottomSheet(true)
+                            dataAdditionViewModel.updateShowRampingBottomSheet(true)
                         }
                     ) {
                         Text(

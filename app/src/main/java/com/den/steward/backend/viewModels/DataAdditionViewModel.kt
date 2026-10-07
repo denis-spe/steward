@@ -217,7 +217,6 @@ class DataAdditionViewModel @Inject constructor(
     }
 
     // ============= Data Addition ===========
-
     fun addRampingTransaction() {
         val currentState = _dataAdditionState.value
 
@@ -233,6 +232,17 @@ class DataAdditionViewModel @Inject constructor(
         ) }
 
         val createdAt = currentState.localDateCreatedAt.atTime(currentState.localTimeCreatedAt).toEpochMillis()
+
+        val isAmountInvalid = currentState.amount.text.isEmpty()
+
+        if (isAmountInvalid) {
+            _dataAdditionState.update {
+                it.copy(
+                    isAmountCorrect =  TransactionFieldState.Error("Amount cannot be empty or 0")
+                )
+            }
+            return
+        }
 
         viewModelScope.launch {
             try {

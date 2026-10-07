@@ -48,7 +48,9 @@ import com.den.steward.ui.components.bottomDrawerSheet.BottomDrawerSheetItem
 import com.den.steward.ui.components.transactionFields.AMOUNT_FONT_SIZE
 import com.den.steward.ui.components.transactionFields.CustomInputTransformation
 import com.den.steward.ui.components.transactionFields.CustomOutputTransformation
+import com.den.steward.ui.components.transactionFields.ExchangeAmountField
 import com.den.steward.ui.components.transactionFields.TransactionFieldState
+import com.den.steward.ui.components.transactionbuttons.ExchangeAccountButton
 import com.den.steward.ui.components.transactionbuttons.TransactionButtons
 import com.den.steward.ui.theme.ExtendedTheme
 
@@ -66,7 +68,6 @@ fun AddAmountExchangeButton(
     val toPayment = dataAdditionState.toPayment.label
     val fromPaymentIcon = dataAdditionState.fromPayment.icon
     val toPaymentIcon = dataAdditionState.toPayment.icon
-    val symbol = getCurrencySymbol()
     val type = TransactionType.RAMPING
 
     FloatingActionButton(
@@ -105,106 +106,17 @@ fun AddAmountExchangeButton(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Surface(
-                modifier = Modifier.fillMaxWidth(0.8f),
-                shape = CircleShape,
-                shadowElevation = 2.dp
-            ) {
-                TextField(
-                    state = dataAdditionState.amount,
-                    colors = TextFieldDefaults.colors().copy(
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent,
-                    ),
-                    textStyle = TextStyle(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = AMOUNT_FONT_SIZE
-                    ),
-                    placeholder = {
-                        Text(
-                            text = "0.0",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface.copy(
-                                    alpha = 0.5f
-                                ),
-                                fontSize = AMOUNT_FONT_SIZE
-                            )
-                        )
-                    },
+            ExchangeAmountField(
+                dataAdditionState.amount
+            )
 
-                    leadingIcon = {
-                        Text(
-                            text = symbol,
-                            color = MaterialTheme.colorScheme.onSurface.copy(
-                                alpha = 0.5f
-                            ),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = AMOUNT_FONT_SIZE
-                        )
-                    },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number,
-                        imeAction = ImeAction.Done
-                    ),
-                    inputTransformation = CustomInputTransformation(),
-                    outputTransformation = CustomOutputTransformation(),
-                )
-            }
-
-            Surface(
-                modifier = Modifier.fillMaxWidth(0.8f),
-                shape = CircleShape,
-                shadowElevation = 2.dp,
+            ExchangeAccountButton(
+                fromPayment = fromPayment,
+                toPayment = toPayment,
+                fromPaymentIcon = fromPaymentIcon,
+                toPaymentIcon = toPaymentIcon,
                 onClick = dataAdditionViewModel::onExchange
-            ) {
-                Row(
-                    modifier = Modifier.padding(5.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Image(
-                            painter = painterResource(id = fromPaymentIcon),
-                            contentDescription = fromPayment,
-                            modifier = Modifier.size(24.dp)
-                        )
-
-                        Text(
-                            fromPayment,
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold
-                            )
-                        )
-                    }
-
-                    Icon(
-                        imageVector = Icons.Default.SyncAlt,
-                        contentDescription = "Sync"
-                    )
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Image(
-                            painter = painterResource(id = toPaymentIcon),
-                            contentDescription = toPayment,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Text(
-                            toPayment,
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold
-                            )
-                        )
-                    }
-                }
-            }
+            )
 
             TransactionButtons(
                 colorResId = type.color,

@@ -416,6 +416,7 @@ fun TodayTabLazyList(
         updateIsAffectingAmount = todayViewModel.updateTransaction::updateIsAffectingAmount,
         onLocalTimeChange = todayViewModel.updateTransaction::onLocalTimeChangeUpdate,
         onLocalDateChange = todayViewModel.updateTransaction::onLocalDateChangeUpdate,
+        onExchange = todayViewModel.updateTransaction::onExchange,
         onTransactionUpdate = {
             todayViewModel.onUpdateTransaction()
             scope.launch {

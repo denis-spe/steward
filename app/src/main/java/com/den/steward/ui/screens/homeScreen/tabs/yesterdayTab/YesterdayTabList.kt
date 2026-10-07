@@ -241,6 +241,7 @@ fun YesterdayTabLazyList(
         updateIsAffectingAmount = yesterdayViewModel.updateTransaction::updateIsAffectingAmount,
         onLocalTimeChange = yesterdayViewModel.updateTransaction::onLocalTimeChangeUpdate,
         onLocalDateChange = yesterdayViewModel.updateTransaction::onLocalDateChangeUpdate,
+        onExchange = yesterdayViewModel.updateTransaction::onExchange,
         onTransactionUpdate = {
             yesterdayViewModel.onUpdateTransaction()
             scope.launch {

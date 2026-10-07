@@ -128,6 +128,18 @@ class UpdateTransactionUseCase @Inject constructor(
         }
     }
 
+    fun onExchange() {
+        val fromPayment = _dataUpdateState.value.fromPayment
+        val toPayment = _dataUpdateState.value.toPaymentMethod
+
+        _dataUpdateState.update {
+            it.copy(
+                fromPayment = toPayment,
+                toPaymentMethod = fromPayment
+            )
+        }
+    }
+
     suspend fun updateTransaction(): Boolean {
         val transaction = dataUpdateState.value.selectedTransaction ?: return false
         val adjustmentEntries: List<TransactionType> = listOf(
@@ -284,6 +296,17 @@ class UpdateTransactionUseCase @Inject constructor(
                         value = dataUpdateState.value.amount.text.toString().toDoubleOrNull() ?: 0.0,
                         selectedIcon = dataUpdateState.value.selectedIcon.icon,
                         createdAt = createdAt
+                    )
+                }
+
+                TransactionType.RAMPING -> {
+                    val ramping = transaction as Transaction.Ramping
+                    ramping.copy(
+                        label = dataUpdateState.value.label.text.toString(),
+                        note = dataUpdateState.value.note.text.toString(),
+                        amount = dataUpdateState.value.amount.text.toString().toDoubleOrNull() ?: 0.0,
+                        to = dataUpdateState.value.toPaymentMethod,
+                        from = dataUpdateState.value.fromPayment
                     )
                 }
                 else -> return false

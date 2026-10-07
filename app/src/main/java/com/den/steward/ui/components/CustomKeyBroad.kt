@@ -196,7 +196,7 @@ fun CustomAmountKeyBoard(
                                                 val currentNumber =
                                                     text.substring(lastOperatorIndex + 1)
 
-                                                if (currentNumber.startsWith("0")) {
+                                                if (currentNumber == "0" && key != "." && selection.start > 0) {
                                                     delete(selection.start - 1, selection.start)
                                                 }
 
