@@ -44,6 +44,7 @@ fun TransactionButtons(
         TransactionType.SETTLEMENT -> "Submit a settlement"
         TransactionType.SAVINGS -> "Record your money"
         TransactionType.PLAN -> "Plan for your future"
+        TransactionType.RAMPING -> "Exchange your money"
         else -> ""
     }
 
@@ -58,6 +59,7 @@ fun TransactionButtons(
         TransactionType.SETTLEMENT -> "Settlement"
         TransactionType.SAVINGS -> "Save"
         TransactionType.PLAN -> "Plan"
+        TransactionType.RAMPING -> "Exchange"
         else -> ""
     }
 

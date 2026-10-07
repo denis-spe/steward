@@ -267,8 +267,9 @@ class YesterdayViewModel @Inject constructor(
     // ===================== Update Transaction =========================
     fun onUpdateTransaction() {
         viewModelScope.launch {
-            updateTransaction.updateTransaction()
-            updateTransaction.onReset()
+            if (updateTransaction.updateTransaction()) {
+                updateTransaction.onReset()
+            }
         }
     }
 }

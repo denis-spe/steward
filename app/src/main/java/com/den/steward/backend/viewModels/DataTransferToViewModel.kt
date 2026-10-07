@@ -21,4 +21,6 @@ data class DataTransferToViewModel(
     val repeatable: RecurrencePattern = RecurrencePattern.NONE,
     val isAffectingAmount: Boolean? = null,
     val selectedIcon: SelectedIcon = SelectedIcon(),
+    val fromPaymentMethod: PaymentMethod = PaymentMethod.CARD,
+    val toPaymentMethod: PaymentMethod = PaymentMethod.CASH,
 )

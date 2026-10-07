@@ -217,6 +217,46 @@ class DataAdditionViewModel @Inject constructor(
     }
 
     // ============= Data Addition ===========
+
+    fun addRampingTransaction() {
+        val currentState = _dataAdditionState.value
+
+        // Guard against multiple clicks
+        if (currentState.isSaving) return
+
+        // 1. Immediately update state to indicate saving and close the sheet
+        // This provides instant feedback to the user and prevents double clicks
+        _dataAdditionState.update { it.copy(
+            isSaving = true,
+            showTransactionAdditionBottomSheet = false,
+            showMainBottomSheet = false
+        ) }
+
+        val createdAt = currentState.localDateCreatedAt.atTime(currentState.localTimeCreatedAt).toEpochMillis()
+
+        viewModelScope.launch {
+            try {
+                // 2. Perform the database operation
+                addDataUseCase.addTransaction(
+                    DataTransferToViewModel(
+                        label = currentState.currentLabel,
+                        amount = currentState.amount.text.toString(),
+                        note = currentState.currentNote,
+                        createdAt = createdAt,
+                        transactionType = TransactionType.RAMPING,
+                        fromPaymentMethod = currentState.fromPayment,
+                        toPaymentMethod = currentState.toPayment
+                    )
+                )
+                // 3. Reset the state after adding the transaction
+                reset()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error adding transaction of type RAMPING", e)
+                // 4. In case of error, stop the loading state and maybe keep the sheet closed or notify user
+                _dataAdditionState.update { it.copy(isSaving = false) }
+            }
+        }
+    }
     fun addCoreEntriesTransaction() {
         val currentState = _dataAdditionState.value
         
@@ -232,7 +272,7 @@ class DataAdditionViewModel @Inject constructor(
                 currentState.endAt.toEpochMillis() <= currentState.startAt.toEpochMillis()
         val isPlanType = currentState.selectedTransactionType == TransactionType.PLAN
 
-        if (isLabelEmpty || (!isPlanType && isAmountInvalid) || isGoalInvalid) {
+        if ((isLabelEmpty) || (!isPlanType && isAmountInvalid) || isGoalInvalid) {
             _dataAdditionState.update { it.copy(
                 isLabelCorrect = if (isLabelEmpty) TransactionFieldState.Error("Label cannot be empty") else TransactionFieldState.Success,
                 isAmountCorrect = when {
@@ -271,7 +311,9 @@ class DataAdditionViewModel @Inject constructor(
                             startedAt = currentState.startAt.toEpochMillis(),
                             endAt = currentState.endAt.toEpochMillis(),
                             repeatable = currentState.recurrence,
-                            selectedIcon = currentState.selectedIcon
+                            selectedIcon = currentState.selectedIcon,
+                            fromPaymentMethod = currentState.fromPayment,
+                            toPaymentMethod = currentState.toPayment
                         )
                     )
                     // 3. Reset the state after adding the transaction
@@ -289,7 +331,6 @@ class DataAdditionViewModel @Inject constructor(
         _dataAdditionState.update { it.copy(isFulfillmentValid = TransactionFieldState.Initial) }
 
         val currentState = _dataAdditionState.value
-        val labelText = currentState.label.text.toString()
         val amountText = currentState.amount.text.toString()
         val noteText = currentState.note.text.toString()
 
@@ -397,6 +438,12 @@ class DataAdditionViewModel @Inject constructor(
         if (!show) {
             _dataAdditionState.update {
                 DataAdditionState()
+            }
+        } else {
+            _dataAdditionState.update {
+                it.copy(
+                    selectedTransactionType = TransactionType.RAMPING
+                )
             }
         }
         _dataAdditionState.update { it.copy(showRampingBottomSheet = show) }

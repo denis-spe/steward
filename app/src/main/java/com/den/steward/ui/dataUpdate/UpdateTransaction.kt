@@ -49,6 +49,22 @@ fun UpdateTransactionBottomDrawerSheet(
     val transactionType = transaction.type
     val label = stringResource(id = transactionType.label)
 
+    val noneAmountAffectiveType = listOf(
+        TransactionType.GOAL,
+        TransactionType.PLAN,
+        TransactionType.ACHIEVEMENT,
+        TransactionType.ATTAIN
+    )
+
+    val fulfillmentTransactionType = listOf(
+        TransactionType.ACHIEVEMENT,
+        TransactionType.ATTAIN,
+        TransactionType.PLAN_FULFILLMENT,
+        TransactionType.SETTLEMENT,
+        TransactionType.REPAYMENT
+    )
+
+
     BottomDrawerSheet(
         title = label,
         description = stringResource(id = transactionType.description),
@@ -61,17 +77,21 @@ fun UpdateTransactionBottomDrawerSheet(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            TransactionLabelField(
-                title = "Title",
-                description = "update your ${label.lowercase()} a label",
-                state = dataUpdateState.label,
-                displayText = dataUpdateState.currentLabel,
-                onDisplayTextChange = updateCorrectLabel,
-                updateWasSuccess = updateIsLabelCorrect,
-                placeholder = "label...",
-                colorResId = transactionType.color,
-                wasSuccess = dataUpdateState.isLabelCorrect
-            )
+
+            if (transactionType !in fulfillmentTransactionType) {
+                TransactionLabelField(
+                    title = "Title",
+                    description = "update your ${label.lowercase()} a label",
+                    state = dataUpdateState.label,
+                    displayText = dataUpdateState.currentLabel,
+                    onDisplayTextChange = updateCorrectLabel,
+                    updateWasSuccess = updateIsLabelCorrect,
+                    placeholder = "label...",
+                    colorResId = transactionType.color,
+                    wasSuccess = dataUpdateState.isLabelCorrect
+                )
+            }
+
             TransactionAmountField(
                 state = dataUpdateState.amount,
                 placeholder = "0.0",
@@ -83,10 +103,7 @@ fun UpdateTransactionBottomDrawerSheet(
             )
 
             if (
-                transactionType !in listOf(
-                    TransactionType.GOAL,
-                    TransactionType.PLAN,
-                )
+                transactionType !in noneAmountAffectiveType
             ) {
                 TransactionAffectAmount(
                     colorResId = transactionType.color,
@@ -119,14 +136,16 @@ fun UpdateTransactionBottomDrawerSheet(
                 onLocalTimeChange = onLocalTimeChange
             )
 
-            TransactionIconSelector(
-                colorResId = transactionType.color,
-                selectedIcon = dataUpdateState.selectedIcon,
-                onIconSelected = updateSelectedIcon
-            )
+            if (transactionType !in fulfillmentTransactionType) {
+                TransactionIconSelector(
+                    colorResId = transactionType.color,
+                    selectedIcon = dataUpdateState.selectedIcon,
+                    onIconSelected = updateSelectedIcon
+                )
+            }
 
             // Only show payment method field for non-goal transactions
-            if (transactionType != TransactionType.GOAL && transactionType != TransactionType.PLAN) {
+            if (transactionType !in noneAmountAffectiveType) {
                 TransactionPaymentMethodField(
                     colorResId = transactionType.color,
                     selectedPaymentMethod = dataUpdateState.paymentMethod,

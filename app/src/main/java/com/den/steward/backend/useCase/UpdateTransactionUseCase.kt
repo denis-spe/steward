@@ -1,6 +1,5 @@
 package com.den.steward.backend.useCase
 
-import androidx.compose.foundation.text.input.TextFieldState
 import com.den.steward.backend.entitles.PaymentMethod
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
@@ -129,8 +128,8 @@ class UpdateTransactionUseCase @Inject constructor(
         }
     }
 
-    suspend fun updateTransaction() {
-        val transaction = dataUpdateState.value.selectedTransaction ?: return
+    suspend fun updateTransaction(): Boolean {
+        val transaction = dataUpdateState.value.selectedTransaction ?: return false
         val adjustmentEntries: List<TransactionType> = listOf(
             TransactionType.REPAYMENT,
             TransactionType.SETTLEMENT,
@@ -138,19 +137,39 @@ class UpdateTransactionUseCase @Inject constructor(
             TransactionType.ACHIEVEMENT
         )
 
-        updateShowBottomSheet(false)
 
         val createdAt = dataUpdateState.value.localDateCreatedAt
             .combine(dataUpdateState.value.localTimeCreatedAt)
 
 
         if (transaction.type in adjustmentEntries) {
-            val parentTransaction = transaction.getParentTransaction ?: return
+            val parentTransaction = transaction.getParentTransaction ?: return false
+
+            val amountOrValue = dataUpdateState.value
+                .amount.text.toString()
+                .toDoubleOrNull() ?: 0.0
+            val parentAmount = parentTransaction.getAmountOrValue ?: 0.0
+
+            if (amountOrValue > parentAmount) {
+                _dataUpdateState.update {
+                    it.copy(
+                        isAmountCorrect = TransactionFieldState.Error(
+                            "Amount cannot be greater than parent transaction"
+                        )
+                    )
+                }
+                updateShowBottomSheet(true)
+                return false
+            } else {
+                updateShowBottomSheet(false)
+            }
+
 
             val newTransaction = when(transaction.type) {
                 TransactionType.REPAYMENT -> {
                     val repayment = transaction as Transaction.Repayment
                     repayment.copy(
+                        amount = amountOrValue,
                         label = dataUpdateState.value.label.text.toString(),
                         note = dataUpdateState.value.note.text.toString(),
                         paymentMethod = dataUpdateState.value.paymentMethod,
@@ -161,6 +180,7 @@ class UpdateTransactionUseCase @Inject constructor(
                 TransactionType.SETTLEMENT -> {
                     val settlement = transaction as Transaction.Settlement
                     settlement.copy(
+                        amount = amountOrValue,
                         label = dataUpdateState.value.label.text.toString(),
                         note = dataUpdateState.value.note.text.toString(),
                         paymentMethod = dataUpdateState.value.paymentMethod,
@@ -171,17 +191,17 @@ class UpdateTransactionUseCase @Inject constructor(
                 TransactionType.ATTAIN -> {
                     val attain = transaction as Transaction.Attain
                     attain.copy(
-                        value = dataUpdateState.value.amount.text.toString().toDoubleOrNull() ?: 0.0,
+                        value = amountOrValue
                     )
                 }
 
                 TransactionType.ACHIEVEMENT -> {
                     val achievement = transaction as Transaction.Achievement
                     achievement.copy(
-                        value = dataUpdateState.value.amount.text.toString().toDoubleOrNull() ?: 0.0,
+                        value = amountOrValue
                     )
                 }
-                else -> return
+                else -> return false
             }
 
             updateDateUseCase.updateTransactionFulfillment(
@@ -189,6 +209,7 @@ class UpdateTransactionUseCase @Inject constructor(
                 transaction.id,
                 newTransaction
             )
+            return true
         } else {
             val newTransaction = when(transaction.type) {
                 TransactionType.EARNINGS -> {
@@ -265,13 +286,21 @@ class UpdateTransactionUseCase @Inject constructor(
                         createdAt = createdAt
                     )
                 }
-                else -> return
+                else -> return false
+            }
+
+            updateShowBottomSheet(false)
+            _dataUpdateState.update {
+                it.copy(
+                    isSaving = false
+                )
             }
 
             updateDateUseCase.updateTransaction(
                 transactionId = transaction.id,
                 newTransaction = newTransaction
             )
+            return true
         }
     }
 }

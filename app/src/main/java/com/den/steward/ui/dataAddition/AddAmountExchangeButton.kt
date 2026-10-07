@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,6 +39,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataAdditionState
 import com.den.steward.backend.viewModels.DataAdditionViewModel
 import com.den.steward.helper.getCurrencySymbol
@@ -46,6 +48,8 @@ import com.den.steward.ui.components.bottomDrawerSheet.BottomDrawerSheetItem
 import com.den.steward.ui.components.transactionFields.AMOUNT_FONT_SIZE
 import com.den.steward.ui.components.transactionFields.CustomInputTransformation
 import com.den.steward.ui.components.transactionFields.CustomOutputTransformation
+import com.den.steward.ui.components.transactionFields.TransactionFieldState
+import com.den.steward.ui.components.transactionbuttons.TransactionButtons
 import com.den.steward.ui.theme.ExtendedTheme
 
 @Composable
@@ -63,9 +67,12 @@ fun AddAmountExchangeButton(
     val fromPaymentIcon = dataAdditionState.fromPayment.icon
     val toPaymentIcon = dataAdditionState.toPayment.icon
     val symbol = getCurrencySymbol()
+    val type = TransactionType.RAMPING
 
     FloatingActionButton(
-        onClick = { dataAdditionViewModel.updateShowRampingBottomSheet(true) },
+        onClick = {
+            dataAdditionViewModel.updateShowRampingBottomSheet(true)
+        },
         shape = shape,
         elevation = elevation,
         modifier = modifier,
@@ -78,10 +85,17 @@ fun AddAmountExchangeButton(
         )
     }
 
+    LaunchedEffect(dataAdditionState.amount.text) {
+        dataAdditionViewModel.updateIsAmountCorrect(TransactionFieldState.Initial)
+    }
+
     // 1. Selection of Transaction Type Bottom Drawer Sheet
     BottomDrawerSheet(
         title = "Ramping",
-        description = "Turn amount from credit card or bank into cash",
+        description = if (dataAdditionState.isAmountCorrect is TransactionFieldState.Error)
+            (dataAdditionState.isAmountCorrect as TransactionFieldState.Error).message
+        else
+            "Turn amount from credit card or bank into cash",
         show = dataAdditionState.showRampingBottomSheet,
         onDismissRequest = { dataAdditionViewModel.updateShowRampingBottomSheet(false) },
     ) {
@@ -191,6 +205,15 @@ fun AddAmountExchangeButton(
                     }
                 }
             }
+
+            TransactionButtons(
+                colorResId = type.color,
+                modifier = Modifier.padding(vertical = 16.dp),
+                transactionType = type,
+                isErrors = dataAdditionState.isAmountCorrect is TransactionFieldState.Error,
+                isLoading = dataAdditionState.isSaving,
+                onClick = dataAdditionViewModel::addRampingTransaction
+            )
         }
     }
 }

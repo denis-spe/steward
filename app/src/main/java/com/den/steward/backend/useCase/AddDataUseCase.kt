@@ -93,6 +93,15 @@ class AddDataUseCase @Inject constructor(
                     selectedIcon = dataTransferToViewModel.selectedIcon.icon
                 )
 
+                TransactionType.RAMPING -> Transaction.Ramping(
+                    label = dataTransferToViewModel.label,
+                    amount = amount,
+                    note = dataTransferToViewModel.note,
+                    createdAt = dataTransferToViewModel.createdAt,
+                    from = dataTransferToViewModel.fromPaymentMethod,
+                    to = dataTransferToViewModel.toPaymentMethod
+                )
+
                 else -> throw IllegalArgumentException("Invalid transaction type: ${dataTransferToViewModel.transactionType}")
             }
         } catch (e: Exception) {
