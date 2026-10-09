@@ -2,14 +2,19 @@
 package com.den.steward.ui.components
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -18,14 +23,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.den.steward.backend.entitles.GoalStatus
@@ -38,6 +42,7 @@ import com.den.steward.helper.formatedDateTime
 import com.den.steward.helper.limitLength
 import com.den.steward.helper.title
 import com.den.steward.helper.toLocalDateTime
+import com.den.steward.ui.screens.homeScreen.tabs.todayTab.VerticalDivider
 import java.time.LocalDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,7 +53,7 @@ fun TransactionViewDialog(
     onDismissRequest: () -> Unit
 ) {
     if (onShow) {
-        Dialog (
+        Dialog(
             onDismissRequest = onDismissRequest,
         ) {
             Surface(
@@ -61,7 +66,7 @@ fun TransactionViewDialog(
                     .padding(bottom = 16.dp)
             ) {
 
-                when(transaction) {
+                when (transaction) {
                     is Transaction.Expense -> {
                         TransactionCard(
                             label = transaction.label,
@@ -71,7 +76,7 @@ fun TransactionViewDialog(
                             paymentMethod = transaction.paymentMethod,
                             transactionType = transaction.type,
                             affectAmount = transaction.affectAmount,
-                            selectedIcon = transaction.selectedIcon
+                            selectedIcon = transaction.getSelectedIcon
                         )
                     }
 
@@ -84,7 +89,7 @@ fun TransactionViewDialog(
                             paymentMethod = transaction.paymentMethod,
                             affectAmount = transaction.affectAmount,
                             transactionType = transaction.type,
-                            selectedIcon = transaction.selectedIcon
+                            selectedIcon = transaction.getSelectedIcon
                         )
                     }
 
@@ -97,7 +102,7 @@ fun TransactionViewDialog(
                             paymentMethod = transaction.paymentMethod,
                             affectAmount = transaction.affectAmount,
                             transactionType = transaction.type,
-                            selectedIcon = transaction.selectedIcon
+                            selectedIcon = transaction.getSelectedIcon
                         )
                     }
 
@@ -112,7 +117,7 @@ fun TransactionViewDialog(
                             recurrencePattern = transaction.repeatable,
                             achievement = transaction.achievement,
                             status = transaction.status,
-                            selectedIcon = transaction.selectedIcon
+                            selectedIcon = transaction.getSelectedIcon
                         )
                     }
 
@@ -131,21 +136,20 @@ private fun TransactionCard(
     createdAt: LocalDateTime,
     paymentMethod: PaymentMethod,
     affectAmount: Boolean,
-    selectedIcon: Int,
+    selectedIcon: SelectedIcon,
     transactionType: TransactionType
 ) {
     val transactionTypeLabel = stringResource(id = transactionType.label)
     val transactionTypeIcon = painterResource(transactionType.icon)
     val transactionTypeColor = colorResource(transactionType.color)
-    val transactionSelectedIcon = painterResource(selectedIcon)
 
     Column(
-        modifier = Modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(5.dp)
+        verticalArrangement = Arrangement.Center,
     ) {
-
         TransactionViewTitle(
             title = label,
+            color = transactionTypeColor,
+            selectedIcon = selectedIcon,
             icon = {
                 Icon(
                     painter = transactionTypeIcon,
@@ -155,34 +159,33 @@ private fun TransactionCard(
             }
         )
 
-        TransactionRow(
-            key = "Amount",
-            value = amount.formatToAmount()
-        )
-        TransactionRow(
-            key = "Created At",
-            value = createdAt.formatedDateTime
-        )
-        TransactionRow(
-            key = "Payment Method",
-            value = paymentMethod.toString()
-        )
-        TransactionRow(
-            key = "Affected Amount",
-            value = if (affectAmount) "Yes" else "No"
-        )
-
-        if (note.isNotBlank()) {
-            TransactionNoteView(
-                note = note
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            TransactionRow(
+                key = "Amount",
+                value = amount.formatToAmount()
             )
-        }
+            TransactionRow(
+                key = "Created At",
+                value = createdAt.formatedDateTime
+            )
+            TransactionRow(
+                key = "Payment Method",
+                value = paymentMethod.toString()
+            )
+            TransactionRow(
+                key = "Affected Amount",
+                value = if (affectAmount) "Yes" else "No"
+            )
 
-        Image(
-            painter = transactionSelectedIcon,
-            contentDescription = transactionTypeLabel,
-            modifier = Modifier.size(25.dp)
-        )
+            if (note.isNotBlank()) {
+                TransactionNoteView(
+                    note = note
+                )
+            }
+        }
     }
 }
 
@@ -197,89 +200,145 @@ private fun TransactionGoalCard(
     recurrencePattern: RecurrencePattern,
     status: GoalStatus,
     achievement: List<Transaction.Achievement>,
-    selectedIcon: Int
+    selectedIcon: SelectedIcon
 ) {
     val transactionTypeLabel = stringResource(id = TransactionType.GOAL.label)
     val transactionTypeIcon = painterResource(TransactionType.GOAL.icon)
     val transactionTypeColor = colorResource(TransactionType.GOAL.color)
 
-    val counts = remember (achievement) {
+    val counts = remember(achievement) {
         object {
-            val completedAchievementSize = achievement.filter { it.status == GoalStatus.COMPLETED }.size
+            val completedAchievementSize =
+                achievement.filter { it.status == GoalStatus.COMPLETED }.size
             val failedAchievementSize = achievement.filter { it.status == GoalStatus.FAILED }.size
         }
     }
 
-    Column(
-        modifier = Modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(5.dp)
-    ) {
+    val achievementColor = colorResource(TransactionType.ACHIEVEMENT.color)
 
+    Column(
+        verticalArrangement = Arrangement.Center,
+    ) {
         TransactionViewTitle(
             title = label,
+            color = transactionTypeColor,
+            selectedIcon = selectedIcon,
             icon = {
                 Icon(
                     painter = transactionTypeIcon,
                     contentDescription = transactionTypeLabel,
                     tint = transactionTypeColor
                 )
-            }
+            },
         )
 
-        TransactionRow(
-            key = "Amount",
-            value = amount.formatToAmount()
-        )
-        TransactionRow(
-            key = "Created At",
-            value = createdAt.formatedDateTime
-        )
-        TransactionRow(
-            key = "Started At",
-            value = startDateTime.formatedDateTime
-        )
-        TransactionRow(
-            key = "Deadline time",
-            value = endDateTime.formatedDateTime
-        )
-
-        TransactionRow(
-            key = "Recurrence Pattern",
-            value = recurrencePattern.name
-        )
-
-        TransactionRow(
-            key = "Status",
-            value = status.label
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp)
         ) {
-            Text(
-                buildAnnotatedString {
-                    append("Completed ")
-                    withStyle(style = SpanStyle(color = Color(0xFF4CAF50))) {
-                        append(counts.completedAchievementSize.toString())
-                    }
-                    append(" - ")
-                    withStyle(style = SpanStyle(color = Color(0xFFF44336))) {
-                        append(counts.failedAchievementSize.toString())
-                    }
-                    append(" Failed")
-
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = MaterialTheme.typography.bodyMedium.fontWeight
+            TransactionRow(
+                key = "Amount",
+                value = amount.formatToAmount()
             )
-        }
-
-        if (note.isNotBlank()) {
-            TransactionNoteView(
-                note = note
+            TransactionRow(
+                key = "Created At",
+                value = createdAt.formatedDateTime
             )
+            TransactionRow(
+                key = "Started At",
+                value = startDateTime.formatedDateTime
+            )
+            TransactionRow(
+                key = "Deadline time",
+                value = endDateTime.formatedDateTime
+            )
+
+            TransactionRow(
+                key = "Recurrence Pattern",
+                value = recurrencePattern.name
+            )
+
+            TransactionRow(
+                key = "Status",
+                value = status.label
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Surface(
+                            color = achievementColor.copy(0.4f),
+                            shape = CircleShape
+                        ) {
+                            Box(
+                                modifier = Modifier.size(40.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    counts.completedAchievementSize.toString(),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = MaterialTheme.typography.titleMedium.fontWeight,
+                                    color = achievementColor
+                                )
+                            }
+                        }
+                        Text(
+                            "Achieved",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = MaterialTheme.typography.labelMedium.fontWeight
+                        )
+                    }
+
+                    VerticalDivider(
+                        modifier = Modifier.height(40.dp),
+                        color = Color.LightGray
+                    )
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.error.copy(0.4f),
+                            shape = CircleShape
+                        ) {
+                            Box(
+                                modifier = Modifier.size(40.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    counts.failedAchievementSize.toString(),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = MaterialTheme.typography.titleMedium.fontWeight,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                        Text(
+                            "Failed",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = MaterialTheme.typography.labelMedium.fontWeight
+                        )
+                    }
+                }
+            }
+
+            if (note.isNotBlank()) {
+                TransactionNoteView(
+                    note = note
+                )
+            }
         }
     }
 }
@@ -337,30 +396,65 @@ private fun TransactionNoteView(
 @Composable
 private fun TransactionViewTitle(
     title: String,
-    icon: @Composable () -> Unit
+    color: Color,
+    icon: @Composable () -> Unit,
+    selectedIcon: SelectedIcon
 ) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+
+    val iconBackgroundColor = color.copy(0.4f).compositeOver(MaterialTheme.colorScheme.background)
+    val transactionSelectedIcon = painterResource(selectedIcon.icon)
+
+    Surface(
+        color = color
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp),
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            icon()
+
+            Box(
+                modifier = Modifier
+                    .width(60.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .align(Alignment.CenterEnd)
+                        .clip(CircleShape)
+                        .background(iconBackgroundColor),
+                    contentAlignment = Alignment.Center
+                ) {
+                    icon()
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(30.dp)
+                        .align(Alignment.CenterStart)
+                        .clip(CircleShape)
+                        .background(iconBackgroundColor),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = transactionSelectedIcon,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
             Text(
                 title.title,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = MaterialTheme.typography.titleMedium.fontWeight
+                fontWeight = MaterialTheme.typography.titleMedium.fontWeight,
+                color = Color.White
             )
         }
-
-        HorizontalDivider(
-            color = Color.Gray,
-            thickness = 1.dp,
-            modifier = Modifier.padding(vertical = 10.dp)
-        )
     }
 }

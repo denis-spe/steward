@@ -36,7 +36,7 @@ val DocumentSnapshot.toTransaction: Transaction?
     val selectedIcon = getLong("selectedIcon") ?: R.drawable.description.toLong()
 
     return when (type) {
-        TransactionType.RAMPING.name -> {
+        TransactionType.EXCHANGE.name -> {
             val from = getString("from")?.let { name ->
                 paymentMethodMap[name]
             } ?: PaymentMethod.CARD
@@ -44,7 +44,7 @@ val DocumentSnapshot.toTransaction: Transaction?
                 paymentMethodMap[name]
             } ?: PaymentMethod.CARD
 
-            Transaction.Ramping(
+            Transaction.Exchange(
                 id = id,
                 label = label,
                 note = note,

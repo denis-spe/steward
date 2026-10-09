@@ -93,7 +93,7 @@ class AddDataUseCase @Inject constructor(
                     selectedIcon = dataTransferToViewModel.selectedIcon.icon
                 )
 
-                TransactionType.RAMPING -> Transaction.Ramping(
+                TransactionType.EXCHANGE -> Transaction.Exchange(
                     label = dataTransferToViewModel.label,
                     amount = amount,
                     note = dataTransferToViewModel.note,

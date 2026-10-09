@@ -6,15 +6,15 @@ import com.den.steward.backend.entitles.Transaction.Achievement
 import com.den.steward.backend.entitles.Transaction.Attain
 import com.den.steward.backend.entitles.Transaction.Debt
 import com.den.steward.backend.entitles.Transaction.Earnings
+import com.den.steward.backend.entitles.Transaction.Exchange
 import com.den.steward.backend.entitles.Transaction.Expense
 import com.den.steward.backend.entitles.Transaction.Goal
 import com.den.steward.backend.entitles.Transaction.Lent
-import com.den.steward.backend.entitles.Transaction.Repayment
-import com.den.steward.backend.entitles.Transaction.Settlement
-import com.den.steward.backend.entitles.Transaction.Savings
 import com.den.steward.backend.entitles.Transaction.Plan
 import com.den.steward.backend.entitles.Transaction.PlanFulfillment
-import com.den.steward.backend.entitles.Transaction.Ramping
+import com.den.steward.backend.entitles.Transaction.Repayment
+import com.den.steward.backend.entitles.Transaction.Savings
+import com.den.steward.backend.entitles.Transaction.Settlement
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 
@@ -32,7 +32,7 @@ val Transaction.toMap: MutableMap<String, Any>
 
         when(this) {
 
-            is Ramping -> {
+            is Exchange -> {
                 mapping["amount"] = this.amount
                 mapping["label"] = this.label
                 mapping["note"] = this.note

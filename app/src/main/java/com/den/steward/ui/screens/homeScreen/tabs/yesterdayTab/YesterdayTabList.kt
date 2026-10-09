@@ -5,6 +5,7 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,11 +15,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBoxState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -32,25 +35,25 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.R
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.Filter
+import com.den.steward.backend.states.Filter.Companion.icon
 import com.den.steward.backend.states.OrderBy
 import com.den.steward.backend.states.SortAndFilterState
 import com.den.steward.backend.states.SortBy
 import com.den.steward.backend.states.yesterdayTabState.YesterdayTabState
 import com.den.steward.backend.states.yesterdayTabState.YesterdayTransactionSummary
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.den.steward.backend.states.Filter.Companion.icon
 import com.den.steward.backend.viewModels.YesterdayViewModel
 import com.den.steward.ui.componentExtenison.shimmerEffect
-import com.den.steward.ui.components.charts.collections.ChartDataCollection
 import com.den.steward.ui.components.DataDeletionDialog
+import com.den.steward.ui.components.charts.collections.ChartDataCollection
 import com.den.steward.ui.dataUpdate.UpdateTransactionBottomDrawerSheet
 import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabListEmpty
 import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabListError
-import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabListPanelButton
+import com.den.steward.ui.theme.ExtendedTheme
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.launch
 
@@ -186,13 +189,19 @@ fun YesterdayTabLazyList(
                     }
                 )
 
+                val shadowElevation = when (index) {
+                    0 -> 4.dp
+                    transactions.lastIndex -> 4.dp
+                    else -> 2.dp
+                }
+
                 YesterdayTabLazyListItem(
                     dismissState = yesterdayItemDismissState,
                     modifier = Modifier.animateItem(
                         fadeInSpec = tween(1000),
                     ),
+                    shadowElevation = shadowElevation,
                     transaction = transaction,
-                    color = MaterialTheme.colorScheme.surface,
                     onDelete = {
                         swipedState = yesterdayItemDismissState
                         yesterdayViewModel.updateSelectedTransactionToDelete(it)
@@ -300,7 +309,7 @@ fun YesterdayTabListPanelButtons(
             verticalAlignment = Alignment.CenterVertically
         ) {
             item(key = "Order By") {
-                TodayTabListPanelButton(
+                YesterdayTabListPanelButton(
                     text = "Order",
                     selected = orderBySelected,
                     icon = {
@@ -314,7 +323,7 @@ fun YesterdayTabListPanelButtons(
                 )
             }
             item(key = "Sort By") {
-                TodayTabListPanelButton(
+                YesterdayTabListPanelButton(
                     text = "Sort",
                     selected = sortBySelected,
                     icon = {
@@ -329,7 +338,7 @@ fun YesterdayTabListPanelButtons(
             }
 
             item(key = "Filter") {
-                TodayTabListPanelButton(
+                YesterdayTabListPanelButton(
                     text = "Filter",
                     selected = filterSelected,
                     icon = {
@@ -342,6 +351,49 @@ fun YesterdayTabListPanelButtons(
                     onClick = onFilterClick
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun YesterdayTabListPanelButton(
+    text: String,
+    selected: Boolean,
+    icon: @Composable () -> Unit,
+    onClick: () -> Unit
+) {
+    val backgroundColor = if (selected) MaterialTheme.colorScheme.primary
+    else ExtendedTheme.colors.lightGray
+    val contentColor =
+        if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
+
+    TextButton(
+        onClick = onClick,
+        contentPadding = PaddingValues(horizontal = 5.dp, vertical = 2.dp),
+        colors = ButtonDefaults.textButtonColors().copy(
+            contentColor = contentColor
+        )
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Surface(
+                color = backgroundColor,
+                shape = CircleShape
+            ) {
+                Box(
+                    modifier = Modifier
+                        .padding(10.dp)
+                ) {
+                    icon()
+                }
+            }
+            Text(
+                text,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
@@ -373,7 +425,7 @@ fun YesterdayTabLazyListShimmer(
 
 @Composable
 fun YesterdayTabListPanelButtonsShimmer() {
-    val height = 46.dp
+    val height = 40.dp
 
     Surface(
         color = MaterialTheme.colorScheme.background

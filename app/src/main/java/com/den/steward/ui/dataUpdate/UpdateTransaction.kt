@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -28,7 +27,6 @@ import com.den.steward.ui.components.transactionFields.TransactionNoteField
 import com.den.steward.ui.components.transactionFields.TransactionPaymentMethodField
 import com.den.steward.ui.components.transactionFields.TransactionTimeField
 import com.den.steward.ui.components.transactionbuttons.ExchangeAccountButton
-import com.den.steward.ui.components.transactionbuttons.TransactionButtons
 import com.den.steward.ui.components.transactionbuttons.TransactionUpdateButtons
 import java.time.LocalDate
 import java.time.LocalTime
@@ -64,7 +62,7 @@ fun UpdateTransactionBottomDrawerSheet(
         transactionType = transactionType,
         onDismissRequest = reset
     ) {
-        if (transactionType == TransactionType.RAMPING) {
+        if (transactionType == TransactionType.EXCHANGE) {
             UpdateRampingTransaction(
                 dataUpdateState = dataUpdateState,
                 onExchange = onExchange,
@@ -228,11 +226,12 @@ fun UpdateRampingTransaction(
     val toPayment = dataUpdateState.toPaymentMethod.label
     val fromPaymentIcon = dataUpdateState.fromPayment.icon
     val toPaymentIcon = dataUpdateState.toPaymentMethod.icon
-    val type = TransactionType.RAMPING
+    val type = TransactionType.EXCHANGE
     val color = colorResource(type.color)
 
     Column(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
             .padding(vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)

@@ -35,7 +35,6 @@ import androidx.compose.ui.unit.dp
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.states.Affected
 import com.den.steward.helper.formattedTime
-import com.den.steward.helper.title
 import com.den.steward.helper.toLocalDateTime
 import com.den.steward.ui.componentExtenison.shimmerEffect
 import com.den.steward.ui.components.SwipeDismiss
@@ -46,7 +45,8 @@ fun AllTabLazyListStickyHeader(date: String) {
         color = MaterialTheme.colorScheme.background.copy(alpha = 0.9f)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
                 .padding(vertical = 12.dp, horizontal = 16.dp),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically
@@ -93,6 +93,7 @@ fun AllTabLazyListItem(
     }
 
     val typeColor = colorResource(id = uiData.typeColorRes)
+    val transactionIcon = painterResource(id = transaction.getIcon)
 
     // FIX: removed animateFloatAsState here. In a LazyColumn, animateFloatAsState
     // restarts from its initial value every time this composable is bound to a
@@ -130,20 +131,40 @@ fun AllTabLazyListItem(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Leading Icon
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(typeColor.copy(alpha = 0.1f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(id = uiData.icon),
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp),
-                            tint = typeColor
-                        )
+                    // Leading Icon with Type Badge Overlay
+                    Box {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(typeColor.copy(alpha = 0.1f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Image(
+                                painter = transactionIcon,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .size(20.dp)
+                                .align(Alignment.BottomEnd)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surface)
+                                .padding(2.dp)
+                                .clip(CircleShape)
+                                .background(typeColor.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = transaction.type.icon),
+                                contentDescription = null,
+                                modifier = Modifier.size(12.dp),
+                                tint = typeColor
+                            )
+                        }
                     }
 
                     // Center Content

@@ -12,8 +12,8 @@ import com.den.steward.backend.states.Affected
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.Filter
 import com.den.steward.backend.states.OrderBy
-import com.den.steward.backend.states.SortBy
 import com.den.steward.backend.states.SortAndFilterState
+import com.den.steward.backend.states.SortBy
 import com.den.steward.backend.states.todayTabState.BalanceStatStates
 import com.den.steward.backend.states.todayTabState.LiabilitiesPaymentStatsState
 import com.den.steward.backend.states.todayTabState.TodayTabDataState
@@ -124,7 +124,7 @@ class TodayViewModel @Inject constructor(
         val flow = todayTransaction.calculateFlow
 
         transactions.forEach { transaction ->
-            if (transaction is Transaction.Ramping) {
+            if (transaction is Transaction.Exchange) {
                 val amount = transaction.amount
                 val fromPaymentMethod = transaction.from
                 val toPaymentMethod = transaction.to

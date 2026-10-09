@@ -478,6 +478,7 @@ fun YesterdayTabStatisticShimmer() {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .clip(MaterialTheme.shapes.medium)
                     .shimmerEffect()
             )
         }

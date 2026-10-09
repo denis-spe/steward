@@ -6,10 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Badge
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -44,9 +40,7 @@ fun TodayTab(
     ) {
         TodayTabList(
             modifier = Modifier.fillMaxSize(),
-            chartViewModel = chartViewModel,
             todayViewModel = todayViewModel,
-            dataDeletionViewModel = dataDeletionViewModel,
             todayTabDataState = todayTabDataState
         )
     }

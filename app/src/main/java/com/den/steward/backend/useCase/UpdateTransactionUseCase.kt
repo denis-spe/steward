@@ -299,9 +299,9 @@ class UpdateTransactionUseCase @Inject constructor(
                     )
                 }
 
-                TransactionType.RAMPING -> {
-                    val ramping = transaction as Transaction.Ramping
-                    ramping.copy(
+                TransactionType.EXCHANGE -> {
+                    val exchange = transaction as Transaction.Exchange
+                    exchange.copy(
                         label = dataUpdateState.value.label.text.toString(),
                         note = dataUpdateState.value.note.text.toString(),
                         amount = dataUpdateState.value.amount.text.toString().toDoubleOrNull() ?: 0.0,

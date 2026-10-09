@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -48,13 +49,11 @@ import com.den.steward.backend.states.Filter.Companion.icon
 import com.den.steward.backend.states.OrderBy
 import com.den.steward.backend.states.SortBy
 import com.den.steward.backend.states.todayTabState.TodayTabDataState
-import com.den.steward.backend.viewModels.ChartViewModel
-import com.den.steward.backend.viewModels.DataDeletionViewModel
 import com.den.steward.backend.viewModels.TodayViewModel
 import com.den.steward.helper.formatToAmount
 import com.den.steward.ui.componentExtenison.shimmerEffect
-import com.den.steward.ui.components.TransactionViewDialog
 import com.den.steward.ui.components.DataDeletionDialog
+import com.den.steward.ui.components.TransactionViewDialog
 import com.den.steward.ui.dataUpdate.UpdateTransactionBottomDrawerSheet
 import com.den.steward.ui.theme.ExtendedTheme
 import kotlinx.coroutines.launch
@@ -64,12 +63,9 @@ private val icon_size = 80.dp
 @Composable
 fun TodayTabList(
     modifier: Modifier = Modifier,
-    chartViewModel: ChartViewModel,
     todayViewModel: TodayViewModel,
-    dataDeletionViewModel: DataDeletionViewModel,
     todayTabDataState: DataState<TodayTabDataState>,
 ) {
-
     Crossfade(
         targetState = todayTabDataState,
         label = "TodayTabListCrossfade"
@@ -208,7 +204,7 @@ fun TodayTabListPanelButtons(
 
 @Composable
 fun TodayTabListPanelButtonsShimmer() {
-    val height = 46.dp
+    val height = 40.dp
 
     Surface(
         color = MaterialTheme.colorScheme.background
@@ -300,15 +296,27 @@ fun TodayTabLazyList(
 
     var swipedState by remember { mutableStateOf<SwipeToDismissBoxState?>(null) }
     val scope = rememberCoroutineScope()
+    val tabs = listOf(
+        "Flow Chart",
+        "Balances",
+        "Liabilities"
+    )
+
+    val pager = rememberPagerState {
+        tabs.size
+    }
 
     LazyColumn(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
-
-        item {
+        item(
+            key = "Today's Statistic"
+        ) {
             TodayTabStatisticView(
+                tabs = tabs,
+                pager = pager,
                 donutChartData = donutChartData,
                 balanceStatStates = balanceStatStates,
                 liabilitiesPaymentStatsState = liabilitiesPaymentStatsState,
@@ -317,7 +325,9 @@ fun TodayTabLazyList(
             )
         }
 
-        stickyHeader {
+        stickyHeader(
+            key = "Filter And Sort"
+        ) {
             TodayTabListHeader()
             TodayTabListPanelButtons(
                 filter = sortAndFilterState.filter,

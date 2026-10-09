@@ -244,16 +244,22 @@ class DataAdditionViewModel @Inject constructor(
             return
         }
 
+        val label = if (currentState.toPayment == PaymentMethod.CASH) {
+            "Withdrawn"
+        } else {
+            "Deposited"
+        }
+
         viewModelScope.launch {
             try {
                 // 2. Perform the database operation
                 addDataUseCase.addTransaction(
                     DataTransferToViewModel(
-                        label = currentState.currentLabel,
+                        label = label,
                         amount = currentState.amount.text.toString(),
                         note = currentState.currentNote,
                         createdAt = createdAt,
-                        transactionType = TransactionType.RAMPING,
+                        transactionType = TransactionType.EXCHANGE,
                         fromPaymentMethod = currentState.fromPayment,
                         toPaymentMethod = currentState.toPayment
                     )
@@ -261,7 +267,7 @@ class DataAdditionViewModel @Inject constructor(
                 // 3. Reset the state after adding the transaction
                 reset()
             } catch (e: Exception) {
-                Log.e(TAG, "Error adding transaction of type RAMPING", e)
+                Log.e(TAG, "Error adding transaction of type EXCHANGE", e)
                 // 4. In case of error, stop the loading state and maybe keep the sheet closed or notify user
                 _dataAdditionState.update { it.copy(isSaving = false) }
             }
@@ -452,7 +458,7 @@ class DataAdditionViewModel @Inject constructor(
         } else {
             _dataAdditionState.update {
                 it.copy(
-                    selectedTransactionType = TransactionType.RAMPING
+                    selectedTransactionType = TransactionType.EXCHANGE
                 )
             }
         }

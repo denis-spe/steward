@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -28,18 +27,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.states.Affected
 import com.den.steward.helper.formattedTime
-import com.den.steward.helper.title
 import com.den.steward.helper.toLocalDateTime
 import com.den.steward.ui.componentExtenison.shimmerEffect
 import com.den.steward.ui.components.SwipeDismiss
@@ -49,7 +47,7 @@ fun YesterdayTabLazyListItem(
     modifier: Modifier = Modifier,
     transaction: Transaction,
     shape: Shape = MaterialTheme.shapes.small,
-    color: Color = MaterialTheme.colorScheme.background,
+    shadowElevation: Dp = 0.dp,
     onUpdate: () -> Unit = {},
     onDelete: (transaction: Transaction) -> Unit = {},
     dismissState: SwipeToDismissBoxState,
@@ -95,6 +93,7 @@ fun YesterdayTabLazyListItem(
             onClick = onClick,
             shape = shape,
             color = MaterialTheme.colorScheme.background,
+            shadowElevation = shadowElevation
         ) {
             Column(
                 modifier = Modifier
@@ -155,13 +154,6 @@ fun YesterdayTabLazyListItem(
                                 modifier = Modifier.weight(1f),
                                 verticalArrangement = Arrangement.spacedBy(2.dp)
                             ) {
-                                Text(
-                                    text = transaction.getLabel,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    maxLines = 1
-                                )
-
                                 LazyRow(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -243,6 +235,13 @@ fun YesterdayTabLazyListItem(
                                         }
                                     }
                                 }
+
+                                Text(
+                                    text = transaction.getLabel,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1
+                                )
                             }
 
                             // Trailing Content (Amount)
@@ -309,9 +308,6 @@ fun YesterdayTabLazyListItem(
                                 }
                             }
                         }
-                        HorizontalDivider(
-                            modifier = Modifier.padding(vertical = 5.dp)
-                        )
                     }
                 }
             }
@@ -324,7 +320,6 @@ fun YesterdayTabLazyListItemShimmer() {
     Surface(
         modifier = Modifier.padding(vertical = 4.dp),
         shape = MaterialTheme.shapes.small,
-        tonalElevation = 1.dp
     ) {
         Column(
             modifier = Modifier
@@ -352,15 +347,15 @@ fun YesterdayTabLazyListItemShimmer() {
                 ) {
                     Box(
                         modifier = Modifier
-                            .width(120.dp)
-                            .height(18.dp)
+                            .width(80.dp)
+                            .height(14.dp)
                             .clip(MaterialTheme.shapes.extraSmall)
                             .shimmerEffect()
                     )
                     Box(
                         modifier = Modifier
-                            .width(80.dp)
-                            .height(14.dp)
+                            .width(120.dp)
+                            .height(18.dp)
                             .clip(MaterialTheme.shapes.extraSmall)
                             .shimmerEffect()
                     )

@@ -39,7 +39,6 @@ import androidx.compose.ui.unit.dp
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.states.Affected
 import com.den.steward.helper.formattedTime
-import com.den.steward.helper.title
 import com.den.steward.helper.toLocalDateTime
 import com.den.steward.ui.componentExtenison.shimmerEffect
 import com.den.steward.ui.components.SwipeDismiss
@@ -310,7 +309,8 @@ fun TodayTabLazyListItem(
                             }
                         }
                         HorizontalDivider(
-                            modifier = Modifier.padding(vertical = 5.dp)
+                            modifier = Modifier.padding(vertical = 5.dp),
+                            color = Color.LightGray
                         )
                     }
                 }
@@ -324,7 +324,7 @@ fun TodayTabLazyListItemShimmer() {
     Surface(
         modifier = Modifier.padding(vertical = 4.dp),
         shape = MaterialTheme.shapes.small,
-        tonalElevation = 1.dp
+        color = MaterialTheme.colorScheme.background
     ) {
         Column(
             modifier = Modifier
@@ -345,45 +345,58 @@ fun TodayTabLazyListItemShimmer() {
                         .shimmerEffect()
                 )
 
-                // Center Content Shimmer
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .width(120.dp)
-                            .height(18.dp)
-                            .clip(MaterialTheme.shapes.extraSmall)
-                            .shimmerEffect()
-                    )
-                    Box(
-                        modifier = Modifier
-                            .width(80.dp)
-                            .height(14.dp)
-                            .clip(MaterialTheme.shapes.extraSmall)
-                            .shimmerEffect()
-                    )
-                }
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Center Content Shimmer
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(120.dp)
+                                    .height(18.dp)
+                                    .clip(MaterialTheme.shapes.extraSmall)
+                                    .shimmerEffect()
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .width(80.dp)
+                                    .height(14.dp)
+                                    .clip(MaterialTheme.shapes.extraSmall)
+                                    .shimmerEffect()
+                            )
+                        }
 
-                // Trailing Content Shimmer
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .width(70.dp)
-                            .height(18.dp)
-                            .clip(MaterialTheme.shapes.extraSmall)
-                            .shimmerEffect()
-                    )
-                    Box(
-                        modifier = Modifier
-                            .width(40.dp)
-                            .height(14.dp)
-                            .clip(MaterialTheme.shapes.extraSmall)
-                            .shimmerEffect()
+                        // Trailing Content Shimmer
+                        Column(
+                            horizontalAlignment = Alignment.End,
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(70.dp)
+                                    .height(18.dp)
+                                    .clip(MaterialTheme.shapes.extraSmall)
+                                    .shimmerEffect()
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .width(40.dp)
+                                    .height(14.dp)
+                                    .clip(MaterialTheme.shapes.extraSmall)
+                                    .shimmerEffect()
+                            )
+                        }
+                    }
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 5.dp),
+                        color = Color.LightGray
                     )
                 }
             }

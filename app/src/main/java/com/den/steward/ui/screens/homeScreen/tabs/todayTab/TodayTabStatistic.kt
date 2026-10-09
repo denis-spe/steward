@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Balance
@@ -53,8 +52,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.todayTabState.BalanceStatStates
 import com.den.steward.backend.states.todayTabState.LiabilitiesPaymentStatsState
 import com.den.steward.helper.formatToAmount
@@ -65,22 +62,14 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun TodayTabStatisticView(
+    tabs: List<String>,
+    pager: PagerState,
     donutChartData: ImmutableList<DonutChartData>,
     balanceStatStates: BalanceStatStates,
     liabilitiesPaymentStatsState: LiabilitiesPaymentStatsState,
     donutSummaryStat: String,
     donutChartCenterAmount: String
 ) {
-    val tabs = listOf(
-        "Flow Chart",
-        "Balances",
-        "Liabilities"
-    )
-
-    val pager = rememberPagerState {
-        tabs.size
-    }
-
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -274,7 +263,9 @@ private fun TodaySummaryView(balanceStatStates: BalanceStatStates) {
 
     TodayStatisticLayout {
         Row(
-            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min),
             horizontalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             // --- Total Flow ---
@@ -465,27 +456,52 @@ private fun LiabilityCardShimmer(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             // Title
-            Box(Modifier.size(60.dp, 14.dp).clip(MaterialTheme.shapes.extraSmall).shimmerEffect())
+            Box(Modifier
+                .size(60.dp, 14.dp)
+                .clip(MaterialTheme.shapes.extraSmall)
+                .shimmerEffect())
 
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 // Remaining section
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Box(Modifier.size(50.dp, 10.dp).clip(MaterialTheme.shapes.extraSmall).shimmerEffect())
-                    Box(Modifier.size(80.dp, 20.dp).clip(MaterialTheme.shapes.extraSmall).shimmerEffect())
+                    Box(Modifier
+                        .size(50.dp, 10.dp)
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .shimmerEffect())
+                    Box(Modifier
+                        .size(80.dp, 20.dp)
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .shimmerEffect())
                 }
                 // Total section
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Box(Modifier.size(40.dp, 10.dp).clip(MaterialTheme.shapes.extraSmall).shimmerEffect())
-                    Box(Modifier.size(70.dp, 16.dp).clip(MaterialTheme.shapes.extraSmall).shimmerEffect())
+                    Box(Modifier
+                        .size(40.dp, 10.dp)
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .shimmerEffect())
+                    Box(Modifier
+                        .size(70.dp, 16.dp)
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .shimmerEffect())
                 }
             }
 
             // Progress bar section
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Box(Modifier.fillMaxWidth().height(6.dp).clip(CircleShape).shimmerEffect())
+                Box(Modifier
+                    .fillMaxWidth()
+                    .height(6.dp)
+                    .clip(CircleShape)
+                    .shimmerEffect())
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Box(Modifier.size(40.dp, 10.dp).clip(MaterialTheme.shapes.extraSmall).shimmerEffect())
-                    Box(Modifier.size(30.dp, 10.dp).clip(MaterialTheme.shapes.extraSmall).shimmerEffect())
+                    Box(Modifier
+                        .size(40.dp, 10.dp)
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .shimmerEffect())
+                    Box(Modifier
+                        .size(30.dp, 10.dp)
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .shimmerEffect())
                 }
             }
         }
@@ -607,6 +623,7 @@ fun TodayTabStatisticShimmer() {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .clip(MaterialTheme.shapes.medium)
                     .shimmerEffect()
             )
         }

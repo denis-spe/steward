@@ -19,7 +19,6 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.den.steward.backend.entitles.TransactionType
-import com.den.steward.ui.theme.ExtendedTheme
 
 @Composable
 fun TransactionButtons(
@@ -44,7 +43,7 @@ fun TransactionButtons(
         TransactionType.SETTLEMENT -> "Submit a settlement"
         TransactionType.SAVINGS -> "Record your money"
         TransactionType.PLAN -> "Plan for your future"
-        TransactionType.RAMPING -> "Exchange your money"
+        TransactionType.EXCHANGE -> "Exchange your money"
         else -> ""
     }
 
@@ -59,7 +58,7 @@ fun TransactionButtons(
         TransactionType.SETTLEMENT -> "Settlement"
         TransactionType.SAVINGS -> "Save"
         TransactionType.PLAN -> "Plan"
-        TransactionType.RAMPING -> "Exchange"
+        TransactionType.EXCHANGE -> "Exchange"
         else -> ""
     }
 
@@ -116,7 +115,7 @@ fun TransactionUpdateButtons(
         TransactionType.SETTLEMENT -> "Update settlement"
         TransactionType.SAVINGS -> "Update your savings"
         TransactionType.PLAN -> "Update your plan"
-        TransactionType.RAMPING -> "Update your exchange"
+        TransactionType.EXCHANGE -> "Update your exchange"
         else -> ""
     }
 
@@ -131,7 +130,7 @@ fun TransactionUpdateButtons(
         TransactionType.SETTLEMENT -> "Settlement"
         TransactionType.SAVINGS -> "Save"
         TransactionType.PLAN -> "Plan"
-        TransactionType.RAMPING -> "Exchange"
+        TransactionType.EXCHANGE -> "Exchange"
         else -> ""
     }
 

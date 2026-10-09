@@ -6,6 +6,8 @@ import com.den.steward.backend.states.Affected
 import com.den.steward.helper.calculateFlow
 import com.den.steward.helper.formatToAmount
 import com.den.steward.helper.title
+import com.den.steward.ui.components.SelectedIcon
+import com.den.steward.ui.components.icons
 
 @Stable
 sealed class Transaction {
@@ -42,11 +44,11 @@ sealed class Transaction {
     ) : Transaction()
 
     @Stable
-    data class Ramping (
+    data class Exchange(
         override val id: String = "",
         val label: String = "",
         val note: String = "",
-        override val type: TransactionType = TransactionType.RAMPING,
+        override val type: TransactionType = TransactionType.EXCHANGE,
         override val createdAt: Long = System.currentTimeMillis(),
         val from: PaymentMethod = PaymentMethod.CARD,
         val to: PaymentMethod = PaymentMethod.CASH,
@@ -111,9 +113,9 @@ sealed class Transaction {
         val percentage: Double get() = if (amount > 0) (totalRepayment / amount) * 100 else 0.0
 
         val status: LiabilitiesStatus get() {
-            return when (remainingAmount) {
-                0.0 -> LiabilitiesStatus.PAID
-                amount -> LiabilitiesStatus.UNPAID
+            return when {
+                remainingAmount <= 0.0 -> LiabilitiesStatus.PAID
+                remainingAmount == amount -> LiabilitiesStatus.UNPAID
                 else -> LiabilitiesStatus.PAYING
             }
         }
@@ -138,9 +140,9 @@ sealed class Transaction {
         val percentage: Double get() = if (amount > 0) (totalRefund / amount) * 100 else 0.0
 
         val status: LiabilitiesStatus get() {
-            return when (remainingAmount) {
-                0.0 -> LiabilitiesStatus.PAID
-                amount -> LiabilitiesStatus.UNPAID
+            return when {
+                remainingAmount <= 0.0 -> LiabilitiesStatus.PAID
+                remainingAmount == amount -> LiabilitiesStatus.UNPAID
                 else -> LiabilitiesStatus.PAYING
             }
         }
@@ -257,7 +259,7 @@ sealed class Transaction {
                 is Savings -> this.label.title
                 is Plan -> this.label.title
                 is PlanFulfillment -> this.label.title
-                is Ramping -> "Ramping"
+                is Exchange -> this.label.title
             }
         }
 
@@ -276,7 +278,7 @@ sealed class Transaction {
                 is Plan -> null
                 is Attain -> null
                 is Achievement -> null
-                is Ramping -> null
+                is Exchange -> null
             }
         }
 
@@ -295,7 +297,7 @@ sealed class Transaction {
                 is PlanFulfillment -> "A plan fulfillment ${this.label}"
                 is Attain -> "Attained ${this.value} of ${this.goal.value}"
                 is Achievement -> "Achieved ${this.value} of ${this.goal.value}"
-                is Ramping -> this.note
+                is Exchange -> this.note
             }
         }
     val getAmountOrValue: Double?
@@ -320,7 +322,7 @@ sealed class Transaction {
                 }
                 is PlanFulfillment -> this.value
                 is Achievement -> this.value
-                is Ramping -> this.amount
+                is Exchange -> this.amount
             }
         }
 
@@ -351,7 +353,7 @@ sealed class Transaction {
 
                 is Plan -> (this.getAmountOrValue ?: this.initialValue).formatToAmount()
                 is PlanFulfillment -> this.value.formatToAmount()
-                is Ramping -> this.amount.formatToAmount()
+                is Exchange -> this.amount.formatToAmount()
             }
         }
 
@@ -370,7 +372,7 @@ sealed class Transaction {
                 is Attain -> null
                 is Achievement -> null
                 is PlanFulfillment -> null
-                is Ramping -> null
+                is Exchange -> null
             }
 
             if (affectAmount == null) return null
@@ -392,7 +394,7 @@ sealed class Transaction {
                 is Settlement -> this.debt.selectedIcon
                 is Repayment -> this.lent.selectedIcon
                 is PlanFulfillment -> this.plan.selectedIcon
-                is Ramping -> R.drawable.ic_cash
+                is Exchange -> R.drawable.ic_cash
             }
         }
 
@@ -436,6 +438,19 @@ sealed class Transaction {
                 is Attain -> this.goal
                 is Achievement -> this.goal
                 else -> null
+            }
+        }
+
+    val getSelectedIcon: SelectedIcon
+        get() {
+            return run {
+                val iconRes = this.getIcon
+                val iconName = icons.entries.firstOrNull { (_, v) -> v == iconRes }?.key
+                    ?: SelectedIcon().name
+                SelectedIcon(
+                    name = iconName,
+                    icon = iconRes
+                )
             }
         }
 }
