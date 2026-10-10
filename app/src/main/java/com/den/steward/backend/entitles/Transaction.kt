@@ -453,4 +453,23 @@ sealed class Transaction {
                 )
             }
         }
+
+    val getFulfillmentTotalSum: Double?
+        get() {
+            return when (this) {
+                is Debt -> {
+                    this.totalRefund
+                }
+
+                is Lent -> {
+                    this.totalRepayment
+                }
+
+                is Goal -> {
+                    this.totalAttain
+                }
+
+                else -> null
+            }
+        }
 }

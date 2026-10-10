@@ -18,7 +18,7 @@ sealed class RecurrencePattern() {
             is WEEKLY -> "Weekly"
             is MONTHLY -> "Monthly"
             is YEARLY -> "Yearly"
-            is Custom -> "Custom"
+            is Custom -> "Scheduled"
         }
     companion object {
         val entries: List<RecurrencePattern>

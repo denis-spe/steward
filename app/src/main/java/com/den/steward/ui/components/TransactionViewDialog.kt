@@ -1,6 +1,8 @@
 // Glory be to LORD our GOD
 package com.den.steward.ui.components
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -16,11 +18,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -75,7 +82,7 @@ fun TransactionViewDialog(
                             createdAt = transaction.createdAt.toLocalDateTime(),
                             paymentMethod = transaction.paymentMethod,
                             transactionType = transaction.type,
-                            affectAmount = transaction.affectAmount,
+                            affectAmount = transaction.getAffectedAmount?.label ?: "",
                             selectedIcon = transaction.getSelectedIcon
                         )
                     }
@@ -87,7 +94,7 @@ fun TransactionViewDialog(
                             amount = transaction.amount,
                             createdAt = transaction.createdAt.toLocalDateTime(),
                             paymentMethod = transaction.paymentMethod,
-                            affectAmount = transaction.affectAmount,
+                            affectAmount = transaction.getAffectedAmount?.label ?: "",
                             transactionType = transaction.type,
                             selectedIcon = transaction.getSelectedIcon
                         )
@@ -100,7 +107,7 @@ fun TransactionViewDialog(
                             amount = transaction.amount,
                             createdAt = transaction.createdAt.toLocalDateTime(),
                             paymentMethod = transaction.paymentMethod,
-                            affectAmount = transaction.affectAmount,
+                            affectAmount = transaction.getAffectedAmount?.label ?: "",
                             transactionType = transaction.type,
                             selectedIcon = transaction.getSelectedIcon
                         )
@@ -121,6 +128,40 @@ fun TransactionViewDialog(
                         )
                     }
 
+                    is Transaction.Debt,
+                    is Transaction.Lent -> {
+                        TransactionLiabilityCard(
+                            label = transaction.getLabel,
+                            note = transaction.getNote,
+                            amount = transaction.getAmountOrValue ?: 0.0,
+                            createdAt = transaction.createdAt.toLocalDateTime(),
+                            paymentMethod = transaction.getPaymentMethodOrNull
+                                ?: PaymentMethod.CASH,
+                            affectAmount = transaction.getAffectedAmount?.label ?: "",
+                            transactionType = transaction.type,
+                            selectedIcon = transaction.getSelectedIcon,
+                            totalFulfillment = transaction.getFulfillmentTotalSum,
+                            status = transaction.getStatus,
+                            statusColor = transaction.getStatusColor,
+                            onShow = onShow
+                        )
+                    }
+
+                    is Transaction.Repayment,
+                    is Transaction.Settlement -> {
+                        TransactionLiabilityFulfillmentCard(
+                            note = transaction.getNote,
+                            amount = transaction.getAmountOrValue ?: 0.0,
+                            createdAt = transaction.createdAt.toLocalDateTime(),
+                            paymentMethod = transaction.getPaymentMethodOrNull
+                                ?: PaymentMethod.CASH,
+                            affectAmount = transaction.getAffectedAmount?.label ?: "",
+                            transactionType = transaction.type,
+                            parentTransaction = transaction.getParentTransaction,
+                            selectedIcon = transaction.getSelectedIcon
+                        )
+                    }
+
                     else -> {}
                 }
             }
@@ -135,7 +176,7 @@ private fun TransactionCard(
     amount: Double,
     createdAt: LocalDateTime,
     paymentMethod: PaymentMethod,
-    affectAmount: Boolean,
+    affectAmount: String,
     selectedIcon: SelectedIcon,
     transactionType: TransactionType
 ) {
@@ -165,19 +206,19 @@ private fun TransactionCard(
         ) {
             TransactionRow(
                 key = "Amount",
-                value = amount.formatToAmount()
+                value = amount.formatToAmount(),
             )
             TransactionRow(
                 key = "Created At",
-                value = createdAt.formatedDateTime
+                value = createdAt.formatedDateTime,
             )
             TransactionRow(
                 key = "Payment Method",
-                value = paymentMethod.toString()
+                value = paymentMethod.label,
             )
             TransactionRow(
                 key = "Affected Amount",
-                value = if (affectAmount) "Yes" else "No"
+                value = affectAmount,
             )
 
             if (note.isNotBlank()) {
@@ -186,6 +227,169 @@ private fun TransactionCard(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun TransactionLiabilityFulfillmentCard(
+    note: String,
+    amount: Double,
+    createdAt: LocalDateTime,
+    paymentMethod: PaymentMethod,
+    affectAmount: String,
+    selectedIcon: SelectedIcon,
+    parentTransaction: Transaction?,
+    transactionType: TransactionType
+) {
+
+    if (parentTransaction == null) return
+
+    val transactionTypeLabel = stringResource(id = transactionType.label)
+    val transactionTypeIcon = painterResource(transactionType.icon)
+    val transactionTypeColor = colorResource(transactionType.color)
+    val parentTransactionLabel = parentTransaction.getLabel
+    val parentTransactionTyeName = stringResource(parentTransaction.type.label)
+    val remaining = remember(
+        parentTransaction.getFulfillmentTotalSum,
+        amount
+    ) {
+        ((parentTransaction.getAmountOrValue ?: 0.0) - (parentTransaction.getFulfillmentTotalSum
+            ?: 0.0)).formatToAmount()
+    }
+    val statusColor = colorResource(parentTransaction.getStatusColor)
+
+    Column(
+        verticalArrangement = Arrangement.Center,
+    ) {
+        TransactionFulfillmentViewTitle(
+            title = parentTransactionLabel,
+            color = transactionTypeColor,
+            selectedIcon = selectedIcon,
+            subtitle = "$parentTransactionTyeName $transactionTypeLabel",
+            icon = {
+                Icon(
+                    painter = transactionTypeIcon,
+                    contentDescription = transactionTypeLabel,
+                    tint = transactionTypeColor
+                )
+            }
+        )
+
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            TransactionRow(
+                key = "Amount",
+                value = amount.formatToAmount(),
+            )
+            TransactionRow(
+                key = "Created At",
+                value = createdAt.formatedDateTime,
+            )
+            TransactionRow(
+                key = "Payment Method",
+                value = paymentMethod.label,
+            )
+
+            TransactionRow(
+                key = "Affected Amount",
+                value = affectAmount,
+            )
+
+            TransactionRow(
+                key = "Status",
+                value = parentTransaction.getStatus ?: "",
+                color = statusColor
+            )
+
+            TransactionRow(
+                key = "Remaining",
+                value = remaining,
+            )
+
+            if (note.isNotBlank()) {
+                TransactionNoteView(
+                    note = note
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun TransactionLiabilityCard(
+    label: String,
+    note: String,
+    amount: Double,
+    createdAt: LocalDateTime,
+    paymentMethod: PaymentMethod,
+    affectAmount: String,
+    selectedIcon: SelectedIcon,
+    status: String?,
+    transactionType: TransactionType,
+    totalFulfillment: Double?,
+    onShow: Boolean,
+    statusColor: Int
+) {
+    val transactionTypeLabel = stringResource(id = transactionType.label)
+    val transactionTypeIcon = painterResource(transactionType.icon)
+    val transactionTypeColor = colorResource(transactionType.color)
+    val colorOfStatus = colorResource(statusColor)
+
+    Column(
+        verticalArrangement = Arrangement.Center,
+    ) {
+        TransactionViewTitle(
+            title = label,
+            color = transactionTypeColor,
+            selectedIcon = selectedIcon,
+            icon = {
+                Icon(
+                    painter = transactionTypeIcon,
+                    contentDescription = transactionTypeLabel,
+                    tint = transactionTypeColor
+                )
+            }
+        )
+
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            TransactionRow(
+                key = "Amount",
+                value = amount.formatToAmount(),
+            )
+            TransactionRow(
+                key = "Created At",
+                value = createdAt.formatedDateTime,
+            )
+            TransactionRow(
+                key = "Payment Method",
+                value = paymentMethod.label,
+            )
+            TransactionRow(
+                key = "Affected Amount",
+                value = affectAmount,
+            )
+
+            if (note.isNotBlank()) {
+                TransactionNoteView(
+                    note = note
+                )
+            }
+        }
+
+        TransactionLiabilityStatusProgress(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            amount = amount,
+            totalFulfillment = totalFulfillment,
+            color = colorOfStatus,
+            title = status ?: "",
+            onShow = onShow
+        )
     }
 }
 
@@ -238,29 +442,29 @@ private fun TransactionGoalCard(
         ) {
             TransactionRow(
                 key = "Amount",
-                value = amount.formatToAmount()
+                value = amount.formatToAmount(),
             )
             TransactionRow(
                 key = "Created At",
-                value = createdAt.formatedDateTime
+                value = createdAt.formatedDateTime,
             )
             TransactionRow(
                 key = "Started At",
-                value = startDateTime.formatedDateTime
+                value = startDateTime.formatedDateTime,
             )
             TransactionRow(
                 key = "Deadline time",
-                value = endDateTime.formatedDateTime
+                value = endDateTime.formatedDateTime,
             )
 
             TransactionRow(
                 key = "Recurrence Pattern",
-                value = recurrencePattern.name
+                value = recurrencePattern.name,
             )
 
             TransactionRow(
                 key = "Status",
-                value = status.label
+                value = status.label,
             )
 
             Row(
@@ -347,6 +551,7 @@ private fun TransactionGoalCard(
 private fun TransactionRow(
     key: String,
     value: String,
+    color: Color? = null,
 ) {
     Row(
         modifier = Modifier
@@ -359,12 +564,26 @@ private fun TransactionRow(
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = MaterialTheme.typography.bodyMedium.fontWeight
         )
-        Text(
-            value,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = MaterialTheme.typography.labelMedium.fontWeight,
-            color = Color.Gray
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            if (color != null) {
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(color)
+                )
+            }
+
+            Text(
+                value,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = MaterialTheme.typography.labelMedium.fontWeight,
+                color = Color.Gray
+            )
+        }
     }
 }
 
@@ -454,6 +673,221 @@ private fun TransactionViewTitle(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = MaterialTheme.typography.titleMedium.fontWeight,
                 color = Color.White
+            )
+        }
+    }
+}
+
+
+@Composable
+private fun TransactionFulfillmentViewTitle(
+    title: String,
+    subtitle: String,
+    color: Color,
+    icon: @Composable () -> Unit,
+    selectedIcon: SelectedIcon
+) {
+
+    val iconBackgroundColor = color.copy(0.4f).compositeOver(MaterialTheme.colorScheme.background)
+    val transactionSelectedIcon = painterResource(selectedIcon.icon)
+
+    Surface(
+        color = color
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+
+            Box(
+                modifier = Modifier
+                    .width(60.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .align(Alignment.CenterEnd)
+                        .clip(CircleShape)
+                        .background(iconBackgroundColor),
+                    contentAlignment = Alignment.Center
+                ) {
+                    icon()
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(30.dp)
+                        .align(Alignment.CenterStart)
+                        .clip(CircleShape)
+                        .background(iconBackgroundColor),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = transactionSelectedIcon,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    title.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = MaterialTheme.typography.titleMedium.fontWeight,
+                    color = Color.White
+                )
+
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = MaterialTheme.typography.labelMedium.fontWeight,
+                    color = Color.White
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TransactionLiabilityStatusProgress(
+    modifier: Modifier = Modifier,
+    amount: Double,
+    totalFulfillment: Double?,
+    color: Color,
+    title: String,
+    onShow: Boolean
+) {
+
+    // Recalculate when amount or totalFulfillment changes
+    val progress = remember(totalFulfillment, amount) {
+        if (totalFulfillment == null || amount <= 0) {
+            0.0f
+        } else if (totalFulfillment > amount) {
+            1.0f
+        } else {
+            (totalFulfillment / amount).toFloat()
+        }
+    }
+
+    val formattedTotalFulfillment = remember(totalFulfillment) {
+        (totalFulfillment ?: 0.0).formatToAmount()
+    }
+
+    val remaining = remember(
+        totalFulfillment,
+        amount
+    ) {
+        (amount - (totalFulfillment ?: 0.0)).formatToAmount()
+    }
+
+    // Trigger targetValue transition after initial composition
+    var startAnimation by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        startAnimation = true
+    }
+
+    val animateProgress by animateFloatAsState(
+        targetValue = if (startAnimation && onShow) progress else 0f,
+        animationSpec =
+            tween(durationMillis = 800),
+        label = "ProgressAnimation"
+    )
+
+    val textProgress = (animateProgress * 100).toInt()
+
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(color)
+                )
+
+                Text(
+                    title.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = MaterialTheme.typography.titleSmall.fontWeight,
+                    color = Color.Gray
+                )
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    "Remaining:",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = MaterialTheme.typography.titleSmall.fontWeight,
+                    color = Color.Gray
+                )
+
+                Text(
+                    remaining,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = MaterialTheme.typography.titleSmall.fontWeight,
+                    color = Color.Gray
+                )
+            }
+        }
+
+        LinearProgressIndicator(
+            progress = { animateProgress },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 5.dp)
+                .height(6.dp),
+            color = color,
+            trackColor = color.copy(alpha = 0.1f),
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 3.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "0%",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = MaterialTheme.typography.labelSmall.fontWeight,
+            )
+
+            Text(
+                "$textProgress% (${formattedTotalFulfillment})",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = MaterialTheme.typography.labelSmall.fontWeight,
+            )
+
+            Text(
+                "100%",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = MaterialTheme.typography.labelSmall.fontWeight,
             )
         }
     }
