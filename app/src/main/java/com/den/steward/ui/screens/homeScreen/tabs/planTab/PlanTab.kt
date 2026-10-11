@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.backend.viewModels.PlanTabViewModel
+import com.den.steward.ui.components.TransactionViewDialog
 
 @Composable
 fun PlanTab(
@@ -24,7 +25,8 @@ fun PlanTab(
     val planTabUiState by planTabViewModel.planTabUiState.collectAsStateWithLifecycle()
 
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
             .padding(padding),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
@@ -39,7 +41,16 @@ fun PlanTab(
             setSelectedTransaction = planTabViewModel::setSelectedTransaction,
             addPlanFulfillment = planTabViewModel::addPlanFulfillment,
             onTypeChange = planTabViewModel::updateSelectedPlanFulfillmentType,
-            deleteFulfillmentPlan = planTabViewModel::deleteFulfillmentPlan
+            deleteFulfillmentPlan = planTabViewModel::deleteFulfillmentPlan,
+            onDialogView = planTabViewModel::onPlanView
         )
+
+        planTabUiState.selectedPlanToView?.let { transaction ->
+            TransactionViewDialog(
+                transaction = transaction,
+                onShow = true,
+                onDismissRequest = { planTabViewModel.onPlanView(null) }
+            )
+        }
     }
 }

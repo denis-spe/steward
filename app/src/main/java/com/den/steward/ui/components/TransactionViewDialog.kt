@@ -10,13 +10,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -32,7 +33,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -40,8 +44,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.den.steward.backend.entitles.GoalStatus
+import com.den.steward.backend.entitles.GoalType
 import com.den.steward.backend.entitles.PaymentMethod
-import com.den.steward.backend.entitles.RecurrencePattern
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.helper.formatToAmount
@@ -50,9 +54,7 @@ import com.den.steward.helper.limitLength
 import com.den.steward.helper.title
 import com.den.steward.helper.toLocalDateTime
 import com.den.steward.ui.screens.homeScreen.tabs.todayTab.VerticalDivider
-import java.time.LocalDateTime
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionViewDialog(
     transaction: Transaction,
@@ -74,75 +76,26 @@ fun TransactionViewDialog(
             ) {
 
                 when (transaction) {
-                    is Transaction.Expense -> {
-                        TransactionCard(
-                            label = transaction.label,
-                            note = transaction.note,
-                            amount = transaction.amount,
-                            createdAt = transaction.createdAt.toLocalDateTime(),
-                            paymentMethod = transaction.paymentMethod,
-                            transactionType = transaction.type,
-                            affectAmount = transaction.getAffectedAmount?.label ?: "",
-                            selectedIcon = transaction.getSelectedIcon
-                        )
-                    }
-
-                    is Transaction.Earnings -> {
-                        TransactionCard(
-                            label = transaction.label,
-                            note = transaction.note,
-                            amount = transaction.amount,
-                            createdAt = transaction.createdAt.toLocalDateTime(),
-                            paymentMethod = transaction.paymentMethod,
-                            affectAmount = transaction.getAffectedAmount?.label ?: "",
-                            transactionType = transaction.type,
-                            selectedIcon = transaction.getSelectedIcon
-                        )
-                    }
-
+                    is Transaction.Expense,
+                    is Transaction.Earnings,
                     is Transaction.Savings -> {
                         TransactionCard(
-                            label = transaction.label,
-                            note = transaction.note,
-                            amount = transaction.amount,
-                            createdAt = transaction.createdAt.toLocalDateTime(),
-                            paymentMethod = transaction.paymentMethod,
-                            affectAmount = transaction.getAffectedAmount?.label ?: "",
-                            transactionType = transaction.type,
-                            selectedIcon = transaction.getSelectedIcon
+                            transaction
                         )
                     }
+
 
                     is Transaction.Goal -> {
                         TransactionGoalCard(
-                            label = transaction.label,
-                            note = transaction.note,
-                            amount = transaction.value,
-                            createdAt = transaction.createdAt.toLocalDateTime(),
-                            startDateTime = transaction.startedAt.toLocalDateTime(),
-                            endDateTime = transaction.endAt.toLocalDateTime(),
-                            recurrencePattern = transaction.repeatable,
-                            achievement = transaction.achievement,
-                            status = transaction.status,
-                            selectedIcon = transaction.getSelectedIcon
+                            transaction = transaction,
+                            onShow = onShow
                         )
                     }
 
                     is Transaction.Debt,
                     is Transaction.Lent -> {
                         TransactionLiabilityCard(
-                            label = transaction.getLabel,
-                            note = transaction.getNote,
-                            amount = transaction.getAmountOrValue ?: 0.0,
-                            createdAt = transaction.createdAt.toLocalDateTime(),
-                            paymentMethod = transaction.getPaymentMethodOrNull
-                                ?: PaymentMethod.CASH,
-                            affectAmount = transaction.getAffectedAmount?.label ?: "",
-                            transactionType = transaction.type,
-                            selectedIcon = transaction.getSelectedIcon,
-                            totalFulfillment = transaction.getFulfillmentTotalSum,
-                            status = transaction.getStatus,
-                            statusColor = transaction.getStatusColor,
+                            transaction = transaction,
                             onShow = onShow
                         )
                     }
@@ -150,15 +103,26 @@ fun TransactionViewDialog(
                     is Transaction.Repayment,
                     is Transaction.Settlement -> {
                         TransactionLiabilityFulfillmentCard(
-                            note = transaction.getNote,
-                            amount = transaction.getAmountOrValue ?: 0.0,
-                            createdAt = transaction.createdAt.toLocalDateTime(),
-                            paymentMethod = transaction.getPaymentMethodOrNull
-                                ?: PaymentMethod.CASH,
-                            affectAmount = transaction.getAffectedAmount?.label ?: "",
-                            transactionType = transaction.type,
-                            parentTransaction = transaction.getParentTransaction,
-                            selectedIcon = transaction.getSelectedIcon
+                            transaction = transaction
+                        )
+                    }
+
+                    is Transaction.Attain -> {
+                        TransactionAttainCard(
+                            transaction = transaction,
+                            onShow = onShow
+                        )
+                    }
+
+                    is Transaction.Exchange -> {
+                        TransactionExchangeCard(
+                            transaction = transaction
+                        )
+                    }
+
+                    is Transaction.Plan -> {
+                        TransactionPlanCard(
+                            transaction = transaction
                         )
                     }
 
@@ -170,27 +134,108 @@ fun TransactionViewDialog(
 }
 
 @Composable
-private fun TransactionCard(
-    label: String,
-    note: String,
-    amount: Double,
-    createdAt: LocalDateTime,
-    paymentMethod: PaymentMethod,
-    affectAmount: String,
-    selectedIcon: SelectedIcon,
-    transactionType: TransactionType
+private fun TransactionPlanCard(
+    transaction: Transaction.Plan
 ) {
-    val transactionTypeLabel = stringResource(id = transactionType.label)
-    val transactionTypeIcon = painterResource(transactionType.icon)
-    val transactionTypeColor = colorResource(transactionType.color)
+    val state = remember(transaction) {
+        object {
+            val label = transaction.getLabel
+            val note = transaction.getNote
+            val amount = transaction.getFormattedAmountOrValue
+            val createdAt = transaction.createdAt.toLocalDateTime().formatedDateTime
+            val transactionType = transaction.type
+            val selectedIcon = transaction.getSelectedIcon
+            val totalFulfillment = transaction.totalFulfillment.formatToAmount()
+            val planFulfillment = transaction.transactions
+        }
+    }
+    val transactionTypeLabel = stringResource(id = state.transactionType.label)
+    val transactionTypeIcon = painterResource(state.transactionType.icon)
+    val transactionTypeColor = colorResource(state.transactionType.color)
 
     Column(
         verticalArrangement = Arrangement.Center,
     ) {
-        TransactionViewTitle(
-            title = label,
+        TransactionFulfillmentViewTitle(
+            title = "Plan",
+            subtitle = state.label,
             color = transactionTypeColor,
-            selectedIcon = selectedIcon,
+            selectedIcon = state.selectedIcon,
+            icon = {
+                Icon(
+                    painter = transactionTypeIcon,
+                    contentDescription = transactionTypeLabel,
+                    tint = transactionTypeColor
+                )
+            }
+        )
+
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            TransactionPlanHeader(
+                amount = state.amount,
+                createdAt = state.createdAt,
+                sumOfFulfillment = state.totalFulfillment
+            )
+
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.4f),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items(state.planFulfillment.size, key = { index ->
+                    state.planFulfillment[index].id
+                }) { index ->
+                    val planFulfillment = state.planFulfillment[index]
+                    val label = planFulfillment.getLabel
+                    val amount = planFulfillment.getFormattedAmountOrValue
+                    val color = colorResource(planFulfillment.fulfillmentType.color)
+                    val icon = painterResource(planFulfillment.fulfillmentType.icon)
+
+                    TransactionPlanFulfillmentRow(
+                        key = label,
+                        value = amount,
+                        color = color,
+                        icon = icon
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TransactionExchangeCard(
+    transaction: Transaction.Exchange
+) {
+    val state = remember(transaction) {
+        object {
+            val label = transaction.getLabel
+            val note = transaction.getNote
+            val amount = transaction.getFormattedAmountOrValue
+            val createdAt = transaction.createdAt.toLocalDateTime().formatedDateTime
+            val transactionType = transaction.type
+            val selectedIcon = transaction.getSelectedIcon
+
+            val fromPaymentMethod = transaction.from
+            val toPaymentMethod = transaction.to
+        }
+    }
+    val transactionTypeLabel = stringResource(id = state.transactionType.label)
+    val transactionTypeIcon = painterResource(state.transactionType.icon)
+    val transactionTypeColor = colorResource(state.transactionType.color)
+
+    Column(
+        modifier = Modifier.fillMaxHeight(0.5f)
+    ) {
+        TransactionFulfillmentViewTitle(
+            title = "Exchange",
+            subtitle = state.label,
+            color = transactionTypeColor,
+            selectedIcon = state.selectedIcon,
             icon = {
                 Icon(
                     painter = transactionTypeIcon,
@@ -206,24 +251,84 @@ private fun TransactionCard(
         ) {
             TransactionRow(
                 key = "Amount",
-                value = amount.formatToAmount(),
+                value = state.amount,
             )
             TransactionRow(
                 key = "Created At",
-                value = createdAt.formatedDateTime,
+                value = state.createdAt,
+            )
+            TransactionRow(
+                key = "From",
+                value = state.fromPaymentMethod.label,
+            )
+            TransactionRow(
+                key = "To",
+                value = state.toPaymentMethod.label,
+            )
+        }
+    }
+}
+
+@Composable
+private fun TransactionCard(
+    transaction: Transaction
+) {
+    val state = remember(transaction) {
+        object {
+            val label = transaction.getLabel
+            val note = transaction.getNote
+            val amount = transaction.getFormattedAmountOrValue
+            val createdAt = transaction.createdAt.toLocalDateTime().formatedDateTime
+            val paymentMethod = transaction.getPaymentMethodOrNull ?: PaymentMethod.CASH
+            val affectAmount = transaction.getAffectedAmount?.label ?: ""
+            val transactionType = transaction.type
+            val selectedIcon = transaction.getSelectedIcon
+        }
+    }
+    val transactionTypeLabel = stringResource(id = state.transactionType.label)
+    val transactionTypeIcon = painterResource(state.transactionType.icon)
+    val transactionTypeColor = colorResource(state.transactionType.color)
+
+    Column(
+        modifier = Modifier.fillMaxHeight(0.5f)
+    ) {
+        TransactionViewTitle(
+            title = state.label,
+            color = transactionTypeColor,
+            selectedIcon = state.selectedIcon,
+            icon = {
+                Icon(
+                    painter = transactionTypeIcon,
+                    contentDescription = transactionTypeLabel,
+                    tint = transactionTypeColor
+                )
+            }
+        )
+
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            TransactionRow(
+                key = "Amount",
+                value = state.amount,
+            )
+            TransactionRow(
+                key = "Created At",
+                value = state.createdAt,
             )
             TransactionRow(
                 key = "Payment Method",
-                value = paymentMethod.label,
+                value = state.paymentMethod.label,
             )
             TransactionRow(
                 key = "Affected Amount",
-                value = affectAmount,
+                value = state.affectAmount,
             )
 
-            if (note.isNotBlank()) {
+            if (state.note.isNotBlank()) {
                 TransactionNoteView(
-                    note = note
+                    note = state.note
                 )
             }
         }
@@ -232,39 +337,44 @@ private fun TransactionCard(
 
 @Composable
 private fun TransactionLiabilityFulfillmentCard(
-    note: String,
-    amount: Double,
-    createdAt: LocalDateTime,
-    paymentMethod: PaymentMethod,
-    affectAmount: String,
-    selectedIcon: SelectedIcon,
-    parentTransaction: Transaction?,
-    transactionType: TransactionType
+    transaction: Transaction
 ) {
 
-    if (parentTransaction == null) return
+    val parentTransaction = transaction.getParentTransaction ?: return
 
-    val transactionTypeLabel = stringResource(id = transactionType.label)
-    val transactionTypeIcon = painterResource(transactionType.icon)
-    val transactionTypeColor = colorResource(transactionType.color)
-    val parentTransactionLabel = parentTransaction.getLabel
-    val parentTransactionTyeName = stringResource(parentTransaction.type.label)
-    val remaining = remember(
-        parentTransaction.getFulfillmentTotalSum,
-        amount
-    ) {
-        ((parentTransaction.getAmountOrValue ?: 0.0) - (parentTransaction.getFulfillmentTotalSum
-            ?: 0.0)).formatToAmount()
+    val state = remember(transaction, parentTransaction) {
+        object {
+            val note = transaction.getNote
+            val amount = transaction.getAmountOrValue ?: 0.0
+            val formattedAmount = transaction.getFormattedAmountOrValue
+            val createdAt = transaction.createdAt.toLocalDateTime().formatedDateTime
+            val paymentMethod = (transaction.getPaymentMethodOrNull
+                ?: PaymentMethod.CASH).label
+            val affectAmount = transaction.getAffectedAmount?.label ?: ""
+            val transactionType = transaction.type
+            val selectedIcon = transaction.getSelectedIcon
+            val remaining = ((parentTransaction.getAmountOrValue
+                ?: 0.0) - (parentTransaction.getFulfillmentTotalSum
+                ?: 0.0)).formatToAmount()
+            val statusColor = parentTransaction.getStatusColor
+            val parentTransactionLabel = parentTransaction.getLabel
+            val parentTransactionTypeName = parentTransaction.type.label
+        }
     }
+
+    val transactionTypeLabel = stringResource(id = state.transactionType.label)
+    val transactionTypeIcon = painterResource(state.transactionType.icon)
+    val transactionTypeColor = colorResource(state.transactionType.color)
+    val parentTransactionTyeName = stringResource(state.parentTransactionTypeName)
     val statusColor = colorResource(parentTransaction.getStatusColor)
 
     Column(
-        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxHeight(0.5f)
     ) {
         TransactionFulfillmentViewTitle(
-            title = parentTransactionLabel,
+            title = state.parentTransactionLabel,
             color = transactionTypeColor,
-            selectedIcon = selectedIcon,
+            selectedIcon = state.selectedIcon,
             subtitle = "$parentTransactionTyeName $transactionTypeLabel",
             icon = {
                 Icon(
@@ -281,20 +391,20 @@ private fun TransactionLiabilityFulfillmentCard(
         ) {
             TransactionRow(
                 key = "Amount",
-                value = amount.formatToAmount(),
+                value = state.formattedAmount,
             )
             TransactionRow(
                 key = "Created At",
-                value = createdAt.formatedDateTime,
+                value = state.createdAt,
             )
             TransactionRow(
                 key = "Payment Method",
-                value = paymentMethod.label,
+                value = state.paymentMethod,
             )
 
             TransactionRow(
                 key = "Affected Amount",
-                value = affectAmount,
+                value = state.affectAmount,
             )
 
             TransactionRow(
@@ -305,12 +415,12 @@ private fun TransactionLiabilityFulfillmentCard(
 
             TransactionRow(
                 key = "Remaining",
-                value = remaining,
+                value = state.remaining,
             )
 
-            if (note.isNotBlank()) {
+            if (state.note.isNotBlank()) {
                 TransactionNoteView(
-                    note = note
+                    note = state.note
                 )
             }
         }
@@ -320,31 +430,40 @@ private fun TransactionLiabilityFulfillmentCard(
 
 @Composable
 private fun TransactionLiabilityCard(
-    label: String,
-    note: String,
-    amount: Double,
-    createdAt: LocalDateTime,
-    paymentMethod: PaymentMethod,
-    affectAmount: String,
-    selectedIcon: SelectedIcon,
-    status: String?,
-    transactionType: TransactionType,
-    totalFulfillment: Double?,
+    transaction: Transaction,
     onShow: Boolean,
-    statusColor: Int
 ) {
-    val transactionTypeLabel = stringResource(id = transactionType.label)
-    val transactionTypeIcon = painterResource(transactionType.icon)
-    val transactionTypeColor = colorResource(transactionType.color)
-    val colorOfStatus = colorResource(statusColor)
+
+    val state = remember(transaction) {
+        object {
+            val label = transaction.getLabel
+            val note = transaction.getNote
+            val amount = transaction.getAmountOrValue ?: 0.0
+            val formattedAmountOrValue = transaction.getFormattedAmountOrValue
+            val createdAt = transaction.createdAt.toLocalDateTime().formatedDateTime
+            val paymentMethod = (transaction.getPaymentMethodOrNull
+                ?: PaymentMethod.CASH).label
+            val affectAmount = transaction.getAffectedAmount?.label ?: ""
+            val transactionType = transaction.type
+            val selectedIcon = transaction.getSelectedIcon
+            val totalFulfillment = transaction.getFulfillmentTotalSum
+            val status = transaction.getStatus ?: ""
+            val statusColor = transaction.getStatusColor
+        }
+    }
+
+    val transactionTypeLabel = stringResource(id = state.transactionType.label)
+    val transactionTypeIcon = painterResource(state.transactionType.icon)
+    val transactionTypeColor = colorResource(state.transactionType.color)
+    val colorOfStatus = colorResource(state.statusColor)
 
     Column(
-        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxHeight(0.5f)
     ) {
         TransactionViewTitle(
-            title = label,
+            title = state.label,
             color = transactionTypeColor,
-            selectedIcon = selectedIcon,
+            selectedIcon = state.selectedIcon,
             icon = {
                 Icon(
                     painter = transactionTypeIcon,
@@ -360,73 +479,152 @@ private fun TransactionLiabilityCard(
         ) {
             TransactionRow(
                 key = "Amount",
-                value = amount.formatToAmount(),
+                value = state.formattedAmountOrValue,
             )
             TransactionRow(
                 key = "Created At",
-                value = createdAt.formatedDateTime,
+                value = state.createdAt,
             )
             TransactionRow(
                 key = "Payment Method",
-                value = paymentMethod.label,
+                value = state.paymentMethod,
             )
             TransactionRow(
                 key = "Affected Amount",
-                value = affectAmount,
+                value = state.affectAmount,
             )
 
-            if (note.isNotBlank()) {
+            if (state.note.isNotBlank()) {
                 TransactionNoteView(
-                    note = note
+                    note = state.note
                 )
             }
         }
 
-        TransactionLiabilityStatusProgress(
+        TransactionFulfillmentStatusProgress(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-            amount = amount,
-            totalFulfillment = totalFulfillment,
+            amount = state.amount,
+            totalFulfillment = state.totalFulfillment,
             color = colorOfStatus,
-            title = status ?: "",
+            title = state.status,
             onShow = onShow
         )
     }
 }
 
 @Composable
-private fun TransactionGoalCard(
-    label: String,
-    note: String,
-    amount: Double,
-    createdAt: LocalDateTime,
-    startDateTime: LocalDateTime,
-    endDateTime: LocalDateTime,
-    recurrencePattern: RecurrencePattern,
-    status: GoalStatus,
-    achievement: List<Transaction.Achievement>,
-    selectedIcon: SelectedIcon
+private fun TransactionAttainCard(
+    transaction: Transaction.Attain,
+    onShow: Boolean
 ) {
-    val transactionTypeLabel = stringResource(id = TransactionType.GOAL.label)
-    val transactionTypeIcon = painterResource(TransactionType.GOAL.icon)
-    val transactionTypeColor = colorResource(TransactionType.GOAL.color)
-
-    val counts = remember(achievement) {
+    val state = remember(transaction) {
         object {
-            val completedAchievementSize =
-                achievement.filter { it.status == GoalStatus.COMPLETED }.size
-            val failedAchievementSize = achievement.filter { it.status == GoalStatus.FAILED }.size
+            val parentLabel = transaction.getParentTransaction?.getLabel ?: ""
+            val transactionTypeColor = transaction.type.color
+            val parentSelectedIcon =
+                transaction.getParentTransaction?.getSelectedIcon ?: SelectedIcon()
+            val transactionTypeIcon = transaction.type.icon
+            val formattedAmountOrValue = transaction.getFormattedAmountOrValue
+            val createdAt = transaction.createdAt.toLocalDateTime().formatedDateTime
+            val amountOrValue = transaction.goal.value
+
+            val totalAttain = transaction.goal.totalAttain
+            val status = transaction.goal.getStatus ?: ""
+            val statusColor = transaction.goal.getStatusColor
+            val goalType = transaction.goal.goalType
         }
     }
 
-    val achievementColor = colorResource(TransactionType.ACHIEVEMENT.color)
+    val transactionTypeColor = colorResource(state.transactionTypeColor)
+    val transactionTypeIcon = painterResource(state.transactionTypeIcon)
+    val selectedIcon = state.parentSelectedIcon
+    val subtitle = "Goal Attainment"
+    val statusColor = colorResource(state.statusColor)
 
     Column(
-        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxHeight(0.4f)
     ) {
-        TransactionViewTitle(
-            title = label,
+        TransactionFulfillmentViewTitle(
+            title = state.parentLabel,
             color = transactionTypeColor,
             selectedIcon = selectedIcon,
+            subtitle = subtitle,
+            icon = {
+                Icon(
+                    painter = transactionTypeIcon,
+                    contentDescription = subtitle,
+                    tint = transactionTypeColor
+                )
+            }
+        )
+
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            TransactionRow(
+                key = "Amount",
+                value = state.formattedAmountOrValue,
+            )
+            TransactionRow(
+                key = "Created At",
+                value = state.createdAt,
+            )
+        }
+
+        TransactionFulfillmentStatusProgress(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            amount = state.amountOrValue,
+            totalFulfillment = state.totalAttain,
+            color = statusColor,
+            title = state.status,
+            onShow = onShow,
+            isAmount = state.goalType == GoalType.AMOUNT
+        )
+    }
+}
+
+@Composable
+private fun TransactionGoalCard(
+    transaction: Transaction.Goal,
+    onShow: Boolean
+) {
+
+    val state = remember(transaction) {
+        object {
+            val label = transaction.label
+            val note = transaction.note
+            val formattedAmount = transaction.getFormattedAmountOrValue
+            val amount = transaction.value
+            val totalFulfillment = transaction.totalAttain
+            val createdAt = transaction.createdAt.toLocalDateTime().formatedDateTime
+            val startDateTime = transaction.startedAt.toLocalDateTime().formatedDateTime
+            val endDateTime = transaction.endAt.toLocalDateTime().formatedDateTime
+            val recurrencePattern = transaction.repeatable.name
+            private val achievement = transaction.achievement
+            val status = transaction.status.label
+            val statusColor = transaction.status.color
+            val selectedIcon = transaction.getSelectedIcon
+            val completedAchievementSize =
+                achievement.filter { it.status == GoalStatus.COMPLETED }.size.toString()
+            val failedAchievementSize =
+                achievement.filter { it.status == GoalStatus.FAILED }.size.toString()
+        }
+    }
+
+    val transactionTypeLabel = stringResource(id = TransactionType.GOAL.label)
+    val transactionTypeIcon = painterResource(TransactionType.GOAL.icon)
+    val transactionTypeColor = colorResource(TransactionType.GOAL.color)
+    val achievementColor = colorResource(TransactionType.ACHIEVEMENT.color)
+    val statusColor = colorResource(state.statusColor)
+
+    Column(
+        modifier = Modifier.fillMaxHeight(0.5f)
+    ) {
+        TransactionViewTitle(
+            title = state.label,
+            color = transactionTypeColor,
+            selectedIcon = state.selectedIcon,
             icon = {
                 Icon(
                     painter = transactionTypeIcon,
@@ -435,6 +633,13 @@ private fun TransactionGoalCard(
                 )
             },
         )
+        TransactionColorStatusProgress(
+            modifier = Modifier.fillMaxWidth(),
+            amount = state.amount,
+            totalFulfillment = state.totalFulfillment,
+            color = transactionTypeColor,
+            onShow = onShow
+        )
 
         Column(
             modifier = Modifier.padding(16.dp),
@@ -442,29 +647,30 @@ private fun TransactionGoalCard(
         ) {
             TransactionRow(
                 key = "Amount",
-                value = amount.formatToAmount(),
+                value = state.formattedAmount,
             )
             TransactionRow(
                 key = "Created At",
-                value = createdAt.formatedDateTime,
+                value = state.createdAt,
             )
             TransactionRow(
                 key = "Started At",
-                value = startDateTime.formatedDateTime,
+                value = state.startDateTime,
             )
             TransactionRow(
                 key = "Deadline time",
-                value = endDateTime.formatedDateTime,
+                value = state.endDateTime,
             )
 
             TransactionRow(
                 key = "Recurrence Pattern",
-                value = recurrencePattern.name,
+                value = state.recurrencePattern,
             )
 
             TransactionRow(
                 key = "Status",
-                value = status.label,
+                value = state.status,
+                color = statusColor
             )
 
             Row(
@@ -490,7 +696,7 @@ private fun TransactionGoalCard(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    counts.completedAchievementSize.toString(),
+                                    state.completedAchievementSize,
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = MaterialTheme.typography.titleMedium.fontWeight,
                                     color = achievementColor
@@ -522,7 +728,7 @@ private fun TransactionGoalCard(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    counts.failedAchievementSize.toString(),
+                                    state.failedAchievementSize,
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = MaterialTheme.typography.titleMedium.fontWeight,
                                     color = MaterialTheme.colorScheme.error
@@ -538,14 +744,15 @@ private fun TransactionGoalCard(
                 }
             }
 
-            if (note.isNotBlank()) {
+            if (state.note.isNotBlank()) {
                 TransactionNoteView(
-                    note = note
+                    note = state.note
                 )
             }
         }
     }
 }
+
 
 @Composable
 private fun TransactionRow(
@@ -579,6 +786,113 @@ private fun TransactionRow(
 
             Text(
                 value,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = MaterialTheme.typography.labelMedium.fontWeight,
+                color = Color.Gray
+            )
+        }
+    }
+}
+
+@Composable
+private fun TransactionPlanFulfillmentRow(
+    key: String,
+    value: String,
+    color: Color,
+    icon: Painter,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Image(
+                painter = icon,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(15.dp),
+                colorFilter = ColorFilter.tint(color)
+            )
+            Text(
+                key,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = MaterialTheme.typography.bodyMedium.fontWeight
+            )
+        }
+
+        Text(
+            value,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = MaterialTheme.typography.labelMedium.fontWeight,
+            color = Color.Gray
+        )
+    }
+}
+
+@Composable
+private fun TransactionPlanHeader(
+    amount: String,
+    createdAt: String,
+    sumOfFulfillment: String,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    "Planned",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = MaterialTheme.typography.titleMedium.fontWeight
+                )
+                Text(
+                    amount,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = MaterialTheme.typography.titleMedium.fontWeight
+                )
+            }
+
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    "Spent",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = MaterialTheme.typography.titleSmall.fontWeight
+                )
+                Text(
+                    sumOfFulfillment,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = MaterialTheme.typography.titleSmall.fontWeight
+                )
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                "Created At $createdAt",
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = MaterialTheme.typography.labelMedium.fontWeight,
                 color = Color.Gray
@@ -759,15 +1073,15 @@ private fun TransactionFulfillmentViewTitle(
 }
 
 @Composable
-private fun TransactionLiabilityStatusProgress(
+private fun TransactionFulfillmentStatusProgress(
     modifier: Modifier = Modifier,
     amount: Double,
     totalFulfillment: Double?,
     color: Color,
     title: String,
-    onShow: Boolean
+    onShow: Boolean,
+    isAmount: Boolean = true
 ) {
-
     // Recalculate when amount or totalFulfillment changes
     val progress = remember(totalFulfillment, amount) {
         if (totalFulfillment == null || amount <= 0) {
@@ -780,14 +1094,24 @@ private fun TransactionLiabilityStatusProgress(
     }
 
     val formattedTotalFulfillment = remember(totalFulfillment) {
-        (totalFulfillment ?: 0.0).formatToAmount()
+        val result = (totalFulfillment ?: 0.0)
+        if (isAmount) {
+            result.formatToAmount()
+        } else {
+            result.toInt().toString()
+        }
     }
 
     val remaining = remember(
         totalFulfillment,
         amount
     ) {
-        (amount - (totalFulfillment ?: 0.0)).formatToAmount()
+        val result = (amount - (totalFulfillment ?: 0.0))
+        if (isAmount) {
+            result.formatToAmount()
+        } else {
+            result.toInt().toString()
+        }
     }
 
     // Trigger targetValue transition after initial composition
@@ -886,6 +1210,95 @@ private fun TransactionLiabilityStatusProgress(
 
             Text(
                 "100%",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = MaterialTheme.typography.labelSmall.fontWeight,
+            )
+        }
+    }
+}
+
+
+@Composable
+private fun TransactionColorStatusProgress(
+    modifier: Modifier = Modifier,
+    amount: Double,
+    totalFulfillment: Double?,
+    color: Color,
+    onShow: Boolean,
+    isAmount: Boolean = true
+) {
+    // Recalculate when amount or totalFulfillment changes
+    val progress = remember(totalFulfillment, amount) {
+        if (totalFulfillment == null || amount <= 0) {
+            0.0f
+        } else if (totalFulfillment > amount) {
+            1.0f
+        } else {
+            (totalFulfillment / amount).toFloat()
+        }
+    }
+
+    val formattedTotalFulfillment = remember(totalFulfillment) {
+        val result = (totalFulfillment ?: 0.0)
+        if (isAmount) {
+            result.formatToAmount()
+        } else {
+            result.toInt().toString()
+        }
+    }
+
+    val remaining = remember(
+        totalFulfillment,
+        amount
+    ) {
+        val result = (amount - (totalFulfillment ?: 0.0))
+        if (isAmount) {
+            result.formatToAmount()
+        } else {
+            result.toInt().toString()
+        }
+    }
+
+    // Trigger targetValue transition after initial composition
+    var startAnimation by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        startAnimation = true
+    }
+
+    val animateProgress by animateFloatAsState(
+        targetValue = if (startAnimation && onShow) progress else 0f,
+        animationSpec =
+            tween(durationMillis = 800),
+        label = "ProgressAnimation"
+    )
+
+    val textProgress = (animateProgress * 100).toInt()
+
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        LinearProgressIndicator(
+            progress = { animateProgress },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp),
+            color = color,
+            trackColor = color.copy(alpha = 0.1f),
+            strokeCap = StrokeCap.Square
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 3.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "$textProgress% (${formattedTotalFulfillment})",
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = MaterialTheme.typography.labelSmall.fontWeight,
             )

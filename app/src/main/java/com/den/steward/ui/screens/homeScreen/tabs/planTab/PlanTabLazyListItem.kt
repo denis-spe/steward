@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,10 +27,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.den.steward.backend.entitles.PlanStatus
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
-import com.den.steward.helper.calculateFlow
 import com.den.steward.helper.formatToAmount
 import com.den.steward.helper.formatedDateTime
 import com.den.steward.helper.toLocalDateTime
@@ -43,6 +40,7 @@ fun PlanTabLazyListItem(
     updateSelectedFulfillmentTransactionType: (TransactionType) -> Unit,
     updateShowFulfillmentTransactionTypeBottomSheet: (Boolean) -> Unit,
     setSelectedTransaction: (Transaction?) -> Unit,
+    onDialogView: () -> Unit = {},
 ) {
     if (transaction !is Transaction.Plan) return
 
@@ -64,7 +62,7 @@ fun PlanTabLazyListItem(
 
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
-        onClick = { /* TODO: Navigate to detail */ },
+        onClick = { onDialogView() },
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.elevatedCardColors().copy(
             containerColor = MaterialTheme.colorScheme.background

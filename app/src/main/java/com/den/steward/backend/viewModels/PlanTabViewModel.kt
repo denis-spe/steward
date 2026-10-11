@@ -101,6 +101,10 @@ class PlanTabViewModel @Inject constructor(
 
     }
 
+    fun onPlanView(transaction: Transaction?) {
+        _planTabUiState.update { it.copy(selectedPlanToView = transaction) }
+    }
+
     fun updateSelectedPlanFulfillmentType(
         transactionType: TransactionType
     ) {

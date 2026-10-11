@@ -34,6 +34,7 @@ fun PlanTabLazyList(
     onTypeChange: (TransactionType) -> Unit,
     addPlanFulfillment: () -> Unit,
     deleteFulfillmentPlan: (transaction: Transaction) -> Unit,
+    onDialogView: (Transaction) -> Unit = {}
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -64,7 +65,9 @@ fun PlanTabLazyList(
                                 updateShowFulfillmentTransactionTypeBottomSheet = updateShowFulfillmentTransactionTypeBottomSheet,
                                 updateSelectedFulfillmentTransactionType = updateSelectedFulfillmentTransactionType,
                                 setSelectedTransaction = setSelectedTransaction,
-                            )
+                            ) {
+                                onDialogView(transaction)
+                            }
                         }
                     }
                 }

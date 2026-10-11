@@ -30,4 +30,5 @@ data class PlanTabUiState(
     val showFulfillmentTransactionTypeBottomSheet: Boolean = false,
     val selectedFulfillmentTransactionType: TransactionType = TransactionType.PLAN_FULFILLMENT,
     val isFulfillmentValid: TransactionFieldState = TransactionFieldState.Initial,
+    val selectedPlanToView: Transaction? = null
     )
