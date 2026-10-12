@@ -72,6 +72,7 @@ fun AllTab(
         allViewModel.transactionCounts(settledPage)
     }.collectAsStateWithLifecycle()
     val transactionCountsByDate by allViewModel.transactionCountsByDate.collectAsStateWithLifecycle()
+    val transactionCountsByMonth by allViewModel.transactionCountsByMonth.collectAsStateWithLifecycle()
 
 
 
@@ -99,6 +100,7 @@ fun AllTab(
                 selectedDate = allUiState.selectedDate,
                 weekNumber = allUiState.weekNumber,
                 counts = transactionCountsState,
+                monthCounts = transactionCountsByMonth,
                 periodType = allUiState.periodType,
                 moreInfo = { day ->
                     val (flow, count) = transactionCountsByDate
@@ -145,7 +147,10 @@ fun AllTab(
                 onShowRecentSearch = allViewModel::updateIsRecentSearchExpanded,
                 isSearchExpanded = allUiState.isSearchExpanded,
                 searchState = allUiState.search,
-                onSearchShow = allViewModel::updateIsSearchExpanded
+                onSearchShow = allViewModel::updateIsSearchExpanded,
+                onMonthClick = {
+                    allViewModel.updateSelectedMonth(it)
+                }
             ) {
                 allViewModel.updateSelectedDate(it)
             }

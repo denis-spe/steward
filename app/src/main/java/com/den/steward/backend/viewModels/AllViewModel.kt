@@ -11,18 +11,18 @@ import com.den.steward.backend.datastore.SearchHistoryManager
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.Affected
-import com.den.steward.backend.states.allTabState.AllTransactionSummary
-import com.den.steward.backend.states.allTabState.AllUiState
 import com.den.steward.backend.states.DataState
-import com.den.steward.backend.states.PeriodType
 import com.den.steward.backend.states.Filter
-import com.den.steward.backend.useCase.PeriodDataHandleUseCase
 import com.den.steward.backend.states.OrderBy
+import com.den.steward.backend.states.PeriodType
 import com.den.steward.backend.states.SortAndFilterState
 import com.den.steward.backend.states.SortBy
 import com.den.steward.backend.states.allTabState.AllTabDataState
+import com.den.steward.backend.states.allTabState.AllTransactionSummary
+import com.den.steward.backend.states.allTabState.AllUiState
 import com.den.steward.backend.useCase.DataDeletionUseCase
 import com.den.steward.backend.useCase.DataFetchUseCase
+import com.den.steward.backend.useCase.PeriodDataHandleUseCase
 import com.den.steward.backend.useCase.UpdateTransactionUseCase
 import com.den.steward.helper.calculateFlow
 import com.den.steward.helper.formattedDate
@@ -55,9 +55,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.time.debounce
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.Month
 import java.time.temporal.IsoFields
 import javax.inject.Inject
-import kotlin.collections.sumOf
 
 /**
  * Pairs a transaction with its already-parsed LocalDateTime so downstream
@@ -174,6 +174,15 @@ class AllViewModel @Inject constructor(
             it.copy(
                 selectedDate = date,
                 periodType = PeriodType.DAY
+            )
+        }
+    }
+
+    fun updateSelectedMonth(date: LocalDate) {
+        _allUiState.update {
+            it.copy(
+                selectedDate = date,
+                periodType = PeriodType.MONTH
             )
         }
     }
@@ -519,7 +528,10 @@ class AllViewModel @Inject constructor(
                                 .groupBy { it.createdAt.toLocalDateTime().toLocalDate() }
                             val counts = groupedTransaction.mapValues { it.value.size }
                             val flow = groupedTransaction.mapValues {
-                                if (it.value.calculateFlow < 0) -1 else 1
+                                val flow = it.value.calculateFlow
+                                if (flow < 0) -1 else {
+                                    if (flow > 0) 1 else 0
+                                }
                             }
 
                             getWeekDaysForPage(page).map { date ->
@@ -554,6 +566,34 @@ class AllViewModel @Inject constructor(
 
                 is DataState.Error, is DataState.Loading -> Pair(
                     emptyMap<LocalDate, Int>(), emptyMap<LocalDate, Int>()
+                )
+            }
+        }
+            .flowOn(Dispatchers.Default)
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5_000),
+                Pair(
+                    emptyMap(), emptyMap()
+                )
+            )
+
+    val transactionCountsByMonth: StateFlow<Pair<Map<Month, Int>, Map<Month, Int>>> =
+        dataFetchUseCase.fetchAllTransactions.distinctUntilChanged().map { stateResult ->
+            when (stateResult) {
+                is DataState.Success -> {
+                    val groupedTransaction = stateResult.data
+                        .groupBy { it.createdAt.toLocalDateTime().toLocalDate().month }
+                    val counts = groupedTransaction.mapValues { it.value.size }
+                    val flow = groupedTransaction.mapValues {
+                        if (it.value.calculateFlow < 0) -1 else 1
+                    }
+
+                    Pair(flow, counts)
+                }
+
+                is DataState.Error, is DataState.Loading -> Pair(
+                    emptyMap<Month, Int>(), emptyMap<Month, Int>()
                 )
             }
         }

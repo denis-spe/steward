@@ -24,6 +24,7 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
@@ -33,7 +34,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -50,14 +50,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.den.steward.backend.states.PeriodType
-import com.den.steward.helper.formattedDate
 import com.den.steward.ui.components.FloatingBottomSheetCalendar
+import com.den.steward.ui.components.FloatingBottomSheetMonthSelector
 import com.kizitonwose.calendar.core.CalendarDay
-import java.time.LocalDate
 import kotlinx.collections.immutable.ImmutableList
+import java.time.LocalDate
+import java.time.Month
 
 @Composable
 fun WeekView(
@@ -69,11 +69,13 @@ fun WeekView(
     selectedDate: LocalDate,
     weekNumber: Int?,
     counts: ImmutableList<Pair<Int?, Int>>,
-    saveSearchQuery: (text: String) -> Unit,
-    onShowRecentSearch: (show: Boolean) -> Unit,
+    monthCounts: Pair<Map<Month, Int>, Map<Month, Int>>? = null,
+    saveSearchQuery: (String) -> Unit,
+    onShowRecentSearch: (Boolean) -> Unit,
     onResetClick: () -> Unit,
-    onSearchShow: (show: Boolean) -> Unit,
-    moreInfo: @Composable (ColumnScope.(day: CalendarDay) -> Unit) = {},
+    onSearchShow: (Boolean) -> Unit,
+    moreInfo: @Composable (ColumnScope.(CalendarDay) -> Unit) = {},
+    onMonthClick: (LocalDate) -> Unit,
     onDayClick: (LocalDate) -> Unit,
 ) {
     val onCalenderShow = remember { mutableStateOf(false) }
@@ -100,6 +102,7 @@ fun WeekView(
                             day = date,
                             count = countValue,
                             flowIndicator = flowIndicator,
+                            periodType = periodType,
                             isSelected = date == selectedDate
                         ) {
                             onDayClick(date)
@@ -123,15 +126,33 @@ fun WeekView(
         )
     }
 
-    FloatingBottomSheetCalendar(
-        isExpanded = onCalenderShow.value,
-        selectedDate = selectedDate,
-        onDateSelected = onDayClick,
-        onDismiss = {
-            onCalenderShow.value = false
-        },
-        moreInfo = moreInfo
-    )
+    when (periodType) {
+        PeriodType.DAY, PeriodType.WEEK -> {
+            FloatingBottomSheetCalendar(
+                isExpanded = onCalenderShow.value,
+                selectedDate = selectedDate,
+                onDateSelected = onDayClick,
+                onDismiss = {
+                    onCalenderShow.value = false
+                },
+                moreInfo = moreInfo
+            )
+        }
+
+        PeriodType.MONTH -> {
+            FloatingBottomSheetMonthSelector(
+                isExpanded = onCalenderShow.value,
+                selectedDate = selectedDate,
+                onMonthSelected = onMonthClick,
+                counts = monthCounts,
+                onDismiss = {
+                    onCalenderShow.value = false
+                }
+            )
+        }
+
+        else -> {}
+    }
 }
 
 @Composable
@@ -168,75 +189,49 @@ fun ControllerPanel(
         label = "SearchExpandTransition"
     ) { expanded ->
         if (!expanded) {
-            when (periodType) {
-                PeriodType.WEEK -> {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(
-                            onClick = { onSearchShow(true) }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = "Search",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 15.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Week ${weekNumber ?: ""}",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
 
-                        Text(
-                            text = "Week ${weekNumber ?: ""}",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    IconButton(
+                        onClick = { onSearchShow(true) }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-
-                        IconButton(onClick = onResetClick) {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = "Reset",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
                     }
-                }
 
-                else -> {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    IconButton(
+                        onClick = { onCalenderShow.value = true }
                     ) {
-                        val date = selectedDate.formattedDate
-                        IconButton(
-                            onClick = { onSearchShow(true) }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = "Search",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Default.CalendarMonth,
+                            contentDescription = null
+                        )
+                    }
 
-                        OutlinedButton(
-                            onClick = { onCalenderShow.value = true }
-                        ) {
-                            Text(
-                                text = date,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        IconButton(onClick = onResetClick) {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = "Reset",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                    IconButton(onClick = onResetClick) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Reset",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }
@@ -330,25 +325,26 @@ private fun WeekDayView(
     count: Int,
     flowIndicator: Int?,
     isSelected: Boolean,
+    periodType: PeriodType,
     onClick: () -> Unit
 ) {
     val materialTheme = MaterialTheme.colorScheme
     val isToday = remember(day) { day == LocalDate.now() }
 
     val textColor = when {
-        isSelected -> materialTheme.onPrimary
+        isSelected && periodType == PeriodType.DAY -> Color.White
         isToday -> materialTheme.secondary
         else -> materialTheme.onSurfaceVariant
     }
 
-    val backgroundColor = if (isSelected)
+    val backgroundColor = if (isSelected && periodType == PeriodType.DAY)
         materialTheme.primary
     else Color.Transparent
 
     val badgeColor = when (flowIndicator) {
         -1 -> materialTheme.error
-        1 -> materialTheme.secondary
-        else -> materialTheme.secondary
+        1 -> Color(0xFF3BA429)
+        else -> Color(0xFF5D15EA)
     }
 
     val dayOfWeek = remember(day.dayOfWeek) {
