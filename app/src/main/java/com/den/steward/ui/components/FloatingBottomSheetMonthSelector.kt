@@ -121,7 +121,7 @@ fun FloatingBottomSheetMonthSelector(
                         color = when {
                             flow < 0 -> MaterialTheme.colorScheme.error
                             flow > 0 -> Color(0xFF3BA429)
-                            else -> MaterialTheme.colorScheme.primaryContainer
+                            else -> Color.DarkGray
                         },
                         isCurrentYear = currentYearMonth.year == displayedYear,
                         isSelected = isSelected,
@@ -140,7 +140,7 @@ fun FloatingBottomSheetMonthSelector(
 }
 
 @Composable
-fun MonthButton(
+private fun MonthButton(
     month: Month,
     count: Int = 0,
     color: Color = MaterialTheme.colorScheme.primaryContainer,

@@ -73,6 +73,7 @@ fun AllTab(
     }.collectAsStateWithLifecycle()
     val transactionCountsByDate by allViewModel.transactionCountsByDate.collectAsStateWithLifecycle()
     val transactionCountsByMonth by allViewModel.transactionCountsByMonth.collectAsStateWithLifecycle()
+    val transactionCountsByYear by allViewModel.transactionCountsByYear.collectAsStateWithLifecycle()
 
 
 
@@ -101,6 +102,7 @@ fun AllTab(
                 weekNumber = allUiState.weekNumber,
                 counts = transactionCountsState,
                 monthCounts = transactionCountsByMonth,
+                yearCounts = transactionCountsByYear,
                 periodType = allUiState.periodType,
                 moreInfo = { day ->
                     val (flow, count) = transactionCountsByDate
@@ -108,7 +110,12 @@ fun AllTab(
                     val dayFlow = flow[day.date]
                     val color = if (dayFlow == -1)
                         MaterialTheme.colorScheme.error
-                    else Color(0xFF3BA429)
+                    else {
+                        if (dayFlow == 1)
+                            Color(0xFF3BA429)
+                        else
+                            Color.DarkGray
+                    }
 
 
                     if (dayCount != null) {
@@ -148,9 +155,8 @@ fun AllTab(
                 isSearchExpanded = allUiState.isSearchExpanded,
                 searchState = allUiState.search,
                 onSearchShow = allViewModel::updateIsSearchExpanded,
-                onMonthClick = {
-                    allViewModel.updateSelectedMonth(it)
-                }
+                onMonthClick = allViewModel::updateSelectedMonth,
+                onYearClick = allViewModel::updateSelectedYear,
             ) {
                 allViewModel.updateSelectedDate(it)
             }

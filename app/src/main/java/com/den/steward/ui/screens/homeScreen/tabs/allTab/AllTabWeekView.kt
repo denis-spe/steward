@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import com.den.steward.backend.states.PeriodType
 import com.den.steward.ui.components.FloatingBottomSheetCalendar
 import com.den.steward.ui.components.FloatingBottomSheetMonthSelector
+import com.den.steward.ui.components.FloatingBottomSheetYearSelector
 import com.kizitonwose.calendar.core.CalendarDay
 import kotlinx.collections.immutable.ImmutableList
 import java.time.LocalDate
@@ -70,12 +71,14 @@ fun WeekView(
     weekNumber: Int?,
     counts: ImmutableList<Pair<Int?, Int>>,
     monthCounts: Pair<Map<Month, Int>, Map<Month, Int>>? = null,
+    yearCounts: Pair<Map<Int, Int>, Map<Int, Int>>? = null,
     saveSearchQuery: (String) -> Unit,
     onShowRecentSearch: (Boolean) -> Unit,
     onResetClick: () -> Unit,
     onSearchShow: (Boolean) -> Unit,
     moreInfo: @Composable (ColumnScope.(CalendarDay) -> Unit) = {},
     onMonthClick: (LocalDate) -> Unit,
+    onYearClick: (LocalDate) -> Unit,
     onDayClick: (LocalDate) -> Unit,
 ) {
     val onCalenderShow = remember { mutableStateOf(false) }
@@ -151,7 +154,18 @@ fun WeekView(
             )
         }
 
-        else -> {}
+        PeriodType.YEAR -> {
+            FloatingBottomSheetYearSelector(
+                isExpanded = onCalenderShow.value,
+                selectedDate = selectedDate,
+                onYearSelected = onYearClick,
+                counts = yearCounts,
+                onDismiss = {
+                    onCalenderShow.value = false
+                }
+            )
+        }
+
     }
 }
 
@@ -344,7 +358,7 @@ private fun WeekDayView(
     val badgeColor = when (flowIndicator) {
         -1 -> materialTheme.error
         1 -> Color(0xFF3BA429)
-        else -> Color(0xFF5D15EA)
+        else -> Color.DarkGray
     }
 
     val dayOfWeek = remember(day.dayOfWeek) {

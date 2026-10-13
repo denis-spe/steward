@@ -187,6 +187,15 @@ class AllViewModel @Inject constructor(
         }
     }
 
+    fun updateSelectedYear(date: LocalDate) {
+        _allUiState.update {
+            it.copy(
+                selectedDate = date,
+                periodType = PeriodType.YEAR
+            )
+        }
+    }
+
     fun updatePeriodType(periodType: PeriodType) {
         _allUiState.update {
             it.copy(
@@ -558,7 +567,9 @@ class AllViewModel @Inject constructor(
                         .groupBy { it.createdAt.toLocalDateTime().toLocalDate() }
                     val counts = groupedTransaction.mapValues { it.value.size }
                     val flow = groupedTransaction.mapValues {
-                        if (it.value.calculateFlow < 0) -1 else 1
+                        if (it.value.calculateFlow < 0) -1 else {
+                            if (it.value.calculateFlow > 0) 1 else 0
+                        }
                     }
 
                     Pair(flow, counts)
@@ -594,6 +605,34 @@ class AllViewModel @Inject constructor(
 
                 is DataState.Error, is DataState.Loading -> Pair(
                     emptyMap<Month, Int>(), emptyMap<Month, Int>()
+                )
+            }
+        }
+            .flowOn(Dispatchers.Default)
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5_000),
+                Pair(
+                    emptyMap(), emptyMap()
+                )
+            )
+
+    val transactionCountsByYear: StateFlow<Pair<Map<Int, Int>, Map<Int, Int>>> =
+        dataFetchUseCase.fetchAllTransactions.distinctUntilChanged().map { stateResult ->
+            when (stateResult) {
+                is DataState.Success -> {
+                    val groupedTransaction = stateResult.data
+                        .groupBy { it.createdAt.toLocalDateTime().toLocalDate().year }
+                    val counts = groupedTransaction.mapValues { it.value.size }
+                    val flow = groupedTransaction.mapValues {
+                        if (it.value.calculateFlow < 0) -1 else 1
+                    }
+
+                    Pair(flow, counts)
+                }
+
+                is DataState.Error, is DataState.Loading -> Pair(
+                    emptyMap<Int, Int>(), emptyMap<Int, Int>()
                 )
             }
         }

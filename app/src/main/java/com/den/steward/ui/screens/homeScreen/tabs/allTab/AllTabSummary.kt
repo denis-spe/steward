@@ -3,7 +3,6 @@ package com.den.steward.ui.screens.homeScreen.tabs.allTab
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -39,10 +38,7 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -55,11 +51,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.den.steward.R
-import com.den.steward.backend.states.allTabState.AllTransactionSummary
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.PeriodType
+import com.den.steward.backend.states.allTabState.AllTransactionSummary
 import com.den.steward.helper.formatToAmount
 import com.den.steward.helper.formattedDate
+import com.den.steward.helper.title
 import com.den.steward.ui.componentExtenison.shimmerEffect
 import com.den.steward.ui.components.charts.VicoLineChart
 import com.den.steward.ui.components.charts.collections.ChartDataCollection
@@ -83,12 +80,12 @@ fun AllTabSummaryCard(
         tabs.size
     }
 
-    val periodText = remember(periodType) {
+    val periodText = remember(periodType, selectedDate) {
         when (periodType) {
             PeriodType.DAY -> selectedDate.formattedDate
             PeriodType.WEEK -> "Weekly Summary"
-            PeriodType.MONTH -> "Monthly Summary"
-            PeriodType.YEAR -> "Yearly Summary"
+            PeriodType.MONTH -> "${selectedDate.month.name.title} Summary"
+            PeriodType.YEAR -> "${selectedDate.year} Summary"
         }
     }
 
@@ -363,7 +360,9 @@ private fun AllTabSummaryCardContent(
     val green = colorResource(R.color.earnings)
 
     val flowIconColor = remember(flow) {
-        if (flow >= 0) green  else error
+        if (flow > 0) green else {
+            if (flow == 0L) Color.DarkGray else error
+        }
     }
     val flowIcon = remember(flow) {
         if (flow >= 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown
@@ -564,7 +563,8 @@ private fun AllTabSummaryCardContentShimmer(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Box(
-                modifier = Modifier.width(55.dp)
+                modifier = Modifier
+                    .width(55.dp)
                     .height(35.dp)
                     .clip(MaterialTheme.shapes.medium)
                     .shimmerEffect()
@@ -642,7 +642,8 @@ private fun AllTabSummaryTransactionCardShimmer(
                 }
 
                 Box(
-                    modifier = Modifier.width(75.dp)
+                    modifier = Modifier
+                        .width(75.dp)
                         .height(16.dp)
                         .clip(MaterialTheme.shapes.medium)
                         .shimmerEffect()
@@ -652,7 +653,8 @@ private fun AllTabSummaryTransactionCardShimmer(
             Spacer(modifier = Modifier.height(4.dp))
 
             Box(
-                modifier = Modifier.width(40.dp)
+                modifier = Modifier
+                    .width(40.dp)
                     .height(26.dp)
                     .clip(MaterialTheme.shapes.medium)
                     .shimmerEffect()
