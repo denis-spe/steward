@@ -93,6 +93,7 @@ fun TransactionRecurrenceField(
     }
 
     TransactionRecurrenceFieldItem(
+        color = color,
         onDialogShow = onDialogShow,
         startedAt = selectedStartAt,
         endAt = selectedEndAt,
@@ -111,6 +112,7 @@ private fun TransactionRecurrenceFieldItem(
     recurrence: RecurrencePattern,
     isStartNotEqualToEndDateTime: TransactionFieldState,
     onIsStartNotEqualToEndDateTimeChange: (TransactionFieldState) -> Unit,
+    color: Color,
 ) {
     val isError = isStartNotEqualToEndDateTime is TransactionFieldState.Error
 
@@ -166,7 +168,7 @@ private fun TransactionRecurrenceFieldItem(
             val text = if (isError)
                     "Required"
                 else when (recurrence) {
-                is RecurrencePattern.NONE -> "Not Repeatable"
+                is RecurrencePattern.NONE -> "Not Set"
                 is RecurrencePattern.DAILY -> "Daily"
                 is RecurrencePattern.WEEKLY -> "Weekly"
                 is RecurrencePattern.MONTHLY -> "Monthly"
@@ -178,7 +180,7 @@ private fun TransactionRecurrenceFieldItem(
                 fontWeight = FontWeight.Bold,
                 color = if (isError)
                     MaterialTheme.colorScheme.error
-                else MaterialTheme.colorScheme.primary,
+                else color,
                 style = MaterialTheme.typography.labelMedium.copy(
                     fontSize = FONT_SIZE
                 )

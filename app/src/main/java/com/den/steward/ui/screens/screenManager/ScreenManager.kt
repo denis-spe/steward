@@ -1,7 +1,6 @@
 // Glory be the name of LORD GOD
 package com.den.steward.ui.screens.screenManager
 
-import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
@@ -174,20 +173,22 @@ fun ScreenManager() {
             ) togetherWith ExitTransition.None
         },
         popTransitionSpec = {
-            // Slide old content horizontal, revealing the new content in place underneath
-            EnterTransition.None togetherWith
-                    slideOutHorizontally (
-                        targetOffsetX = { it },
-                        animationSpec = tween(500)
-                    )
+            slideInHorizontally(
+                initialOffsetX = { -it },
+                animationSpec = tween(500)
+            ) togetherWith slideOutHorizontally(
+                targetOffsetX = { it },
+                animationSpec = tween(500)
+            )
         },
         predictivePopTransitionSpec = {
-            // Slide old content horizontal, revealing the new content in place underneath
-            EnterTransition.None togetherWith
-                    slideOutHorizontally (
-                        targetOffsetX = { it },
-                        animationSpec = tween(500)
-                    )
-        },
+            slideInHorizontally(
+                initialOffsetX = { -it },
+                animationSpec = tween(500)
+            ) togetherWith slideOutHorizontally(
+                targetOffsetX = { it },
+                animationSpec = tween(500)
+            )
+        }
     )
 }

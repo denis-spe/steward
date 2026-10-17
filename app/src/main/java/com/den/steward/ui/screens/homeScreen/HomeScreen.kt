@@ -1,5 +1,7 @@
 package com.den.steward.ui.screens.homeScreen
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,14 +24,15 @@ import androidx.navigation3.runtime.NavKey
 import com.den.steward.backend.states.HomeTab
 import com.den.steward.backend.viewModels.DataAdditionViewModel
 import com.den.steward.backend.viewModels.HomeViewModel
-import com.den.steward.ui.components.IconSelectorDialog
 import com.den.steward.ui.dataAddition.MainFloatingActionButton
 import com.den.steward.ui.screens.homeScreen.tabs.allTab.AllTab
 import com.den.steward.ui.screens.homeScreen.tabs.overviewTab.OverviewTab
 import com.den.steward.ui.screens.homeScreen.tabs.planTab.PlanTab
 import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTab
 import com.den.steward.ui.screens.homeScreen.tabs.yesterdayTab.YesterdayTab
+import com.den.steward.ui.screens.screenManager.SettingsRouter
 
+@RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 @Composable
 fun HomeScreen(
     backStack: NavBackStack<NavKey>,
@@ -38,14 +42,20 @@ fun HomeScreen(
 
     val homeUiState by homeViewModel.homeUiState.collectAsStateWithLifecycle()
     val dataAdditionState by dataAdditionViewModel.dataAdditionState.collectAsStateWithLifecycle()
+    val userState by homeViewModel.userState.collectAsStateWithLifecycle()
+    val topDrawerState = remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             topBar = {
                 HomeTopBar(
+                    userState = userState,
                     currentTab = homeUiState.currentTab,
-                    onTabChange = { homeViewModel.updateHomeTab(it) }
+                    onTabChange = { homeViewModel.updateHomeTab(it) },
+                    onLogoClick = {
+                        topDrawerState.value = true
+                    }
                 )
             }
         ) { padding ->
@@ -85,6 +95,19 @@ fun HomeScreen(
                 }
             }
         }
+
+        HomeTopDrawer(
+            userState = userState,
+            isOpen = topDrawerState.value,
+            onClose = { topDrawerState.value = false },
+            onSettingsClick = {
+                topDrawerState.value = false
+                backStack.addLast(SettingsRouter)
+            },
+            onHomeClick = {
+                topDrawerState.value = false
+            }
+        )
 
         if (dataAdditionState.showMainBottomSheet) {
             Box(

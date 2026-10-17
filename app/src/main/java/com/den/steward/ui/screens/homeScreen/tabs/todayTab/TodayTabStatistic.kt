@@ -48,10 +48,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.den.steward.R
 import com.den.steward.backend.states.todayTabState.BalanceStatStates
 import com.den.steward.backend.states.todayTabState.LiabilitiesPaymentStatsState
 import com.den.steward.helper.formatToAmount
@@ -316,27 +318,51 @@ private fun TodaySummaryView(balanceStatStates: BalanceStatStates) {
                 )
 
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    paymentState.forEach { (method, amount) ->
-                        Column (
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                            horizontalAlignment = Alignment.Start
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Image(
-                                    painter = painterResource(id = method.icon),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
-                                )
+                    if (paymentState.isNotEmpty()) {
+                        paymentState.forEach { (method, amount) ->
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(4.dp),
+                                horizontalAlignment = Alignment.Start
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Image(
+                                        painter = painterResource(id = method.icon),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Text(
+                                        text = method.label,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
                                 Text(
-                                    text = method.label,
-                                    style = MaterialTheme.typography.bodyMedium
+                                    text = amount.formatToAmount(),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold
                                 )
                             }
+                        }
+                    } else {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
                             Text(
-                                text = amount.formatToAmount(),
+                                text = 0.0.formatToAmount(),
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Text(
+                                text = "No payments yet",
                                 style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -354,8 +380,8 @@ private fun TodayTabUnpaidLiabilitiesView(liabilitiesPaymentStatsState: Liabilit
         totalDebt,
         unPaidLoan,
         unPaidDebt,
-        paidCount,
-        unPaidCount
+        _,
+        _
     ) = liabilitiesPaymentStatsState
 
     TodayStatisticLayout {
@@ -378,7 +404,7 @@ private fun TodayTabUnpaidLiabilitiesView(liabilitiesPaymentStatsState: Liabilit
                     title = "Receivable",
                     amount = totalLoan,
                     unpaidAmount = unPaidLoan,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = colorResource(R.color.lent),
                     progressTitle = "loans"
                 )
                 LiabilityCard(
@@ -386,7 +412,7 @@ private fun TodayTabUnpaidLiabilitiesView(liabilitiesPaymentStatsState: Liabilit
                     title = "Payable",
                     amount = totalDebt,
                     unpaidAmount = unPaidDebt,
-                    color = MaterialTheme.colorScheme.error,
+                    color = colorResource(R.color.debt),
                     progressTitle = "debts"
                 )
             }

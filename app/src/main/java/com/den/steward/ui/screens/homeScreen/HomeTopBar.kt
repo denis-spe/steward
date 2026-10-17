@@ -7,11 +7,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
@@ -24,17 +23,54 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.den.steward.backend.states.AuthState
 import com.den.steward.backend.states.HomeTab
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeTopBar(currentTab: HomeTab, onTabChange: (HomeTab) -> Unit) {
+fun HomeTopBar(
+    currentTab: HomeTab,
+    onTabChange: (HomeTab) -> Unit,
+    userState: AuthState,
+    onLogoClick: () -> Unit
+) {
     CenterAlignedTopAppBar(
         title = {
             HomeTabRow(
                 currentTab = currentTab,
                 onTabChange = onTabChange
             )
+        },
+        navigationIcon = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                if (userState is AuthState.Authenticated) {
+                    val name = if (userState.isAnonymous) "GT" else
+                        userState.displayName
+                            ?.split(" ")
+                            ?.joinToString { it[0].toString() }
+                            ?.replace(regex = Regex("[^A-Za-z]"), "") ?: "GT"
+
+                    Surface(
+                        shape = CircleShape,
+                        shadowElevation = 2.dp,
+                        color = MaterialTheme.colorScheme.background // Gives a background to default icon
+                    ) {
+                        FilledIconButton(
+                            onClick = onLogoClick
+                        ) {
+                            Text(
+                                name,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                        }
+                    }
+                }
+            }
         }
     )
 }
@@ -45,8 +81,7 @@ fun HomeTabRow(currentTab: HomeTab, onTabChange: (HomeTab) -> Unit) {
         HomeTab.entries.toTypedArray()
     }
     Surface(
-        shadowElevation = 3.dp,
-        tonalElevation = 1.dp,
+        shadowElevation = 2.dp,
         shape = CircleShape,
     ) {
         Column(

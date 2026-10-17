@@ -4,10 +4,8 @@ package com.den.steward.ui.components.transactionFields
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -16,9 +14,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.den.steward.R
-import com.den.steward.backend.entitles.PaymentMethod
 import com.den.steward.ui.components.IconSelectorDialog
 import com.den.steward.ui.components.SelectedIcon
 
@@ -55,7 +53,9 @@ fun TransactionIconSelector(
 
                 Text(
                     text = selectedIcon.value.name,
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
                     color = color
                 )
             }

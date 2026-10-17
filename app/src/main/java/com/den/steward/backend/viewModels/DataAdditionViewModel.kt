@@ -4,6 +4,7 @@ package com.den.steward.backend.viewModels
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.den.steward.R
 import com.den.steward.backend.entitles.GoalStatus
 import com.den.steward.backend.entitles.PaymentMethod
 import com.den.steward.backend.entitles.RecurrencePattern
@@ -51,6 +52,23 @@ class DataAdditionViewModel @Inject constructor(
      */
     fun updateShowTransactionAdditionBottomSheet(show: Boolean) {
         _dataAdditionState.update { it.copy(showTransactionAdditionBottomSheet = show) }
+    }
+
+    fun getDefaultIconForType(type: TransactionType?): SelectedIcon = when (type) {
+        TransactionType.GOAL -> SelectedIcon("Target", R.drawable.tag_goal)
+        TransactionType.PLAN -> SelectedIcon("Plan", R.drawable.account)
+        TransactionType.EARNINGS -> SelectedIcon("Earnings", R.drawable.earnings_2)
+        TransactionType.EXPENSE -> SelectedIcon("Expense", R.drawable.expense_2)
+        TransactionType.LENT -> SelectedIcon("Lent", R.drawable.pay_date)
+        TransactionType.DEBT -> SelectedIcon("Debt", R.drawable.debt_2)
+        TransactionType.SAVINGS -> SelectedIcon("Savings", R.drawable.savings_2)
+        TransactionType.REPAYMENT, TransactionType.SETTLEMENT -> SelectedIcon(
+            "Payment",
+            R.drawable.payment_2
+        )
+
+        TransactionType.ATTAIN -> SelectedIcon("Achievement", R.drawable.achievement)
+        else -> SelectedIcon()
     }
 
     /**
@@ -153,6 +171,7 @@ class DataAdditionViewModel @Inject constructor(
             showTransactionAdditionBottomSheet = true,
             showTransactionTypeBottomSheet = false,
             selectedTransactionType = transactionType,
+            selectedIcon = getDefaultIconForType(transactionType)
         ) }
     }
 

@@ -1,10 +1,10 @@
 // Glory be to the LORD GOD of hosts
 package com.den.steward
 
-import com.den.steward.backend.services.service.Account
-import com.den.steward.backend.services.service.Storage
 import com.den.steward.backend.services.AccountService
 import com.den.steward.backend.services.StorageService
+import com.den.steward.backend.services.service.Account
+import com.den.steward.backend.services.service.Storage
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
@@ -21,7 +21,7 @@ import javax.inject.Singleton
 object StewardModule {
 
     // Changed to your computer's local IP to allow physical device connection
-    private const val EMULATOR_IP = "192.168.10.141"
+    private const val EMULATOR_IP = "10.147.236.215"
 
     @Singleton
     @Provides

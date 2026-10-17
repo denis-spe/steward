@@ -7,7 +7,6 @@ import com.den.steward.backend.states.OrderBy
 import com.den.steward.backend.states.PeriodType
 import com.den.steward.backend.states.SortBy
 import com.den.steward.helper.filterByListOfFilters
-import com.den.steward.helper.title
 import com.den.steward.helper.toLocalDateTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -89,7 +88,12 @@ class PeriodDataHandleUseCase @Inject constructor(
                             transaction.getPaymentMethodOrNull?.label?.contains(search, ignoreCase = true) == true ||
                             transaction.getAffectedAmount?.label?.contains(search, ignoreCase = true) == true ||
                             transaction.getStatus?.contains(search, ignoreCase = true) == true ||
-                            transaction.type.toString().contains(search, ignoreCase = true)
+                                    transaction.type.toString()
+                                        .contains(search, ignoreCase = true) ||
+                                    transaction.getSelectedIcon.name.contains(
+                                        search,
+                                        ignoreCase = true
+                                    )
                         }
 
 

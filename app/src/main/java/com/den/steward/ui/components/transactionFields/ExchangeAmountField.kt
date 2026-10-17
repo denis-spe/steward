@@ -30,7 +30,7 @@ fun ExchangeAmountField(
     Surface(
         modifier = Modifier.fillMaxWidth(0.8f),
         shape = CircleShape,
-        shadowElevation = 2.dp
+        shadowElevation = 1.dp
     ) {
         TextField(
             state = state,

@@ -1,14 +1,14 @@
 // Glory Be To The Name of LORD Of Hosts And Lord JESUS
 package com.den.steward.ui.components
 
-import androidx.compose.animation.slideIn
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,20 +16,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedFilterChip
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -39,14 +39,52 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import coil.compose.AsyncImage
 import com.den.steward.R
 
 val icons = mapOf(
     "Apple" to R.drawable.apple,
     "Banana" to R.drawable.banana,
     "Achievement" to R.drawable.achievement,
-    "eggs" to R.drawable.eggs
+    "Eggs" to R.drawable.eggs,
+    "Hamburger" to R.drawable.hamburger,
+    "Beef" to R.drawable.beef,
+    "Coke" to R.drawable.cola,
+    "Biscuits" to R.drawable.biscuits,
+    "Bread" to R.drawable.bread,
+    "MCdonald" to R.drawable.mcdonald_french_fries,
+    "Milk" to R.drawable.milk_carton,
+    "Rent" to R.drawable.rent,
+    "Pizza" to R.drawable.salami_pizza,
+    "Rice" to R.drawable.rice_bowl,
+    "Target" to R.drawable.tag_goal,
+    "Salt" to R.drawable.salt,
+    "Tomato" to R.drawable.tomato,
+    "Watermelon" to R.drawable.watermelon,
+    "Fried chicken" to R.drawable.fried_chicken,
+    "Airplane" to R.drawable.airplane,
+    "Bus" to R.drawable.bus,
+    "Chicken" to R.drawable.chicken,
+    "Delivery" to R.drawable.delivery,
+    "Fuel" to R.drawable.fuel,
+    "Noodle" to R.drawable.noodles,
+    "Taxi" to R.drawable.taxi,
+    "Ticket" to R.drawable.tickets,
+    "Television" to R.drawable.tv,
+    "Flash device" to R.drawable.flash_device,
+    "USB cable" to R.drawable.usb_cable,
+    "Laptop" to R.drawable.laptop,
+    "Phone" to R.drawable.phone,
+    "Plug" to R.drawable.plug,
+    "Electricity" to R.drawable.electricity,
+    "Money Transfer" to R.drawable.money_transfer,
+    "Payment" to R.drawable.payment_2,
+    "Savings" to R.drawable.savings_2,
+    "ATM" to R.drawable.atm,
+    "Expense" to R.drawable.expense_2,
+    "Earnings" to R.drawable.earnings_2,
+    "Plan" to R.drawable.account,
+    "Debt" to R.drawable.debt_2,
+    "Lent" to R.drawable.pay_date,
 )
 
 data class  SelectedIcon(
@@ -71,6 +109,7 @@ fun IconSelectorDialog(
 
     // Icon selector dialog
     val selectedIcon = remember { mutableStateOf(selectedIcon) }
+    val searchState = rememberTextFieldState()
 
     Dialog(
         onDismissRequest = onDismiss
@@ -88,13 +127,29 @@ fun IconSelectorDialog(
                     leadingIcon = leadingIcon
                 )
 
+                TextField(
+                    state = searchState,
+                    placeholder = {
+                        Text(
+                            "Search",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    },
+
+                    colors = TextFieldDefaults.colors().copy(
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    )
+                )
+
                 HorizontalDivider(
                     modifier = Modifier.padding(top = 5.dp)
                 )
 
                 IconSelectorDialogBody(
                     defaultSelectedColor = color,
-                    selectedIcon = selectedIcon.value
+                    selectedIcon = selectedIcon.value,
+                    searchState = searchState
                 ) { icon ->
                     selectedIcon.value = icon
                 }
@@ -143,26 +198,59 @@ private fun IconSelectorDialogHeader(
 private fun IconSelectorDialogBody(
     defaultSelectedColor: Color = MaterialTheme.colorScheme.primary,
     selectedIcon: SelectedIcon,
+    searchState: TextFieldState,
     onIconSelect: (SelectedIcon) -> Unit
 ) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        modifier = Modifier.padding(vertical = 16.dp),
-        contentPadding = PaddingValues(5.dp),
-        userScrollEnabled = true
-    ) {
-        icons.forEach { (name, icon) ->
-            item(key = name) {
+    val searchQuery = searchState.text.toString().trim()
+
+    val filteredIcons = remember(searchQuery) {
+        if (searchQuery.isEmpty()) {
+            icons.entries.toList()
+        } else {
+            icons.entries.filter { (name, _) ->
+                name.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
+
+    if (filteredIcons.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxHeight(0.5f)
+                .fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "No icons found",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    } else {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            modifier = Modifier
+                .fillMaxHeight(0.5f)
+                .padding(vertical = 16.dp),
+            contentPadding = PaddingValues(5.dp),
+            userScrollEnabled = true
+        ) {
+            items(
+                items = filteredIcons,
+                key = { it.key }
+            ) { (name, icon) ->
                 IconContent(
                     name = name,
                     icon = icon,
                     color = defaultSelectedColor,
                     isSelected = selectedIcon.name == name
                 ) {
-                    onIconSelect(SelectedIcon(
-                        name = name,
-                        icon = icon
-                    ))
+                    onIconSelect(
+                        SelectedIcon(
+                            name = name,
+                            icon = icon
+                        )
+                    )
                 }
             }
         }
@@ -228,24 +316,28 @@ private fun IconSelectorDialogFooter(
                 "Cancel",
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.error
+                    color = color
                 )
             )
         }
 
-        Button(
+        VerticalDivider(
+            modifier = Modifier
+                .height(50.dp)
+                .padding(horizontal = 5.dp)
+        )
+
+        TextButton(
             onClick = {
                 onConfirm()
                 onDismiss()
             },
-            colors = ButtonDefaults.buttonColors().copy(
-                containerColor = color
-            )
         ) {
             Text(
                 "Done",
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    color = color
                 )
             )
         }

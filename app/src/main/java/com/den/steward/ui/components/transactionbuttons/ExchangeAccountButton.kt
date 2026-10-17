@@ -31,11 +31,11 @@ fun ExchangeAccountButton(
     Surface(
         modifier = Modifier.fillMaxWidth(0.8f),
         shape = CircleShape,
-        shadowElevation = 2.dp,
+        shadowElevation = 1.dp,
         onClick = onClick
     ) {
         Row(
-            modifier = Modifier.padding(5.dp),
+            modifier = Modifier.padding(vertical = 12.dp, horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
