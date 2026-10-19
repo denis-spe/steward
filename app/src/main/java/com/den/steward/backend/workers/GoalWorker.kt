@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.den.steward.R
 import com.den.steward.backend.entitles.GoalStatus
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.notification.NotificationEntity
@@ -51,7 +52,7 @@ class GoalWorker @AssistedInject constructor(
             val updatedGoal = goalToolUseCase.resetGoalAttain(goal).getOrThrow()
 
             // 3. Re-schedule if repeatable
-//            if (goal.repeatable != com.den.steward.backend.entitles.RecurrencePattern.NONE) {
+//            if (goal.repeatable != com.den.steward.backend.entitles.RepeatMode.NONE) {
 //                goalToolUseCase.schedule(transactionId, updatedGoal)
 //            }
 
@@ -67,7 +68,7 @@ class GoalWorker @AssistedInject constructor(
                         GoalStatus.COMPLETED -> "You achieved your goal"
                         GoalStatus.FAILED -> "You failed to achieve your goal"
                     },
-                    icon = data.type.icon,
+                    icon = R.drawable.ic_launcher_foreground_sprout,
                     largeIcon = data.selectedIcon
                 )
             )

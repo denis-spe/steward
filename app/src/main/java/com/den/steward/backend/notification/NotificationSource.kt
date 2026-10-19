@@ -48,6 +48,7 @@ class NotificationSource @Inject constructor(
 
         builder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(icon)
+            .setColor(ContextCompat.getColor(context, R.color.steward_gold))
             .setLargeIcon(largeIcon)
             .setContentTitle(title)
             .setContentText(message)

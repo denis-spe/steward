@@ -7,7 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.den.steward.R
 import com.den.steward.backend.entitles.GoalStatus
 import com.den.steward.backend.entitles.PaymentMethod
-import com.den.steward.backend.entitles.RecurrencePattern
+import com.den.steward.backend.entitles.RepeatMode
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataAdditionState
@@ -153,7 +153,7 @@ class DataAdditionViewModel @Inject constructor(
         ) }
     }
 
-    fun updateRecurrence(recurrence: RecurrencePattern) {
+    fun updateRecurrence(recurrence: RepeatMode) {
         _dataAdditionState.update { it.copy(recurrence = recurrence) }
     }
 
@@ -196,6 +196,14 @@ class DataAdditionViewModel @Inject constructor(
             .map { state ->
                 if (state is DataState.Success) {
                     val transactions = state.data.filter { it.type == transactionType }
+                        .filter {
+                            when (it) {
+                                is Transaction.Lent -> it.remainingAmount > 0.0
+                                is Transaction.Debt -> it.remainingAmount > 0.0
+                                is Transaction.Goal -> it.remainingValue > 0.0
+                                else -> false
+                            }
+                        }
                     DataState.Success(transactions)
                 } else {
                     state

@@ -5,6 +5,11 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
+    <!-- Filled frame background -->
+    <path
+        android:pathData="M54,14 A40,40 0 1,1 53.99,14 Z"
+        android:fillColor="@color/steward_gold" />
+
     <!-- Pot -->
     <path
         android:pathData="M40,72 L68,72 L64,86 L44,86 Z"

@@ -8,16 +8,18 @@ import com.den.steward.backend.entitles.GoalType
 import com.den.steward.backend.entitles.LiabilitiesStatus
 import com.den.steward.backend.entitles.PaymentMethod
 import com.den.steward.backend.entitles.PlanStatus
-import com.den.steward.backend.entitles.RecurrencePattern
+import com.den.steward.backend.entitles.RepeatMode
+import com.den.steward.backend.entitles.RepeatModeType
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.google.firebase.firestore.DocumentSnapshot
+import java.time.DayOfWeek
 
 private val paymentMethodMap = PaymentMethod.entries.associateBy { it.name }
 private val goalTypeMap = GoalType.entries.associateBy { it.name }
 private val goalStatusMap = GoalStatus.entries.associateBy { it.name }
 private val transactionTypeMap = TransactionType.entries.associateBy { it.name }
-private val recurrencePatternMap = RecurrencePattern.entries.associateBy { it.name }
+private val repeatModeTypeMap = RepeatModeType.entries.associateBy { it.name }
 private val liabilitiesStatusMap = LiabilitiesStatus.entries.associateBy { it.name }
 private val planStatusMap = PlanStatus.entries.associateBy { it.name }
 
@@ -63,11 +65,18 @@ val DocumentSnapshot.toTransaction: Transaction?
             val startedAt = getTimestamp("startedAt")?.toDate()?.time ?: createdAt
             val endAt = getTimestamp("endAt")?.toDate()?.time ?: createdAt
             val repeatable = when (val repeatableName = getString("repeatable")) {
-                "Custom" -> {
+                "Schedule" -> {
                     val days = (get("repeatableDays") as? List<*>)?.filterIsInstance<Long>() ?: emptyList()
-                    RecurrencePattern.Custom(days.map { it.toInt() })
+                    val weekDays = days.mapNotNull { dayNum ->
+                        DayOfWeek.entries.firstOrNull { it.value == dayNum.toInt() }
+                    }
+                    RepeatMode(repeatModeType = RepeatModeType.Schedule, weekDays = weekDays)
                 }
-                else -> recurrencePatternMap[repeatableName] ?: RecurrencePattern.NONE
+
+                else -> {
+                    val type = repeatModeTypeMap[repeatableName]
+                    if (type != null) RepeatMode(repeatModeType = type) else RepeatMode.NONE
+                }
             }
 
             Transaction.Goal(

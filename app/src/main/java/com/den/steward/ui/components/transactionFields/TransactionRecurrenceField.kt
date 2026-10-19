@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -48,22 +47,24 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.den.steward.R
-import com.den.steward.backend.entitles.RecurrencePattern
+import com.den.steward.backend.entitles.RepeatMode
+import com.den.steward.backend.entitles.RepeatModeType
 import com.den.steward.helper.formatedDateTime
 import com.den.steward.helper.formattedDate
 import com.den.steward.helper.formattedTime
 import com.den.steward.ui.components.DateRangeDialog
 import com.den.steward.ui.components.TimeDialog
+import java.time.DayOfWeek
 import java.time.LocalDateTime
 
 @Composable
 fun TransactionRecurrenceField(
     colorResId: Int,
-    recurrence: RecurrencePattern,
+    recurrence: RepeatMode,
     isStartNotEqualToEndDateTime: TransactionFieldState,
     onStartTimeChange: (LocalDateTime) -> Unit,
     onEndTimeChange: (LocalDateTime) -> Unit,
-    onRecurrenceChange: ( RecurrencePattern) -> Unit,
+    onRecurrenceChange: (RepeatMode) -> Unit,
     onIsStartNotEqualToEndDateTimeChange: (TransactionFieldState) -> Unit
 ) {
     val onDialogShow = remember { mutableStateOf(false) }
@@ -109,7 +110,7 @@ private fun TransactionRecurrenceFieldItem(
     onDialogShow: MutableState<Boolean>,
     startedAt: MutableState<LocalDateTime?>,
     endAt: MutableState<LocalDateTime?>,
-    recurrence: RecurrencePattern,
+    recurrence: RepeatMode,
     isStartNotEqualToEndDateTime: TransactionFieldState,
     onIsStartNotEqualToEndDateTimeChange: (TransactionFieldState) -> Unit,
     color: Color,
@@ -167,13 +168,12 @@ private fun TransactionRecurrenceFieldItem(
         trailingContent = {
             val text = if (isError)
                     "Required"
-                else when (recurrence) {
-                is RecurrencePattern.NONE -> "Not Set"
-                is RecurrencePattern.DAILY -> "Daily"
-                is RecurrencePattern.WEEKLY -> "Weekly"
-                is RecurrencePattern.MONTHLY -> "Monthly"
-                is RecurrencePattern.YEARLY -> "Yearly"
-                is RecurrencePattern.Custom -> "Schedule"
+            else when (recurrence.repeatModeType) {
+                null -> "Not Set"
+                RepeatModeType.Weekly -> "Weekly"
+                RepeatModeType.Monthly -> "Monthly"
+                RepeatModeType.Schedule -> "Schedule"
+                RepeatModeType.Time -> "Time"
             }
             Text(
                 text = text,
@@ -194,8 +194,8 @@ private fun TransactionRecurrenceFieldItem(
 @Composable
 private fun RecurrenceDialog(
     color: Color,
-    recurrence: RecurrencePattern,
-    onRecurrenceChange: (RecurrencePattern) -> Unit,
+    recurrence: RepeatMode,
+    onRecurrenceChange: (RepeatMode) -> Unit,
     onDismissRequest: () -> Unit,
     onSubmit: (LocalDateTime?, LocalDateTime?) -> Unit,
 ) {
@@ -264,8 +264,8 @@ private fun RecurrenceRow(
 @Composable
 private fun RecurrenceDialogContent(
     color: Color,
-    recurrence: RecurrencePattern,
-    onRecurrenceChange: (RecurrencePattern) -> Unit,
+    recurrence: RepeatMode,
+    onRecurrenceChange: (RepeatMode) -> Unit,
     onDismissRequest: () -> Unit,
     onSubmit: (finalStartDate: LocalDateTime?, finalEndDate: LocalDateTime?) -> Unit,
 ) {
@@ -346,7 +346,7 @@ private fun RecurrenceDialogContent(
                         TransactionFieldState.Error("End date must be within 1 year")
                 }
 
-                recurrence is RecurrencePattern.Custom && (recurrence as RecurrencePattern.Custom).days.isEmpty() -> {
+                recurrence.repeatModeType == RepeatModeType.Schedule && recurrence.weekDays.isEmpty() -> {
                     transactionFieldState.value =
                         TransactionFieldState.Error("Select at least one day for custom recurrence")
                 }
@@ -395,14 +395,14 @@ private fun RecurrenceDialogContent(
 @Composable
 fun RecurrenceOptionsContent(
     color: Color,
-    recurrence: RecurrencePattern,
-    onRecurrenceChange: (RecurrencePattern) -> Unit,
+    recurrence: RepeatMode,
+    onRecurrenceChange: (RepeatMode) -> Unit,
     onSelect: (start: LocalDateTime, end: LocalDateTime) -> Unit
 ) {
-    val selectedDays = remember {
-        mutableStateListOf<Int>().apply {
-            if (recurrence is RecurrencePattern.Custom) {
-                addAll(recurrence.days)
+    val selectedDays = remember(recurrence) {
+        mutableStateListOf<DayOfWeek>().apply {
+            if (recurrence.repeatModeType == RepeatModeType.Schedule) {
+                addAll(recurrence.weekDays)
             }
         }
     }
@@ -426,47 +426,79 @@ fun RecurrenceOptionsContent(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            items(RecurrencePattern.entries) { pattern ->
-                if (pattern != null) {
-                    RecurrenceItemButton(
-                        title = pattern.name,
-                        color = color,
-                        isSelected = when {
-                            recurrence is RecurrencePattern.Custom && pattern is RecurrencePattern.Custom -> true
-                            else -> recurrence == pattern
-                        },
-                        onClick = {
-                            val newPattern = if (pattern is RecurrencePattern.Custom) {
-                                RecurrencePattern.Custom(selectedDays.toList())
-                            } else {
-                                pattern
-                            }
-                            onRecurrenceChange(newPattern)
+            items(RepeatModeType.entries) { pattern ->
+                val isSelected = recurrence.repeatModeType == pattern
+                RecurrenceItemButton(
+                    title = pattern.name,
+                    color = color,
+                    isSelected = isSelected,
+                    onClick = {
+                        val newMode = if (isSelected) {
+                            RepeatMode.NONE
+                        } else {
+                            when (pattern) {
+                                RepeatModeType.Schedule -> RepeatMode(
+                                    repeatModeType = RepeatModeType.Schedule,
+                                    weekDays = selectedDays.toList()
+                                )
 
-                            val now = LocalDateTime.now()
-                            val end = when (newPattern) {
-                                is RecurrencePattern.DAILY -> now.plusDays(1).withHour(0).withMinute(0)
-                                is RecurrencePattern.WEEKLY -> now.plusWeeks(1).withHour(0).withMinute(0)
-                                is RecurrencePattern.MONTHLY -> now.plusMonths(1).withHour(0).withMinute(0)
-                                is RecurrencePattern.YEARLY -> now.plusYears(1).withHour(0).withMinute(0)
-                                else -> null
-                            }
-
-                            if (end != null) {
-                                onSelect(now, end)
+                                else -> RepeatMode(repeatModeType = pattern)
                             }
                         }
-                    )
-                }
+                        onRecurrenceChange(newMode)
+
+                        val now = LocalDateTime.now()
+                        val end = when (pattern) {
+                            RepeatModeType.Weekly -> now.plusWeeks(1).withHour(23).withMinute(59)
+                                .withSecond(59)
+
+                            RepeatModeType.Monthly -> now.plusMonths(1).withHour(23).withMinute(59)
+                                .withSecond(59)
+
+                            RepeatModeType.Schedule -> {
+                                if (selectedDays.isNotEmpty()) {
+                                    val todayDay = now.dayOfWeek
+                                    val minOffset =
+                                        selectedDays.minOfOrNull { (it.value - todayDay.value + 7) % 7 }
+                                            ?: 0
+                                    val daysToAdd = if (minOffset == 0) 7 else minOffset
+                                    now.plusDays(daysToAdd.toLong()).withHour(23).withMinute(59)
+                                        .withSecond(59)
+                                } else null
+                            }
+
+                            else -> null
+                        }
+
+                        if (end != null) {
+                            onSelect(now, end)
+                        }
+                    }
+                )
             }
         }
 
-        if (recurrence is RecurrencePattern.Custom) {
+        if (recurrence.repeatModeType == RepeatModeType.Schedule) {
             RecurrenceWeekDay(
                 color = color,
                 dayState = selectedDays,
                 onDaysChanged = { updatedDays ->
-                    onRecurrenceChange(RecurrencePattern.Custom(updatedDays))
+                    val newPattern = RepeatMode(
+                        repeatModeType = RepeatModeType.Schedule,
+                        weekDays = updatedDays
+                    )
+                    onRecurrenceChange(newPattern)
+
+                    if (updatedDays.isNotEmpty()) {
+                        val now = LocalDateTime.now()
+                        val todayDay = now.dayOfWeek
+                        val minOffset =
+                            updatedDays.minOfOrNull { (it.value - todayDay.value + 7) % 7 } ?: 0
+                        val daysToAdd = if (minOffset == 0) 7 else minOffset
+                        val end = now.plusDays(daysToAdd.toLong()).withHour(23).withMinute(59)
+                            .withSecond(59)
+                        onSelect(now, end)
+                    }
                 }
             )
         }
@@ -476,8 +508,8 @@ fun RecurrenceOptionsContent(
 @Composable
 fun RecurrenceWeekDay(
     color: Color,
-    dayState: SnapshotStateList<Int>,
-    onDaysChanged: (List<Int>) -> Unit
+    dayState: SnapshotStateList<DayOfWeek>,
+    onDaysChanged: (List<DayOfWeek>) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -495,20 +527,31 @@ fun RecurrenceWeekDay(
 
         Row (
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val dayNames = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
-            dayNames.forEachIndexed { index, day ->
+            val daysInWeek = listOf(
+                DayOfWeek.SUNDAY,
+                DayOfWeek.MONDAY,
+                DayOfWeek.TUESDAY,
+                DayOfWeek.WEDNESDAY,
+                DayOfWeek.THURSDAY,
+                DayOfWeek.FRIDAY,
+                DayOfWeek.SATURDAY
+            )
+            val dayLabels = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+
+            daysInWeek.forEachIndexed { index, dayOfWeek ->
+                val isSelected = dayOfWeek in dayState
                 RecurrenceDayCircle(
-                    title = day.take(1),
+                    title = dayLabels[index],
                     color = color,
-                    isSelected = index in dayState,
+                    isSelected = isSelected,
                     onClick = {
-                        if (index in dayState) {
-                            dayState.remove(index)
+                        if (isSelected) {
+                            dayState.remove(dayOfWeek)
                         } else {
-                            dayState.add(index)
+                            dayState.add(dayOfWeek)
                         }
                         onDaysChanged(dayState.toList())
                     }
@@ -528,12 +571,12 @@ fun RecurrenceDayCircle(
     Box(
         modifier = Modifier
             .size(36.dp)
-            .clip(CircleShape)
+            .clip(MaterialTheme.shapes.medium)
             .background(if (isSelected) color else Color.Transparent)
             .border(
                 width = 1.dp,
                 color = if (isSelected) color else MaterialTheme.colorScheme.outline,
-                shape = CircleShape
+                shape = MaterialTheme.shapes.medium
             )
             .clickable { onClick() },
         contentAlignment = Alignment.Center

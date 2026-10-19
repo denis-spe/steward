@@ -192,7 +192,7 @@ sealed class Transaction {
         val selectedIcon: Int = R.drawable.tag_goal,
         val startedAt: Long = System.currentTimeMillis(),
         val endAt: Long = System.currentTimeMillis(),
-        val repeatable: RecurrencePattern = RecurrencePattern.NONE,
+        val repeatable: RepeatMode = RepeatMode.NONE,
     ) : Transaction() {
         val totalAttain get() = attain.sumOf { it.value }
         val remainingValue: Double get() = value - totalAttain

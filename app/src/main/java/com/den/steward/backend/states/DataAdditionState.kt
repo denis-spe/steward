@@ -5,7 +5,7 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.Immutable
 import com.den.steward.backend.entitles.PaymentMethod
 import com.den.steward.backend.entitles.PlanStatus
-import com.den.steward.backend.entitles.RecurrencePattern
+import com.den.steward.backend.entitles.RepeatMode
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.ui.components.SelectedIcon
@@ -43,13 +43,13 @@ data class DataAdditionState(
 
     // Core transaction types
     val coreEntries: List<TransactionType> = listOf(
-        TransactionType.GOAL,
-        TransactionType.PLAN,
         TransactionType.EARNINGS,
         TransactionType.EXPENSE,
         TransactionType.LENT,
         TransactionType.DEBT,
         TransactionType.SAVINGS,
+        TransactionType.GOAL,
+        TransactionType.PLAN,
     ),
 
     // Adjustment transaction types
@@ -89,7 +89,7 @@ data class DataAdditionState(
     // Goal starting and ending local date time
     val startAt: LocalDateTime = LocalDateTime.now(),
     val endAt: LocalDateTime = LocalDateTime.now(),
-    val recurrence: RecurrencePattern = RecurrencePattern.NONE,
+    val recurrence: RepeatMode = RepeatMode.NONE,
     val isStartNotEqualToEndDateTime: TransactionFieldState = TransactionFieldState.Initial,
     val isFulfillBtnClick: Boolean = false,
 

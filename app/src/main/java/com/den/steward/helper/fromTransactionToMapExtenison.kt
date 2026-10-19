@@ -1,6 +1,6 @@
 package com.den.steward.helper
 
-import com.den.steward.backend.entitles.RecurrencePattern
+import com.den.steward.backend.entitles.RepeatModeType
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.Transaction.Achievement
 import com.den.steward.backend.entitles.Transaction.Attain
@@ -20,7 +20,7 @@ import com.google.firebase.firestore.FieldValue
 
 val Transaction.toMap: MutableMap<String, Any>
     get() {
-        val mapping = mutableMapOf<String, Any>(
+        val mapping = mutableMapOf(
             "id" to this.id,
             "type" to this.type.name,
             "createdAt" to if (this.createdAt < System.currentTimeMillis() - 1000) {
@@ -92,8 +92,8 @@ val Transaction.toMap: MutableMap<String, Any>
                 mapping["goalType"] = this.goalType.name
                 mapping["status"] = this.status.name
                 mapping["repeatable"] = this.repeatable.name
-                if (this.repeatable is RecurrencePattern.Custom) {
-                    mapping["repeatableDays"] = this.repeatable.days
+                if (this.repeatable.repeatModeType == RepeatModeType.Schedule) {
+                    mapping["repeatableDays"] = this.repeatable.weekDays.map { it.value }
                 }
                 mapping["startedAt"] = Timestamp(java.util.Date(this.startedAt))
                 mapping["endAt"] = Timestamp(java.util.Date(this.endAt))
