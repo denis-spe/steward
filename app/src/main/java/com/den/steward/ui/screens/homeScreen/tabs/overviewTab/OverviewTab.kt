@@ -1,5 +1,7 @@
 package com.den.steward.ui.screens.homeScreen.tabs.overviewTab
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,15 +11,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.den.steward.backend.states.HomeTab
-import com.den.steward.backend.states.Filter
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
 import com.den.steward.backend.viewModels.OverviewViewModel
 
+@RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 @Composable
 fun OverviewTab(
     padding: PaddingValues,
     overviewViewModel: OverviewViewModel = hiltViewModel(),
-    onTabChange: (HomeTab, Filter?) -> Unit = { _, _ -> }
+    backStack: NavBackStack<NavKey>
 ) {
     val overviewUiState by overviewViewModel.overviewUiState.collectAsStateWithLifecycle()
     val groupedTransactions by overviewViewModel.groupedTransactions.collectAsStateWithLifecycle()
@@ -30,7 +33,7 @@ fun OverviewTab(
     ) {
         OverviewList(
             dataState = groupedTransactions,
-            onTabChange = onTabChange
+            backStack = backStack
         )
     }
 }

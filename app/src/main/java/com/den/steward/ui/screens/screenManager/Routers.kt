@@ -1,7 +1,6 @@
 // Grace and truth came through JESUS CHRIST
 package com.den.steward.ui.screens.screenManager
 
-import androidx.navigation.NavType
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
@@ -30,3 +29,17 @@ data object ForgotPasswordRouter: NavKey
 
 @Serializable
 data object SettingsRouter: NavKey
+
+@Serializable
+data object DebtRouter : NavKey
+
+
+@Serializable
+data object LentRouter : NavKey
+
+@Serializable
+data object GoalRouter : NavKey
+
+
+@Serializable
+data object TransactionRouter : NavKey

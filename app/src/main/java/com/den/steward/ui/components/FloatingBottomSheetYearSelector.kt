@@ -3,6 +3,7 @@ package com.den.steward.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -53,43 +54,76 @@ fun FloatingBottomSheetYearSelector(
                 currentYearMonth.plusYears(10).year).toImmutableList()
     }
 
+
+
     FloatingModelBottomSheet(
         onDismiss = onDismiss
     ) {
-        // Months Grid
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.4f)
-                .padding(16.dp),
-            contentPadding = PaddingValues(vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        Column(
+            modifier = Modifier.fillMaxWidth(),
         ) {
-            items(years.size, key = { years[it] }) { index ->
-                val year = years[index]
-                val isSelected = selectedYear == year
-                val flow = counts?.first?.get(year) ?: 0
-                val count = counts?.second?.get(year) ?: 0
 
-                YearButton(
-                    year = year,
-                    count = count,
-                    color = when {
-                        flow < 0 -> MaterialTheme.colorScheme.error
-                        flow > 0 -> Color(0xFF3BA429)
-                        else -> MaterialTheme.colorScheme.primaryContainer
-                    },
-                    isCurrentYear = currentYearMonth.year == year,
-                    isSelected = isSelected,
-                    onClick = {
-                        selectedYear = year
-                        val selectedLocalDate = LocalDate.of(year, initialDate.month, 1)
-                        onYearSelected(selectedLocalDate)
-                        onDismiss()
-                    }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp, start = 16.dp, end = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Select Year",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
                 )
+
+                Column {
+                    Text(
+                        "Current Year",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        currentYearMonth.year.toString(),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+            // Months Grid
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(3),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.4f)
+                    .padding(16.dp),
+                contentPadding = PaddingValues(vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(years.size, key = { years[it] }) { index ->
+                    val year = years[index]
+                    val isSelected = selectedYear == year
+                    val flow = counts?.first?.get(year) ?: 0
+                    val count = counts?.second?.get(year) ?: 0
+
+                    YearButton(
+                        year = year,
+                        count = count,
+                        color = when {
+                            flow < 0 -> MaterialTheme.colorScheme.error
+                            flow > 0 -> Color(0xFF3BA429)
+                            else -> MaterialTheme.colorScheme.primaryContainer
+                        },
+                        isCurrentYear = currentYearMonth.year == year,
+                        isSelected = isSelected,
+                        onClick = {
+                            selectedYear = year
+                            val selectedLocalDate = LocalDate.of(year, initialDate.month, 1)
+                            onYearSelected(selectedLocalDate)
+                            onDismiss()
+                        }
+                    )
+                }
             }
         }
     }

@@ -1,6 +1,8 @@
 // Grace and truth came through JESUS CHRIST
 package com.den.steward.ui.screens.homeScreen.tabs.overviewTab
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,12 +18,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,19 +31,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataState
+import com.den.steward.backend.states.Filter
 import com.den.steward.helper.formatToAmount
 import com.den.steward.ui.componentExtenison.shimmerEffect
+import com.den.steward.ui.screens.screenManager.TransactionRouter
 
-import com.den.steward.backend.states.HomeTab
-import com.den.steward.backend.states.Filter
-
+@RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 @Composable
 internal fun OverviewList(
     dataState: DataState<Map<String, List<Transaction>>>,
-    onTabChange: (HomeTab, Filter?) -> Unit = { _, _ -> }
+    backStack: NavBackStack<NavKey>
 ) {
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -51,7 +55,7 @@ internal fun OverviewList(
             is DataState.Success -> {
                 OverviewLazyList(
                     data = dataState.data,
-                    onTabChange = onTabChange
+                    backStack = backStack
                 )
             }
             is DataState.Loading -> {
@@ -137,10 +141,11 @@ internal fun OverviewLoanList(transactions: List<Transaction>) {
 }
 
 
+@RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 @Composable
 internal fun OverviewLazyList(
     data: Map<String, List<Transaction>>,
-    onTabChange: (HomeTab, Filter?) -> Unit
+    backStack: NavBackStack<NavKey>
 ) {
     val allTransactions = data.values.flatten()
     
@@ -173,14 +178,15 @@ internal fun OverviewLazyList(
 
                         TextButton(
                             onClick = {
-                                val filter = when(header) {
-                                    "Transactions" -> Filter.ALL
+                                when (header) {
+                                    "Transactions" -> {
+                                        backStack.addLast(TransactionRouter)
+                                    }
                                     "Goal" -> Filter.GOAL
                                     "Debt" -> Filter.DEBT
                                     "Lent" -> Filter.LENT
                                     else -> Filter.ALL
                                 }
-                                onTabChange(HomeTab.ALL, filter)
                             },
                             contentPadding = PaddingValues(0.dp)
                         ) {

@@ -484,7 +484,8 @@ fun FulfillmentList(
                 } else {
                     item {
                         Box(
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
                                 .padding(vertical = 24.dp),
                             contentAlignment = Alignment.Center
                         ) {
@@ -498,7 +499,7 @@ fun FulfillmentList(
                                     modifier = Modifier.size(100.dp)
                                 )
                                 Text(
-                                    "No ${transactionName.lowercase()} found",
+                                    "No ${transactionName.lowercase()} to fulfill",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     textAlign = TextAlign.Center,

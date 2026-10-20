@@ -82,9 +82,7 @@ fun HomeScreen(
                 HomeTab.OVERVIEW -> {
                     OverviewTab(
                         padding = padding,
-                        onTabChange = { tab, filter ->
-                            homeViewModel.updateHomeTab(tab, filter)
-                        }
+                        backStack = backStack
                     )
                 }
 

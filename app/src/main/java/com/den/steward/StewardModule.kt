@@ -21,7 +21,7 @@ import javax.inject.Singleton
 object StewardModule {
 
     // Changed to your computer's local IP to allow physical device connection
-    private const val EMULATOR_IP = "10.147.236.215"
+    private const val EMULATOR_IP = "10.16.17.215"
 
     @Singleton
     @Provides

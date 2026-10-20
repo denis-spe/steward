@@ -1,6 +1,8 @@
 // Glory be the name of LORD GOD
 package com.den.steward.ui.screens.screenManager
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
@@ -38,8 +40,10 @@ import com.den.steward.ui.screens.authScreen.registerScreen.PasswordScreen
 import com.den.steward.ui.screens.homeScreen.HomeScreen
 import com.den.steward.ui.screens.loadingScreen.LoadingScreen
 import com.den.steward.ui.screens.settingsScreen.SettingsScreen
+import com.den.steward.ui.screens.transactionScreen.TransactionScreen
 import com.den.steward.ui.screens.welcomeScreen.WelcomeScreen
 
+@RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 fun EntryProviderScope<NavKey>.featureAEntryBuilder(
     backStack: NavBackStack<NavKey>,
     registerViewModel: RegisterViewModel,
@@ -115,8 +119,16 @@ fun EntryProviderScope<NavKey>.featureAEntryBuilder(
             forgotPasswordViewModel = forgotPasswordViewModel
         )
     }
+
+    // ====== Transactions Screen =======
+    entry<TransactionRouter> {
+        TransactionScreen(
+            backStack = backStack
+        )
+    }
 }
 
+@RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 @Composable
 fun ScreenManager() {
     // 1. Instantiate the viewModel
