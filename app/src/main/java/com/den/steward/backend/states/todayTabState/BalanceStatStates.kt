@@ -9,5 +9,5 @@ import kotlinx.collections.immutable.persistentMapOf
 @Immutable
 data class BalanceStatStates(
     val flow: Double = 0.0,
-    val paymentState: ImmutableMap<PaymentMethod, Double> = persistentMapOf()
+    val paymentState: ImmutableMap<PaymentMethod?, Double> = persistentMapOf()
 )

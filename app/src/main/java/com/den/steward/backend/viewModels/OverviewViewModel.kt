@@ -4,20 +4,26 @@ package com.den.steward.backend.viewModels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.den.steward.backend.entitles.GoalStatus
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataState
-import com.den.steward.backend.states.OverviewUiState
-import com.den.steward.backend.useCase.DataFetchUseCase
 import com.den.steward.backend.states.OrderBy
+import com.den.steward.backend.states.OverviewUiState
 import com.den.steward.backend.states.SortBy
+import com.den.steward.backend.states.overviewTabState.OverviewSummary
+import com.den.steward.backend.useCase.DataFetchUseCase
+import com.den.steward.helper.calculateFlow
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import javax.inject.Inject
@@ -30,11 +36,77 @@ class OverviewViewModel @Inject constructor(
     private val _overviewUiState = MutableStateFlow(OverviewUiState())
     val overviewUiState = _overviewUiState.asStateFlow()
 
+    val overviewSummary: StateFlow<DataState<OverviewSummary>> =
+        dataFetchUseCase.fetchAllTransactions
+            .map { state ->
+                when (state) {
+                    is DataState.Success -> {
+                        val transactions = state.data
+                        val liabilities = listOf(
+                            TransactionType.SETTLEMENT,
+                            TransactionType.REPAYMENT,
+                            TransactionType.DEBT,
+                            TransactionType.LENT
+                        )
+
+                        val netFlow = transactions.filterNot { transaction ->
+                            transaction.type in liabilities
+                        }.calculateFlow
+
+                        val liabilityFlow = transactions.filter { transaction ->
+                            transaction.type in liabilities
+                        }.calculateFlow
+
+                        val goalAchieved = transactions.filter {
+                            it is Transaction.Achievement &&
+                                    it.status == GoalStatus.COMPLETED
+                        }
+                            .size
+                        val goalFailed = transactions.filter {
+                            it is Transaction.Achievement &&
+                                    it.status == GoalStatus.FAILED
+                        }
+                            .size
+
+                        DataState.Success(
+                            OverviewSummary(
+                                netFlow = netFlow.toString(),
+                                liabilities = liabilityFlow.toString(),
+                                goalAchieved = goalAchieved.toString(),
+                                goalFailed = goalFailed.toString()
+                            )
+                        )
+
+                    }
+
+                    is DataState.Error -> DataState.Error(state.message)
+                    is DataState.Loading -> DataState.Loading
+                }
+            }.flowOn(Dispatchers.Default)
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = DataState.Loading
+            )
+
     val groupedTransactions: StateFlow<DataState<Map<String, List<Transaction>>>> = dataFetchUseCase.fetchAllTransactions
         .combine(_overviewUiState) { state, uiState ->
             when (state) {
                 is DataState.Success -> {
-                    val groupedData: Map<String, List<Transaction>> = state.data.groupBy { transaction ->
+                    val groupedData: Map<String, List<Transaction>> = state.data
+                        .filter { transaction ->
+                            when (transaction.type) {
+                                TransactionType.ACHIEVEMENT,
+                                TransactionType.ATTAIN,
+                                TransactionType.PLAN_FULFILLMENT,
+                                TransactionType.PLAN,
+                                TransactionType.REPAYMENT,
+                                TransactionType.SETTLEMENT -> false
+
+                                else -> true
+                            }
+                        }
+                        .groupBy { transaction ->
                         when (transaction.type) {
                             TransactionType.LENT -> "Lent"
                             TransactionType.DEBT -> "Debt"

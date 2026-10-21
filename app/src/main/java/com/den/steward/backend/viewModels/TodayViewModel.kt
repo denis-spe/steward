@@ -5,7 +5,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.den.steward.backend.entitles.PaymentMethod
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.Affected
@@ -90,6 +89,7 @@ class TodayViewModel @Inject constructor(
                     todayTransaction = todayTransactions,
                     transactions = transactions
                 )
+
                 val liabilitiesStats = handleLiabilitiesPaymentStats(transactions)
                 val donutCharts = handleDonutChart(todayTransactions)
                 val donutSummary = handleDonutSummary(donutCharts)
@@ -120,7 +120,12 @@ class TodayViewModel @Inject constructor(
         todayTransaction: List<Transaction>,
         transactions: List<Transaction>
     ): BalanceStatStates {
-        val paymentMethodStat = mutableMapOf<PaymentMethod, Double>()
+        val groupPaymentMethod = transactions.groupBy {
+            it.getPaymentMethodOrNull
+        }
+            .mapValues { (_, transactions) ->
+                transactions.calculateFlow
+            }.toMutableMap()
         val flow = todayTransaction.calculateFlow
 
         transactions.forEach { transaction ->
@@ -129,37 +134,20 @@ class TodayViewModel @Inject constructor(
                 val fromPaymentMethod = transaction.from
                 val toPaymentMethod = transaction.to
 
-                val currentFrom = paymentMethodStat.getOrDefault(fromPaymentMethod, 0.0)
-                val currentTo = paymentMethodStat.getOrDefault(toPaymentMethod, 0.0)
+                val currentFrom = groupPaymentMethod.getOrDefault(fromPaymentMethod, 0.0)
+                val currentTo = groupPaymentMethod.getOrDefault(toPaymentMethod, 0.0)
 
-                paymentMethodStat[fromPaymentMethod] = currentFrom - amount
-                paymentMethodStat[toPaymentMethod] = currentTo + amount
+                groupPaymentMethod[fromPaymentMethod] = currentFrom - amount
+                groupPaymentMethod[toPaymentMethod] = currentTo + amount
 
-            } else if (transaction.getAffectedAmount == Affected.AFFECTED) {
-                val method = transaction.getPaymentMethodOrNull ?: return@forEach
-                val amount = transaction.getAmountOrValue ?: 0.0
-                val current = paymentMethodStat.getOrDefault(method, 0.0)
-
-                val updated = when (transaction.type) {
-                    TransactionType.EARNINGS,
-                    TransactionType.SAVINGS,
-                    TransactionType.DEBT,
-                    TransactionType.REPAYMENT -> current + amount
-
-                    TransactionType.EXPENSE,
-                    TransactionType.LENT,
-                    TransactionType.SETTLEMENT -> current - amount
-
-                    else -> current
-                }
-
-                paymentMethodStat[method] = updated
             }
         }
 
+
+
         return BalanceStatStates(
             flow = flow,
-            paymentState = paymentMethodStat.toImmutableMap()
+            paymentState = groupPaymentMethod.toImmutableMap()
         )
     }
 

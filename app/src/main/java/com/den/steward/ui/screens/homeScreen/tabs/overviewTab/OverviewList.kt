@@ -25,6 +25,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,9 +35,9 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import com.den.steward.backend.entitles.Transaction
-import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.Filter
+import com.den.steward.backend.states.overviewTabState.OverviewSummary
 import com.den.steward.helper.formatToAmount
 import com.den.steward.ui.componentExtenison.shimmerEffect
 import com.den.steward.ui.screens.screenManager.TransactionRouter
@@ -45,7 +46,8 @@ import com.den.steward.ui.screens.screenManager.TransactionRouter
 @Composable
 internal fun OverviewList(
     dataState: DataState<Map<String, List<Transaction>>>,
-    backStack: NavBackStack<NavKey>
+    backStack: NavBackStack<NavKey>,
+    overviewSummary: DataState<OverviewSummary>
 ) {
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -55,7 +57,8 @@ internal fun OverviewList(
             is DataState.Success -> {
                 OverviewLazyList(
                     data = dataState.data,
-                    backStack = backStack
+                    backStack = backStack,
+                    overviewSummary = overviewSummary
                 )
             }
             is DataState.Loading -> {
@@ -145,7 +148,8 @@ internal fun OverviewLoanList(transactions: List<Transaction>) {
 @Composable
 internal fun OverviewLazyList(
     data: Map<String, List<Transaction>>,
-    backStack: NavBackStack<NavKey>
+    backStack: NavBackStack<NavKey>,
+    overviewSummary: DataState<OverviewSummary>
 ) {
     val allTransactions = data.values.flatten()
     
@@ -159,7 +163,9 @@ internal fun OverviewLazyList(
         }
 
         item {
-            OverviewSummarySection(transactions = allTransactions)
+            OverviewSummarySection(
+                overviewSummary = overviewSummary,
+            )
         }
 
         data.forEach { (header, transactions) ->
@@ -342,38 +348,62 @@ internal fun OverviewListError() {
 }
 
 @Composable
-internal fun OverviewSummarySection(transactions: List<Transaction>) {
-    val totalEarnings = transactions.filter { it.type == TransactionType.EARNINGS }.sumOf { it.getAmountOrValue ?: 0.0 }
-    val totalExpenses = transactions.filter { it.type == TransactionType.EXPENSE }.sumOf { it.getAmountOrValue ?: 0.0 }
-    val totalLent = transactions.filterIsInstance<Transaction.Lent>().sumOf { it.amount }
-    val totalDebt = transactions.filterIsInstance<Transaction.Debt>().sumOf { it.amount }
+internal fun OverviewSummarySection(
+    overviewSummary: DataState<OverviewSummary>
+) {
+    when (overviewSummary) {
+        is DataState.Success -> {
+            val data = overviewSummary.data
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        SummaryCard(
-            modifier = Modifier.weight(1f),
-            title = "Net Flow",
-            amount = totalEarnings - totalExpenses,
-            color = MaterialTheme.colorScheme.primary
-        )
-        SummaryCard(
-            modifier = Modifier.weight(1f),
-            title = "Liabilities",
-            amount = totalDebt - totalLent,
-            color = MaterialTheme.colorScheme.error
-        )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                SummaryCard(
+                    modifier = Modifier.weight(1f),
+                    title = "Net Flow",
+                    amount = data.netFlow,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                SummaryCard(
+                    modifier = Modifier.weight(1f),
+                    title = "Liabilities",
+                    amount = data.liabilities,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+        }
+
+        is DataState.Loading -> {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                SummaryCardLoading(modifier = Modifier.weight(1f))
+                SummaryCardLoading(modifier = Modifier.weight(1f))
+            }
+        }
+
+        is DataState.Error -> {
+            Text(text = overviewSummary.message)
+        }
     }
+
 }
 
 @Composable
 private fun SummaryCard(
     modifier: Modifier = Modifier,
     title: String,
-    amount: Double,
+    amount: String,
     color: Color
 ) {
+    val state = remember(amount) {
+        object {
+            val amountAsDouble = amount.toDoubleOrNull() ?: 0.0
+            val formattedAmount = amountAsDouble.formatToAmount()
+        }
+    }
     Card(
         modifier = modifier,
         shape = MaterialTheme.shapes.medium,
@@ -390,10 +420,40 @@ private fun SummaryCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = amount.formatToAmount(),
+                text = state.formattedAmount,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold,
-                color = if (amount >= 0) color else MaterialTheme.colorScheme.error
+                color = if (state.amountAsDouble >= 0) color else MaterialTheme.colorScheme.error
+            )
+        }
+    }
+}
+
+@Composable
+private fun SummaryCardLoading(
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.onSurface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurfaceVariant)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(60.dp, 20.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .shimmerEffect()
+            )
+            Box(
+                modifier = Modifier
+                    .size(50.dp, 24.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .shimmerEffect()
             )
         }
     }

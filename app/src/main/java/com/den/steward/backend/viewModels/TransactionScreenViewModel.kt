@@ -12,8 +12,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
@@ -24,20 +24,23 @@ class TransactionScreenViewModel @Inject constructor(
     val updateTransaction: UpdateTransactionUseCase,
     dataFetchUseCase: DataFetchUseCase
 ) : ViewModel() {
-    val transactions = dataFetchUseCase.fetchAllTransactions.filterNot { state ->
+
+    val transactions = dataFetchUseCase.fetchAllTransactions.map { state ->
         when (state) {
-            is DataState.Success -> state.data.all { transaction ->
-                transaction.type in listOf(
-                    TransactionType.DEBT,
-                    TransactionType.LENT,
-                    TransactionType.GOAL,
-                    TransactionType.ATTAIN,
-                    TransactionType.PLAN_FULFILLMENT,
-                    TransactionType.ACHIEVEMENT
-                )
+            is DataState.Success -> {
+                val transactions = state.data.filterNot {
+                    it.type in listOf(
+                        TransactionType.ACHIEVEMENT, TransactionType.ATTAIN,
+                        TransactionType.PLAN_FULFILLMENT, TransactionType.PLAN,
+                        TransactionType.REPAYMENT, TransactionType.SETTLEMENT,
+                        TransactionType.LENT, TransactionType.DEBT, TransactionType.GOAL
+                    )
+                }
+                DataState.Success(transactions)
             }
 
-            else -> false
+            is DataState.Error -> DataState.Error(state.message)
+            is DataState.Loading -> DataState.Loading
         }
     }
         .flowOn(Dispatchers.Default)

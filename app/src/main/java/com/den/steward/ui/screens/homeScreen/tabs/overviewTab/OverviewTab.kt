@@ -24,6 +24,7 @@ fun OverviewTab(
 ) {
     val overviewUiState by overviewViewModel.overviewUiState.collectAsStateWithLifecycle()
     val groupedTransactions by overviewViewModel.groupedTransactions.collectAsStateWithLifecycle()
+    val overviewSummary by overviewViewModel.overviewSummary.collectAsStateWithLifecycle()
 
 
     Column(
@@ -33,7 +34,8 @@ fun OverviewTab(
     ) {
         OverviewList(
             dataState = groupedTransactions,
-            backStack = backStack
+            backStack = backStack,
+            overviewSummary = overviewSummary
         )
     }
 }

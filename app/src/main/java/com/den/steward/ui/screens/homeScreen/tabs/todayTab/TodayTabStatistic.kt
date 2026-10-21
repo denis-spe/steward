@@ -319,7 +319,9 @@ private fun TodaySummaryView(balanceStatStates: BalanceStatStates) {
 
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (paymentState.isNotEmpty()) {
-                        paymentState.forEach { (method, amount) ->
+                        for ((method, amount) in paymentState) {
+                            if (method == null) continue
+
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalArrangement = Arrangement.spacedBy(4.dp),

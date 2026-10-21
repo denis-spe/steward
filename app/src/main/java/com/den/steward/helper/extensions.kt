@@ -25,7 +25,6 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.util.Locale
-import kotlin.collections.sumOf
 import kotlin.math.abs
 import kotlin.math.log10
 import kotlin.math.pow
@@ -433,6 +432,7 @@ val List<Transaction>.calculateFlow: Double get() {
     }
     return incoming - outgoing
 }
+
 
 fun List<Transaction>.filterByListOfFilters(filters: List<Filter>): List<Transaction> {
     val targetTypes = filters.mapNotNull { it.toTransactionType }
