@@ -192,7 +192,7 @@ sealed class Transaction {
         val selectedIcon: Int = R.drawable.tag_goal,
         val startedAt: Long = System.currentTimeMillis(),
         val endAt: Long = System.currentTimeMillis(),
-        val repeatable: RepeatMode = RepeatMode.NONE,
+        val repeatable: Recurrence = Recurrence.NONE,
     ) : Transaction() {
         val totalAttain get() = attain.sumOf { it.value }
         val remainingValue: Double get() = value - totalAttain
@@ -208,20 +208,6 @@ sealed class Transaction {
                 totalAttain == 0.0 && time < startedAt -> GoalStatus.NOT_STARTED
                 else -> GoalStatus.IN_PROGRESS
             }
-        }
-
-        fun calculateSchedule(now: Long): Goal {
-            val schedule = this.repeatable.onSchedule
-            val duration = if (schedule > 0L) {
-                schedule
-            } else {
-                (this.endAt - this.startedAt).coerceAtLeast(0L)
-            }
-
-            return this.copy(
-                startedAt = now,
-                endAt = now + duration
-            )
         }
     }
 

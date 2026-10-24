@@ -1,6 +1,5 @@
 package com.den.steward.helper
 
-import com.den.steward.backend.entitles.RepeatModeType
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.Transaction.Achievement
 import com.den.steward.backend.entitles.Transaction.Attain
@@ -91,10 +90,7 @@ val Transaction.toMap: MutableMap<String, Any>
                 mapping["note"] = this.note
                 mapping["goalType"] = this.goalType.name
                 mapping["status"] = this.status.name
-                mapping["repeatable"] = this.repeatable.name
-                if (this.repeatable.repeatModeType == RepeatModeType.Schedule) {
-                    mapping["repeatableDays"] = this.repeatable.weekDays.map { it.value }
-                }
+                mapping["repeatable"] = this.repeatable.toMap
                 mapping["startedAt"] = Timestamp(java.util.Date(this.startedAt))
                 mapping["endAt"] = Timestamp(java.util.Date(this.endAt))
                 mapping["selectedIcon"] = this.selectedIcon

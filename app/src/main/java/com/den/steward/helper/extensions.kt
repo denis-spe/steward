@@ -19,11 +19,13 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.text.DecimalFormat
 import java.text.NumberFormat
+import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
+import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.log10
@@ -468,4 +470,33 @@ fun List<Transaction>.filterByListOfFilters(filters: List<Filter>): List<Transac
             }
         }
     }
+}
+
+
+fun Transaction.Goal.nextCycle(
+    now: Long = System.currentTimeMillis(),
+    zone: ZoneId = ZoneId.systemDefault()
+): Transaction.Goal {
+    val nowLocal = LocalDateTime.ofInstant(Instant.ofEpochMilli(now), zone)
+    val anchor = LocalDateTime.ofInstant(Instant.ofEpochMilli(endAt), zone)
+
+    val next = repeatable.next(nowLocal, anchor)
+        ?: return copy(attain = emptyList())
+
+    return copy(
+        startedAt = now,
+        endAt = next.atZone(zone).toInstant().toEpochMilli(),
+        attain = emptyList()
+    )
+}
+
+fun DayOfWeek.nextTriggerMillisByWeekDay(
+    time: LocalTime,
+    now: LocalDateTime = LocalDateTime.now()
+): Long {
+    var target = now.toLocalDate()
+        .with(TemporalAdjusters.nextOrSame(this))
+        .atTime(time)
+    if (!target.isAfter(now)) target = target.plusWeeks(1)
+    return target.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 }

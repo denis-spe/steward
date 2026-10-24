@@ -52,10 +52,13 @@ class NotificationSource @Inject constructor(
             .setLargeIcon(largeIcon)
             .setContentTitle(title)
             .setContentText(message)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(bigMassage ?: ""))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setAutoCancel(true)
+
+        if (!bigMassage.isNullOrBlank()) {
+            builder.setStyle(NotificationCompat.BigTextStyle().bigText(bigMassage))
+        }
 
         val notificationManager = NotificationManagerCompat.from(context)
 

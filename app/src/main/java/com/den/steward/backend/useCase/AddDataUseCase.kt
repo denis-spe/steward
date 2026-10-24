@@ -1,11 +1,13 @@
 package com.den.steward.backend.useCase
 
 import android.util.Log
+import com.den.steward.backend.entitles.Recurrence
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.services.service.Account
 import com.den.steward.backend.services.service.Storage
 import com.den.steward.backend.viewModels.DataTransferToViewModel
+import com.den.steward.helper.toLocalDateTime
 import javax.inject.Inject
 
 class AddDataUseCase @Inject constructor(
@@ -75,16 +77,29 @@ class AddDataUseCase @Inject constructor(
                     affectAmount = dataTransferToViewModel.isAffectingAmount ?: false,
                     selectedIcon = dataTransferToViewModel.selectedIcon.icon
                 )
-                TransactionType.GOAL -> Transaction.Goal(
-                    label = dataTransferToViewModel.label,
-                    value = amount,
-                    note = dataTransferToViewModel.note,
-                    createdAt = dataTransferToViewModel.createdAt,
-                    startedAt = dataTransferToViewModel.startedAt,
-                    endAt = dataTransferToViewModel.endAt,
-                    repeatable = dataTransferToViewModel.repeatable,
-                    selectedIcon = dataTransferToViewModel.selectedIcon.icon
-                )
+                TransactionType.GOAL -> {
+                    val localTime = dataTransferToViewModel.endAt.toLocalDateTime()
+                        .toLocalTime()
+
+                    val endAt = if (dataTransferToViewModel.repeatable is Recurrence.OnDays) {
+                        val millis = dataTransferToViewModel.repeatable.toMillis(localTime)
+                            .sorted()
+                        millis.first()
+                    } else {
+                        dataTransferToViewModel.endAt
+                    }
+
+                    Transaction.Goal(
+                        label = dataTransferToViewModel.label,
+                        value = amount,
+                        note = dataTransferToViewModel.note,
+                        createdAt = dataTransferToViewModel.createdAt,
+                        startedAt = dataTransferToViewModel.startedAt,
+                        endAt = endAt,
+                        repeatable = dataTransferToViewModel.repeatable,
+                        selectedIcon = dataTransferToViewModel.selectedIcon.icon
+                    )
+                }
                 TransactionType.PLAN -> Transaction.Plan(
                     label = dataTransferToViewModel.label,
                     initialValue = amount,
@@ -123,7 +138,7 @@ class AddDataUseCase @Inject constructor(
             Log.i(TAG, "Transaction saved successfully: $transactionId")
             if (transaction is Transaction.Goal) {
                 Log.i(TAG, "Scheduling Goal worker for $transactionId")
-                goalToolUseCase.schedule(transactionId, transaction)
+                goalToolUseCase.schedule(transactionId, transaction.endAt, transaction.repeatable)
             }
         } else {
             Log.e(TAG, "Failed to save transaction: ${result.exceptionOrNull()?.message}")

@@ -2,7 +2,7 @@ package com.den.steward.backend.viewModels
 
 import androidx.compose.runtime.Immutable
 import com.den.steward.backend.entitles.PaymentMethod
-import com.den.steward.backend.entitles.RepeatMode
+import com.den.steward.backend.entitles.Recurrence
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.helper.toEpochMillis
 import com.den.steward.ui.components.SelectedIcon
@@ -18,7 +18,7 @@ data class DataTransferToViewModel(
     val paymentMethod: PaymentMethod = PaymentMethod.CASH,
     val endAt: Long = LocalDateTime.now().toEpochMillis(),
     val startedAt: Long = LocalDateTime.now().toEpochMillis(),
-    val repeatable: RepeatMode = RepeatMode.NONE,
+    val repeatable: Recurrence = Recurrence.NONE,
     val isAffectingAmount: Boolean? = null,
     val selectedIcon: SelectedIcon = SelectedIcon(),
     val fromPaymentMethod: PaymentMethod = PaymentMethod.CARD,

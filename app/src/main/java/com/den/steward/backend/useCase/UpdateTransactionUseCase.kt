@@ -15,7 +15,8 @@ import java.time.LocalTime
 import javax.inject.Inject
 
 class UpdateTransactionUseCase @Inject constructor(
-    private val updateDateUseCase: UpdateDateUseCase
+    private val updateDateUseCase: UpdateDateUseCase,
+    private val goalToolUseCase: GoalToolUseCase
 ) {
 
     private val _dataUpdateState = MutableStateFlow(DataUpdateState())
@@ -323,6 +324,13 @@ class UpdateTransactionUseCase @Inject constructor(
                 transactionId = transaction.id,
                 newTransaction = newTransaction
             )
+            if (newTransaction is Transaction.Goal) {
+                goalToolUseCase.schedule(
+                    transactionId = newTransaction.id,
+                    endAtMillis = newTransaction.endAt,
+                    recurrence = newTransaction.repeatable
+                )
+            }
             return true
         }
     }

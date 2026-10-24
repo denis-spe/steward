@@ -5,8 +5,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,14 +13,19 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -38,7 +41,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -47,8 +49,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.den.steward.R
-import com.den.steward.backend.entitles.RepeatMode
-import com.den.steward.backend.entitles.RepeatModeType
+import com.den.steward.backend.entitles.Recurrence
 import com.den.steward.helper.formatedDateTime
 import com.den.steward.helper.formattedDate
 import com.den.steward.helper.formattedTime
@@ -60,11 +61,11 @@ import java.time.LocalDateTime
 @Composable
 fun TransactionRecurrenceField(
     colorResId: Int,
-    recurrence: RepeatMode,
+    recurrence: Recurrence,
     isStartNotEqualToEndDateTime: TransactionFieldState,
     onStartTimeChange: (LocalDateTime) -> Unit,
     onEndTimeChange: (LocalDateTime) -> Unit,
-    onRecurrenceChange: (RepeatMode) -> Unit,
+    onRecurrenceChange: (Recurrence) -> Unit,
     onIsStartNotEqualToEndDateTimeChange: (TransactionFieldState) -> Unit
 ) {
     val onDialogShow = remember { mutableStateOf(false) }
@@ -110,7 +111,7 @@ private fun TransactionRecurrenceFieldItem(
     onDialogShow: MutableState<Boolean>,
     startedAt: MutableState<LocalDateTime?>,
     endAt: MutableState<LocalDateTime?>,
-    recurrence: RepeatMode,
+    recurrence: Recurrence,
     isStartNotEqualToEndDateTime: TransactionFieldState,
     onIsStartNotEqualToEndDateTimeChange: (TransactionFieldState) -> Unit,
     color: Color,
@@ -168,13 +169,7 @@ private fun TransactionRecurrenceFieldItem(
         trailingContent = {
             val text = if (isError)
                     "Required"
-            else when (recurrence.repeatModeType) {
-                null -> "Not Set"
-                RepeatModeType.Weekly -> "Weekly"
-                RepeatModeType.Monthly -> "Monthly"
-                RepeatModeType.Schedule -> "Schedule"
-                RepeatModeType.Time -> "Time"
-            }
+            else recurrence.name
             Text(
                 text = text,
                 fontWeight = FontWeight.Bold,
@@ -194,8 +189,8 @@ private fun TransactionRecurrenceFieldItem(
 @Composable
 private fun RecurrenceDialog(
     color: Color,
-    recurrence: RepeatMode,
-    onRecurrenceChange: (RepeatMode) -> Unit,
+    recurrence: Recurrence,
+    onRecurrenceChange: (Recurrence) -> Unit,
     onDismissRequest: () -> Unit,
     onSubmit: (LocalDateTime?, LocalDateTime?) -> Unit,
 ) {
@@ -264,8 +259,8 @@ private fun RecurrenceRow(
 @Composable
 private fun RecurrenceDialogContent(
     color: Color,
-    recurrence: RepeatMode,
-    onRecurrenceChange: (RepeatMode) -> Unit,
+    recurrence: Recurrence,
+    onRecurrenceChange: (Recurrence) -> Unit,
     onDismissRequest: () -> Unit,
     onSubmit: (finalStartDate: LocalDateTime?, finalEndDate: LocalDateTime?) -> Unit,
 ) {
@@ -296,11 +291,11 @@ private fun RecurrenceDialogContent(
             },
             onStartTimeClick = {
                 showTimePicker.value = true
-                showRecurrencePicker.value = "Starting Time"
+                showRecurrencePicker.value = "Starting Once"
             },
             onLastTimeClick = {
                 showTimePicker.value = true
-                showRecurrencePicker.value = "Ending Time"
+                showRecurrencePicker.value = "Ending Once"
             }
         )
     }
@@ -346,7 +341,7 @@ private fun RecurrenceDialogContent(
                         TransactionFieldState.Error("End date must be within 1 year")
                 }
 
-                recurrence.repeatModeType == RepeatModeType.Schedule && recurrence.weekDays.isEmpty() -> {
+                (recurrence is Recurrence.OnDays) && recurrence.days.isEmpty() -> {
                     transactionFieldState.value =
                         TransactionFieldState.Error("Select at least one day for custom recurrence")
                 }
@@ -379,9 +374,9 @@ private fun RecurrenceDialogContent(
             color = color,
             headerTitle = showRecurrencePicker.value,
             showTimePicker = showTimePicker,
-            localTimeState = if (showRecurrencePicker.value == "Starting Time") startedAtTime.value else endAtTime.value,
+            localTimeState = if (showRecurrencePicker.value == "Starting Once") startedAtTime.value else endAtTime.value,
             onTimeChange = {
-                if (showRecurrencePicker.value == "Starting Time") {
+                if (showRecurrencePicker.value == "Starting Once") {
                     startedAtTime.value = it
                 } else {
                     endAtTime.value = it
@@ -395,14 +390,14 @@ private fun RecurrenceDialogContent(
 @Composable
 fun RecurrenceOptionsContent(
     color: Color,
-    recurrence: RepeatMode,
-    onRecurrenceChange: (RepeatMode) -> Unit,
+    recurrence: Recurrence,
+    onRecurrenceChange: (Recurrence) -> Unit,
     onSelect: (start: LocalDateTime, end: LocalDateTime) -> Unit
 ) {
     val selectedDays = remember(recurrence) {
         mutableStateListOf<DayOfWeek>().apply {
-            if (recurrence.repeatModeType == RepeatModeType.Schedule) {
-                addAll(recurrence.weekDays)
+            if (recurrence is Recurrence.OnDays) {
+                addAll(recurrence.days)
             }
         }
     }
@@ -421,41 +416,39 @@ fun RecurrenceOptionsContent(
             fontWeight = FontWeight.Bold
         )
 
-        LazyRow (
+        LazyRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            items(RepeatModeType.entries) { pattern ->
-                val isSelected = recurrence.repeatModeType == pattern
+            items(Recurrence.presets) { preset ->
+                val isSelected = recurrence == preset ||
+                        (recurrence is Recurrence.OnDays && preset is Recurrence.OnDays)
                 RecurrenceItemButton(
-                    title = pattern.name,
+                    title = preset.name,
                     color = color,
                     isSelected = isSelected,
                     onClick = {
-                        val newMode = if (isSelected) {
-                            RepeatMode.NONE
-                        } else {
-                            when (pattern) {
-                                RepeatModeType.Schedule -> RepeatMode(
-                                    repeatModeType = RepeatModeType.Schedule,
-                                    weekDays = selectedDays.toList()
-                                )
-
-                                else -> RepeatMode(repeatModeType = pattern)
-                            }
-                        }
-                        onRecurrenceChange(newMode)
-
                         val now = LocalDateTime.now()
-                        val end = when (pattern) {
-                            RepeatModeType.Weekly -> now.plusWeeks(1).withHour(23).withMinute(59)
-                                .withSecond(59)
+                        val end: LocalDateTime? = when (preset) {
+                            is Recurrence.Every -> when (preset) {
+                                Recurrence.Daily -> now.plusDays(1).withHour(23).withMinute(59)
+                                    .withSecond(59)
 
-                            RepeatModeType.Monthly -> now.plusMonths(1).withHour(23).withMinute(59)
-                                .withSecond(59)
+                                Recurrence.Weekly -> now.plusWeeks(1).withHour(23).withMinute(59)
+                                    .withSecond(59)
 
-                            RepeatModeType.Schedule -> {
+                                Recurrence.Monthly -> now.plusMonths(1).withHour(23).withMinute(59)
+                                    .withSecond(59)
+
+                                Recurrence.Yearly -> now.plusYears(1).withHour(23).withMinute(59)
+                                    .withSecond(59)
+
+                                else -> now.plus(1, preset.unit).withHour(23).withMinute(59)
+                                    .withSecond(59)
+                            }
+
+                            is Recurrence.OnDays -> {
                                 if (selectedDays.isNotEmpty()) {
                                     val todayDay = now.dayOfWeek
                                     val minOffset =
@@ -467,8 +460,18 @@ fun RecurrenceOptionsContent(
                                 } else null
                             }
 
-                            else -> null
+                            is Recurrence.Once -> now.plusMinutes(2)
                         }
+
+                        val newRecurrence = if (isSelected) {
+                            Recurrence.NONE
+                        } else {
+                            when (preset) {
+                                is Recurrence.OnDays -> Recurrence.OnDays(selectedDays.toSet())
+                                else -> preset
+                            }
+                        }
+                        onRecurrenceChange(newRecurrence)
 
                         if (end != null) {
                             onSelect(now, end)
@@ -478,16 +481,12 @@ fun RecurrenceOptionsContent(
             }
         }
 
-        if (recurrence.repeatModeType == RepeatModeType.Schedule) {
+        if (recurrence is Recurrence.OnDays) {
             RecurrenceWeekDay(
                 color = color,
                 dayState = selectedDays,
                 onDaysChanged = { updatedDays ->
-                    val newPattern = RepeatMode(
-                        repeatModeType = RepeatModeType.Schedule,
-                        weekDays = updatedDays
-                    )
-                    onRecurrenceChange(newPattern)
+                    onRecurrenceChange(Recurrence.OnDays(updatedDays.toSet()))
 
                     if (updatedDays.isNotEmpty()) {
                         val now = LocalDateTime.now()
@@ -527,7 +526,7 @@ fun RecurrenceWeekDay(
 
         Row (
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
+            horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically
         ) {
             val daysInWeek = listOf(
@@ -541,21 +540,29 @@ fun RecurrenceWeekDay(
             )
             val dayLabels = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
 
-            daysInWeek.forEachIndexed { index, dayOfWeek ->
-                val isSelected = dayOfWeek in dayState
-                RecurrenceDayCircle(
-                    title = dayLabels[index],
-                    color = color,
-                    isSelected = isSelected,
-                    onClick = {
-                        if (isSelected) {
-                            dayState.remove(dayOfWeek)
-                        } else {
-                            dayState.add(dayOfWeek)
-                        }
-                        onDaysChanged(dayState.toList())
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                daysInWeek.forEachIndexed { index, dayOfWeek ->
+                    val isSelected = dayOfWeek in dayState
+                    item(key = index) {
+                        RecurrenceDayCircle(
+                            title = dayLabels[index],
+                            color = color,
+                            isSelected = isSelected,
+                            onClick = {
+                                if (isSelected) {
+                                    dayState.remove(dayOfWeek)
+                                } else {
+                                    dayState.add(dayOfWeek)
+                                }
+                                onDaysChanged(dayState.toList())
+                            }
+                        )
                     }
-                )
+                }
             }
         }
     }
@@ -568,25 +575,32 @@ fun RecurrenceDayCircle(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .size(36.dp)
-            .clip(MaterialTheme.shapes.medium)
-            .background(if (isSelected) color else Color.Transparent)
-            .border(
-                width = 1.dp,
-                color = if (isSelected) color else MaterialTheme.colorScheme.outline,
-                shape = MaterialTheme.shapes.medium
-            )
-            .clickable { onClick() },
-        contentAlignment = Alignment.Center
+
+    val boxColor = if (isSelected) color else Color.LightGray
+
+
+    Surface(
+        onClick = onClick,
+        color = Color.Transparent,
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.labelSmall,
-            color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
-            fontWeight = FontWeight.Bold
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = if (isSelected) color else MaterialTheme.colorScheme.onSurface
+            )
+
+            Box(
+                modifier = Modifier
+                    .width(25.dp)
+                    .height(10.dp)
+                    .background(boxColor),
+            )
+        }
     }
 }
 
@@ -748,31 +762,36 @@ fun RecurrenceItemButton(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    val stroke = if (isSelected) {
-        BorderStroke(1.dp, color)
-    } else {
-        BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-    }
+    val border = FilterChipDefaults.filterChipBorder(
+        enabled = true,
+        selected = isSelected,
+        selectedBorderColor = color
+    )
 
-    Surface (
-        modifier = Modifier
-            .border(stroke, MaterialTheme.shapes.medium),
+    FilterChip(
         shape = MaterialTheme.shapes.medium,
-        color = if (isSelected) color.copy(alpha = 0.1f) else Color.Transparent,
-        onClick = onClick
-    ) {
-        Text(
-            title,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier
-                .clip(MaterialTheme.shapes.medium)
-                .padding(10.dp),
-            color = if (isSelected) {
-                color
-            } else {
-                MaterialTheme.colorScheme.onSurface
-            },
-            fontWeight = FontWeight.Bold
-        )
-    }
+        onClick = onClick,
+        selected = isSelected,
+        colors = FilterChipDefaults.filterChipColors().copy(
+            selectedContainerColor = color.copy(0.2f),
+            selectedLabelColor = color,
+        ),
+        label = {
+            Text(
+                title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        border = border,
+        leadingIcon = {
+            if (isSelected) {
+                androidx.compose.material3.Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = "Selected",
+                    tint = color
+                )
+            }
+        }
+    )
 }

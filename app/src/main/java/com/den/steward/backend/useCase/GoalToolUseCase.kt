@@ -3,15 +3,13 @@ package com.den.steward.backend.useCase
 import android.content.Context
 import android.util.Log
 import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import androidx.work.workDataOf
+import com.den.steward.backend.entitles.Recurrence
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.services.service.Account
 import com.den.steward.backend.services.service.Storage
 import com.den.steward.backend.workers.GoalWorker
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class GoalToolUseCase @Inject constructor(
@@ -32,38 +30,22 @@ class GoalToolUseCase @Inject constructor(
         return storageService.resetGoalAttain(userId, transaction)
     }
 
-    suspend fun schedule(transactionId: String, goal: Transaction.Goal? = null) {
-        Log.d(TAG, "Attempting to schedule worker for Goal: $transactionId")
-
-        // If goal is provided, use it directly. Otherwise fetch from storage.
-        val transaction = goal ?: (storageService.getTransaction(userId, transactionId)
-            .getOrNull() as? Transaction.Goal) ?: run {
-                Log.e(TAG, "Failed to fetch Goal for scheduling: $transactionId")
-                return
-            }
-
-        val now = System.currentTimeMillis()
-        // Use a 1-second minimum delay for testing, but typically WorkManager handles delays > 10s better.
-        val delay = (transaction.endAt - now).coerceAtLeast(1000L)
-
-        Log.d(TAG, "Enqueuing Unique Work for $transactionId with delay ${delay/1000}s")
-
-        val workRequest = OneTimeWorkRequestBuilder<GoalWorker>()
-            .setInputData(
-                workDataOf(
-                    "transactionId" to transactionId
-                )
-            )
-            .addTag("goal_worker_$transactionId")
-            .setInitialDelay(delay, TimeUnit.MILLISECONDS)
-            .build()
-
-        WorkManager.getInstance(context).enqueueUniqueWork(
-            transactionId,
-            ExistingWorkPolicy.REPLACE,
-            workRequest
+    fun schedule(transactionId: String, endAtMillis: Long, recurrence: Recurrence) {
+        Log.d(
+            TAG,
+            "Attempting to schedule worker for Goal: $transactionId at $endAtMillis, recurrence=$recurrence"
         )
-        
-        Log.d(TAG, "Goal $transactionId enqueued successfully. Run at: ${now + delay}")
+        GoalWorker.schedule(
+            context = context,
+            transactionId = transactionId,
+            endAtMillis = endAtMillis,
+            recurrence = recurrence,
+            policy = ExistingWorkPolicy.REPLACE
+        )
+    }
+
+    fun cancel(transactionId: String) {
+        Log.d(TAG, "Cancelling scheduled worker for Goal: $transactionId")
+        WorkManager.getInstance(context).cancelUniqueWork(transactionId)
     }
 }

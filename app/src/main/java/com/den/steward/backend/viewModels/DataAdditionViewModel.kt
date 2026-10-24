@@ -7,7 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.den.steward.R
 import com.den.steward.backend.entitles.GoalStatus
 import com.den.steward.backend.entitles.PaymentMethod
-import com.den.steward.backend.entitles.RepeatMode
+import com.den.steward.backend.entitles.Recurrence
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataAdditionState
@@ -153,7 +153,7 @@ class DataAdditionViewModel @Inject constructor(
         ) }
     }
 
-    fun updateRecurrence(recurrence: RepeatMode) {
+    fun updateRecurrence(recurrence: Recurrence) {
         _dataAdditionState.update { it.copy(recurrence = recurrence) }
     }
 

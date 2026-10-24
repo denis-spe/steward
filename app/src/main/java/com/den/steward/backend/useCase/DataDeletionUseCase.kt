@@ -10,7 +10,8 @@ import javax.inject.Inject
 
 class DataDeletionUseCase @Inject constructor(
     private val storageService: StorageService,
-    private val accountService: AccountService
+    private val accountService: AccountService,
+    private val goalToolUseCase: GoalToolUseCase
 ) {
     /**
      * Get the current user ID.
@@ -20,6 +21,10 @@ class DataDeletionUseCase @Inject constructor(
     suspend fun deleteTransaction(
         transaction: Transaction
     ) {
+        if (transaction is Transaction.Goal) {
+            goalToolUseCase.cancel(transaction.id)
+        }
+
         val transactionId = when(transaction.type) {
             TransactionType.ATTAIN -> (transaction as Transaction.Attain).goal.id
             TransactionType.ACHIEVEMENT -> (transaction as Transaction.Achievement).goal.id
