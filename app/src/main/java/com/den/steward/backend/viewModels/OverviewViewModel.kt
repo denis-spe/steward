@@ -28,6 +28,11 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
+data class OverviewData(
+    val summary: OverviewSummary,
+    val groupedTransactions: Map<String, List<Transaction>>
+)
+
 @HiltViewModel
 class OverviewViewModel @Inject constructor(
     dataFetchUseCase: DataFetchUseCase
@@ -160,6 +165,29 @@ class OverviewViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = DataState.Loading
         )
+
+    val overviewData: StateFlow<DataState<OverviewData>> =
+        combine(overviewSummary, groupedTransactions) { summaryState, transactionsState ->
+            when {
+                summaryState is DataState.Error -> DataState.Error(summaryState.message)
+                transactionsState is DataState.Error -> DataState.Error(transactionsState.message)
+                summaryState is DataState.Success && transactionsState is DataState.Success -> {
+                    DataState.Success(
+                        OverviewData(
+                            summary = summaryState.data,
+                            groupedTransactions = transactionsState.data
+                        )
+                    )
+                }
+
+                else -> DataState.Loading
+            }
+        }.distinctUntilChanged()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = DataState.Loading
+            )
 
     fun updateSort(orderBy: OrderBy) {
         _overviewUiState.update {

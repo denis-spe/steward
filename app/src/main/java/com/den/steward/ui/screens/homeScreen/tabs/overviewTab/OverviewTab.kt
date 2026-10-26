@@ -22,10 +22,8 @@ fun OverviewTab(
     overviewViewModel: OverviewViewModel = hiltViewModel(),
     backStack: NavBackStack<NavKey>
 ) {
-    val overviewUiState by overviewViewModel.overviewUiState.collectAsStateWithLifecycle()
-    val groupedTransactions by overviewViewModel.groupedTransactions.collectAsStateWithLifecycle()
-    val overviewSummary by overviewViewModel.overviewSummary.collectAsStateWithLifecycle()
-
+    val overviewDataState by overviewViewModel.overviewData
+        .collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier
@@ -33,9 +31,8 @@ fun OverviewTab(
             .padding(padding)
     ) {
         OverviewList(
-            dataState = groupedTransactions,
-            backStack = backStack,
-            overviewSummary = overviewSummary
+            overviewDataState = overviewDataState,
+            backStack = backStack
         )
     }
 }

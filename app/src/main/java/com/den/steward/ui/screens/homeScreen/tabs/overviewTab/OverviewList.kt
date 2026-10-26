@@ -18,12 +18,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -38,6 +43,7 @@ import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.Filter
 import com.den.steward.backend.states.overviewTabState.OverviewSummary
+import com.den.steward.backend.viewModels.OverviewData
 import com.den.steward.helper.formatToAmount
 import com.den.steward.ui.componentExtenison.shimmerEffect
 import com.den.steward.ui.screens.screenManager.TransactionRouter
@@ -45,20 +51,19 @@ import com.den.steward.ui.screens.screenManager.TransactionRouter
 @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 @Composable
 internal fun OverviewList(
-    dataState: DataState<Map<String, List<Transaction>>>,
-    backStack: NavBackStack<NavKey>,
-    overviewSummary: DataState<OverviewSummary>
+    overviewDataState: DataState<OverviewData>,
+    backStack: NavBackStack<NavKey>
 ) {
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
-        when(dataState) {
+        when (overviewDataState) {
             is DataState.Success -> {
                 OverviewLazyList(
-                    data = dataState.data,
+                    data = overviewDataState.data.groupedTransactions,
                     backStack = backStack,
-                    overviewSummary = overviewSummary
+                    overviewSummary = overviewDataState.data.summary
                 )
             }
             is DataState.Loading -> {
@@ -149,10 +154,9 @@ internal fun OverviewLoanList(transactions: List<Transaction>) {
 internal fun OverviewLazyList(
     data: Map<String, List<Transaction>>,
     backStack: NavBackStack<NavKey>,
-    overviewSummary: DataState<OverviewSummary>
+    overviewSummary: OverviewSummary
 ) {
-    val allTransactions = data.values.flatten()
-    
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -182,7 +186,7 @@ internal fun OverviewLazyList(
                             fontWeight = FontWeight.Bold,
                         )
 
-                        TextButton(
+                        FilledIconButton(
                             onClick = {
                                 when (header) {
                                     "Transactions" -> {
@@ -194,13 +198,17 @@ internal fun OverviewLazyList(
                                     else -> Filter.ALL
                                 }
                             },
-                            contentPadding = PaddingValues(0.dp)
+                            colors = IconButtonDefaults.filledIconButtonColors()
+                                .copy(
+                                    containerColor = Color.LightGray.copy(
+                                        alpha = 0.2f
+                                    ),
+                                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                         ) {
-                            Text(
-                                text = "View all",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.SemiBold
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = "See All"
                             )
                         }
                     }
@@ -253,6 +261,16 @@ internal fun OverviewListLoading() {
             OverviewTabHeader()
         }
 
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                SummaryCardLoading(modifier = Modifier.weight(1f))
+                SummaryCardLoading(modifier = Modifier.weight(1f))
+            }
+        }
+
         headers.forEach { header ->
             item {
                 Row(
@@ -268,8 +286,8 @@ internal fun OverviewListLoading() {
 
                     Box(
                         modifier = Modifier
-                            .size(60.dp, 20.dp)
-                            .clip(MaterialTheme.shapes.small)
+                            .size(35.dp, 35.dp)
+                            .clip(CircleShape)
                             .shimmerEffect()
                     )
                 }
@@ -349,46 +367,25 @@ internal fun OverviewListError() {
 
 @Composable
 internal fun OverviewSummarySection(
-    overviewSummary: DataState<OverviewSummary>
+    overviewSummary: OverviewSummary
 ) {
-    when (overviewSummary) {
-        is DataState.Success -> {
-            val data = overviewSummary.data
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                SummaryCard(
-                    modifier = Modifier.weight(1f),
-                    title = "Net Flow",
-                    amount = data.netFlow,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                SummaryCard(
-                    modifier = Modifier.weight(1f),
-                    title = "Liabilities",
-                    amount = data.liabilities,
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
-        }
-
-        is DataState.Loading -> {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                SummaryCardLoading(modifier = Modifier.weight(1f))
-                SummaryCardLoading(modifier = Modifier.weight(1f))
-            }
-        }
-
-        is DataState.Error -> {
-            Text(text = overviewSummary.message)
-        }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        SummaryCard(
+            modifier = Modifier.weight(1f),
+            title = "Net Flow",
+            amount = overviewSummary.netFlow,
+            color = MaterialTheme.colorScheme.primary
+        )
+        SummaryCard(
+            modifier = Modifier.weight(1f),
+            title = "Liabilities",
+            amount = overviewSummary.liabilities,
+            color = MaterialTheme.colorScheme.error
+        )
     }
-
 }
 
 @Composable
@@ -436,7 +433,7 @@ private fun SummaryCardLoading(
     Card(
         modifier = modifier,
         shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.onSurface),
+        colors = CardDefaults.cardColors(Color.LightGray.copy(alpha = 0.2f)),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurfaceVariant)
     ) {
         Column(

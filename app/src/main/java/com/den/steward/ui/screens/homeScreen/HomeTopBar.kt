@@ -47,22 +47,32 @@ fun HomeTopBar(
                 horizontalArrangement = Arrangement.Center
             ) {
                 if (userState is AuthState.Authenticated) {
-                    val name = if (userState.isAnonymous) "GT" else
-                        userState.displayName
-                            ?.split(" ")
-                            ?.joinToString { it[0].toString() }
-                            ?.replace(regex = Regex("[^A-Za-z]"), "") ?: "GT"
+                    val name = remember(userState) {
+                        if (userState.isAnonymous) {
+                            "GT"
+                        } else {
+                            userState.displayName
+                                ?.takeIf { it.isNotBlank() }
+                                ?.split("\\s+".toRegex())
+                                ?.mapNotNull { word ->
+                                    word.firstOrNull { char -> char.isLetter() }?.uppercaseChar()
+                                }
+                                ?.take(2)
+                                ?.joinToString("")
+                                ?.ifEmpty { "GT" } ?: "GT"
+                        }
+                    }
 
                     Surface(
                         shape = CircleShape,
                         shadowElevation = 2.dp,
-                        color = MaterialTheme.colorScheme.background // Gives a background to default icon
+                        color = MaterialTheme.colorScheme.background
                     ) {
                         FilledIconButton(
                             onClick = onLogoClick
                         ) {
                             Text(
-                                name,
+                                text = name,
                                 style = MaterialTheme.typography.titleMedium.copy(
                                     fontWeight = FontWeight.Bold
                                 )
