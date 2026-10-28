@@ -2,6 +2,7 @@
 package com.den.steward.backend.viewModels
 
 import android.util.Log
+import androidx.compose.foundation.text.input.clearText
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.den.steward.R
@@ -218,9 +219,14 @@ class DataAdditionViewModel @Inject constructor(
     }
 
     fun reset() {
-        _dataAdditionState.update {
-            DataAdditionState()
-        }
+        val newState = DataAdditionState()
+
+        // Clear the edit buffer of each TextFieldState
+        newState.label.clearText()
+        newState.amount.clearText()
+        newState.note.clearText()
+
+        _dataAdditionState.value = newState
     }
 
     fun updateShowFulfillmentTransactionTypeBottomSheet(expanded: Boolean) {
@@ -258,8 +264,6 @@ class DataAdditionViewModel @Inject constructor(
             showMainBottomSheet = false
         ) }
 
-        val createdAt = currentState.localDateCreatedAt.atTime(currentState.localTimeCreatedAt).toEpochMillis()
-
         val isAmountInvalid = currentState.amount.text.isEmpty()
 
         if (isAmountInvalid) {
@@ -277,22 +281,30 @@ class DataAdditionViewModel @Inject constructor(
             "Deposited"
         }
 
+        val amount = currentState.amount.text.toString().ifEmpty { currentState.currentAmount }
+        val note = currentState.note.text.toString().ifEmpty { currentState.currentNote }
+        val createdAt =
+            currentState.localDateCreatedAt.atTime(currentState.localTimeCreatedAt).toEpochMillis()
+        val transactionType = TransactionType.EXCHANGE
+        val fromPaymentMethod = currentState.fromPayment
+        val toPaymentMethod = currentState.toPayment
+        // 2. Reset the state IMMEDIATELY (wiping UI fields)
+        reset()
+
         viewModelScope.launch {
             try {
                 // 2. Perform the database operation
                 addDataUseCase.addTransaction(
                     DataTransferToViewModel(
                         label = label,
-                        amount = currentState.amount.text.toString(),
-                        note = currentState.currentNote,
+                        amount = amount,
+                        note = note,
                         createdAt = createdAt,
-                        transactionType = TransactionType.EXCHANGE,
-                        fromPaymentMethod = currentState.fromPayment,
-                        toPaymentMethod = currentState.toPayment
+                        transactionType = transactionType,
+                        fromPaymentMethod = fromPaymentMethod,
+                        toPaymentMethod = toPaymentMethod
                     )
                 )
-                // 3. Reset the state after adding the transaction
-                reset()
             } catch (e: Exception) {
                 Log.e(TAG, "Error adding transaction of type EXCHANGE", e)
                 // 4. In case of error, stop the loading state and maybe keep the sheet closed or notify user
@@ -300,6 +312,8 @@ class DataAdditionViewModel @Inject constructor(
             }
         }
     }
+
+
     fun addCoreEntriesTransaction() {
         val currentState = _dataAdditionState.value
         
@@ -328,44 +342,47 @@ class DataAdditionViewModel @Inject constructor(
             return
         }
 
-        currentState.selectedTransactionType?.let { transactionType ->
-            // 1. Immediately update state to indicate saving and close the sheet
-            // This provides instant feedback to the user and prevents double clicks
-            _dataAdditionState.update { it.copy(
-                isSaving = true,
-                showTransactionAdditionBottomSheet = false,
-                showMainBottomSheet = false
-            ) }
+        // 1. Capture current values into local variables
+        val transactionType = currentState.selectedTransactionType ?: return
+        val labelText = currentState.label.text.toString().ifEmpty { currentState.currentLabel }
+        val amountText = currentState.amount.text.toString().ifEmpty { currentState.currentAmount }
+        val noteText = currentState.note.text.toString().ifEmpty { currentState.currentNote }
+        val createdAt =
+            currentState.localDateCreatedAt.atTime(currentState.localTimeCreatedAt).toEpochMillis()
+        val paymentMethod = currentState.paymentMethod
+        val isAffectingAmount = currentState.isAffectingAmount
+        val startAt = currentState.startAt.toEpochMillis()
+        val endAt = currentState.endAt.toEpochMillis()
+        val recurrence = currentState.recurrence
+        val selectedIcon = currentState.selectedIcon
+        val fromPayment = currentState.fromPayment
+        val toPayment = currentState.toPayment
 
-            val createdAt = currentState.localDateCreatedAt.atTime(currentState.localTimeCreatedAt).toEpochMillis()
+        // 2. Reset the state IMMEDIATELY (wiping UI fields)
+        reset()
 
-            viewModelScope.launch {
-                try {
-                    // 2. Perform the database operation
-                    addDataUseCase.addTransaction(
-                        DataTransferToViewModel(
-                            label = currentState.currentLabel,
-                            amount = currentState.currentAmount,
-                            note = currentState.currentNote,
-                            createdAt = createdAt,
-                            paymentMethod = currentState.paymentMethod,
-                            isAffectingAmount = currentState.isAffectingAmount,
-                            transactionType = transactionType,
-                            startedAt = currentState.startAt.toEpochMillis(),
-                            endAt = currentState.endAt.toEpochMillis(),
-                            repeatable = currentState.recurrence,
-                            selectedIcon = currentState.selectedIcon,
-                            fromPaymentMethod = currentState.fromPayment,
-                            toPaymentMethod = currentState.toPayment
-                        )
+        // 3. Perform asynchronous database operation
+        viewModelScope.launch {
+            try {
+                addDataUseCase.addTransaction(
+                    DataTransferToViewModel(
+                        label = labelText,
+                        amount = amountText,
+                        note = noteText,
+                        createdAt = createdAt,
+                        paymentMethod = paymentMethod,
+                        isAffectingAmount = isAffectingAmount,
+                        transactionType = transactionType,
+                        startedAt = startAt,
+                        endAt = endAt,
+                        repeatable = recurrence,
+                        selectedIcon = selectedIcon,
+                        fromPaymentMethod = fromPayment,
+                        toPaymentMethod = toPayment
                     )
-                    // 3. Reset the state after adding the transaction
-                    reset()
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error adding transaction of type $transactionType", e)
-                    // 4. In case of error, stop the loading state and maybe keep the sheet closed or notify user
-                    _dataAdditionState.update { it.copy(isSaving = false) }
-                }
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Error adding transaction of type $transactionType", e)
             }
         }
     }
@@ -455,11 +472,7 @@ class DataAdditionViewModel @Inject constructor(
         }
 
         // Immediately update state to indicate saving and close the sheet
-        _dataAdditionState.update { it.copy(
-            isSaving = true,
-            showFulfillmentTransactionAdditionBottomSheet = false,
-            showMainBottomSheet = false
-        ) }
+        reset()
 
         viewModelScope.launch {
             try {
@@ -468,8 +481,7 @@ class DataAdditionViewModel @Inject constructor(
                     parent.id,
                     fulfillment
                 )
-                // Reset the state after adding
-                reset()
+
             } catch (e: Exception) {
                 Log.e(TAG, "Error adding fulfillment transaction", e)
                 _dataAdditionState.update { it.copy(isSaving = false) }

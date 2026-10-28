@@ -457,11 +457,36 @@ class StorageService @Inject constructor(
         userId: String,
         transactionId: String
     ): Result<Unit> {
+        if (userId.isBlank() || transactionId.isBlank()) {
+            return Result.failure(IllegalArgumentException("User ID and transaction ID are required"))
+        }
         return try {
-            docRef.document(userId)
+            val transactionRef = docRef.document(userId)
                 .collection(TRANSACTION_COLLECTION)
                 .document(transactionId)
-                .delete().await()
+
+            val subcollections = listOf(
+                REPAYMENT_COLLECTION,
+                SETTLEMENT_COLLECTION,
+                ATTAIN_COLLECTION,
+                ACHIEVEMENT_COLLECTION,
+                PLAN_COLLECTION
+            )
+
+            for (subName in subcollections) {
+                runCatching {
+                    val subSnapshot = transactionRef.collection(subName).get().await()
+                    if (!subSnapshot.isEmpty) {
+                        subSnapshot.documents.chunked(500).forEach { chunk ->
+                            val batch = docRef.firestore.batch()
+                            chunk.forEach { batch.delete(it.reference) }
+                            batch.commit().await()
+                        }
+                    }
+                }
+            }
+
+            transactionRef.delete().await()
             Result.success(Unit)
         } catch (e: CancellationException) {
             throw e
@@ -600,7 +625,7 @@ class StorageService @Inject constructor(
     // -------------------------------------------------------------------------
     // Real-time listener for every transaction and its supported subcollections
     // -------------------------------------------------------------------------
-    @OptIn(ExperimentalCoroutinesApi::class)
+    // -------------------------------------------------------------------------
     override fun fetchAllTransactions(userId: String): Flow<Result<List<Transaction>>> {
         return callbackFlow {
             val transactionsCollection = docRef.document(userId).collection(TRANSACTION_COLLECTION)
@@ -651,8 +676,9 @@ class StorageService @Inject constructor(
                     .orEmpty()
                 val newIds = newTransactions.map { it.id }.toSet()
 
-                // Remove subcollection listeners for transactions that were deleted.
-                (subListeners.keys - newIds).forEach { removedId ->
+                // Corrected set subtraction to clean up deleted transaction listeners
+                val deletedIds = subListeners.keys.subtract(newIds)
+                deletedIds.forEach { removedId ->
                     subListeners.remove(removedId)?.forEach { it.remove() }
                     fulfillmentMap.remove(removedId)
                 }

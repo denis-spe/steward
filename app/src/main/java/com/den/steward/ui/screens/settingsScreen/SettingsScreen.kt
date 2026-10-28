@@ -107,22 +107,29 @@ private fun SettingsScreenHeader(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        state.photoUrl?.let {
-            AsyncImage(
-                model = it,
+        Surface(
+            modifier = Modifier.padding(bottom = 16.dp),
+            shape = CircleShape,
+            shadowElevation = 6.dp,
+            color = MaterialTheme.colorScheme.surfaceVariant // Gives a background to default icon
+        ) {
+            state.photoUrl?.let {
+                AsyncImage(
+                    model = it,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(imageSize)
+                        .clip(CircleShape)
+                )
+            } ?: Image(
+                painter = painterResource(R.drawable.default_user),
                 contentDescription = null,
                 modifier = Modifier
                     .size(imageSize)
-                    .clip(CircleShape)
+                    .clip(CircleShape),
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface)
             )
-        } ?: Image(
-            painter = painterResource(R.drawable.default_user),
-            contentDescription = null,
-            modifier = Modifier
-                .size(imageSize)
-                .clip(CircleShape),
-            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface)
-        )
+        }
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally

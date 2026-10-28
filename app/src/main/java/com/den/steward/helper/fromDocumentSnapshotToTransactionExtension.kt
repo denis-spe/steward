@@ -22,7 +22,7 @@ private val planStatusMap = PlanStatus.entries.associateBy { it.name }
 
 val DocumentSnapshot.toTransaction: Transaction?
     get() {
-    val id = getString("id").let { if (it.isNullOrEmpty()) this.id else it }
+        val id = this.id
     val label = getString("label") ?: ""
     val type = getString("type") ?: ""
     val note = getString("note") ?: ""

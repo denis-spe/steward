@@ -72,38 +72,48 @@ fun TransactionScreenLazyList(
             )
         }
 
-        groupedTransactions.forEach { (date, transactions) ->
-            stickyHeader(key = date) {
-                TransactionScreenListItemHeader(date = date)
+        if (groupedTransactions.isEmpty()) {
+            item(key = "empty_transactions") {
+                TransactionScreenEmpty()
             }
+        } else {
+            groupedTransactions.forEach { (date, transactions) ->
+                stickyHeader(key = date) {
+                    TransactionScreenListItemHeader(date = date)
+                }
 
-            items(transactions.size, key = { transactions[it].id }) { index ->
-                val transaction = transactions[index]
+                items(transactions.size, key = { transactions[it].id }) { index ->
+                    val transaction = transactions[index]
 
-                TransactionListItem(
-                    transaction = transaction,
-                    selected = transaction.id in transactionIds,
-                    onDelete = { dismissState ->
-                        swipedState.value = dismissState
-                        updateSelectedTransactionToDelete(transaction)
-                    },
-                    onUpdate = { dismissState ->
-                        swipedState.value = dismissState
-                        updateSelectedTransaction(transaction)
-                    },
-                    onLongClick = {
-                        transactionToBeDeleted.add(transaction)
-                    },
-                    onClick = {
-                        if (transaction.id in transactionIds) {
-                            transactionToBeDeleted.remove(transaction)
-                        } else if (transactionToBeDeleted.isNotEmpty() && transaction.id !in transactionIds) {
-                            transactionToBeDeleted.add(transaction)
-                        } else {
-                            onTransactionView(transaction)
+                    TransactionListItem(
+                        transaction = transaction,
+                        selected = transaction.id in transactionIds,
+                        onDelete = { dismissState ->
+                            swipedState.value = dismissState
+                            updateSelectedTransactionToDelete(transaction)
+                        },
+                        onUpdate = { dismissState ->
+                            swipedState.value = dismissState
+                            updateSelectedTransaction(transaction)
+                        },
+                        onLongClick = {
+                            if (transaction.id !in transactionIds) {
+                                transactionToBeDeleted.add(transaction)
+                            } else {
+                                transactionToBeDeleted.removeIf { it.id == transaction.id }
+                            }
+                        },
+                        onClick = {
+                            if (transaction.id in transactionIds) {
+                                transactionToBeDeleted.removeIf { it.id == transaction.id }
+                            } else if (transactionToBeDeleted.isNotEmpty()) {
+                                transactionToBeDeleted.add(transaction)
+                            } else {
+                                onTransactionView(transaction)
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
     }
@@ -136,6 +146,29 @@ fun TransactionScreenListItemHeader(
 }
 
 @Composable
+fun TransactionScreenListItemHeaderShimmer() {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.background.copy(0.95f)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(76.dp, 26.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .shimmerEffect()
+            )
+        }
+    }
+}
+
+@Composable
 private fun TransactionListItem(
     transaction: Transaction,
     selected: Boolean = false,
@@ -144,7 +177,7 @@ private fun TransactionListItem(
     onDelete: (dismissState: SwipeToDismissBoxState) -> Unit,
     onUpdate: (dismissState: SwipeToDismissBoxState) -> Unit
 ) {
-    val state = remember {
+    val state = remember(transaction) {
         object {
             val title = transaction.getLabel
             val icon = transaction.getIcon
@@ -166,7 +199,7 @@ private fun TransactionListItem(
     val red = Color(0xFFF44336)
     val typeColor = colorResource(id = state.typeColor)
     val typeIcon = painterResource(id = state.typeIcon)
-    val background = if (selected) Color.LightGray.copy(0.1f)
+    val background = if (selected) Color.LightGray.copy(0.08f)
     else typeColor.copy(0.1f)
 
     SwipeDismiss(
@@ -348,7 +381,7 @@ fun TransactionListItemShimmer() {
 
                     Box(
                         modifier = Modifier
-                            .size(55.dp, 20.dp)
+                            .size(68.dp, 16.dp)
                             .clip(MaterialTheme.shapes.small)
                             .shimmerEffect()
                     )

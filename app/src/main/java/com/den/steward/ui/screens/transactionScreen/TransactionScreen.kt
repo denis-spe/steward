@@ -1,18 +1,15 @@
 // Glory be to the LORD GOD of hosts
 package com.den.steward.ui.screens.transactionScreen
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -20,11 +17,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Sort
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.outlined.Analytics
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
@@ -50,7 +44,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -66,6 +59,7 @@ import com.den.steward.backend.states.transactionScreenState.TransactionDataStat
 import com.den.steward.backend.viewModels.TransactionScreenViewModel
 import com.den.steward.helper.pop
 import com.den.steward.ui.components.DataDeletionDialog
+import com.den.steward.ui.components.DeleteAllButton
 import com.den.steward.ui.dataUpdate.UpdateTransactionBottomDrawerSheet
 import kotlinx.coroutines.launch
 
@@ -122,54 +116,43 @@ fun TransactionScreen(
                 .navigationBarsPadding()
                 .padding(16.dp),
         ) {
-            AnimatedVisibility(
+            DeleteAllButton(
                 visible = transactionToBeDeleted.isNotEmpty(),
-                enter = slideInVertically { it } + fadeIn(),
-                exit = slideOutVertically { it } + fadeOut()
-            ) {
-                Button(
-                    onClick = {},
-                    colors = ButtonDefaults.buttonColors()
-                        .copy(
-                            containerColor = Color(0xFFF62229).copy(0.2f).compositeOver(
-                                MaterialTheme.colorScheme.background
-                            ),
-                            contentColor = Color(0xFFF62229)
-                        )
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "DeleteForever"
-                    )
-                    Column(
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            "Delete All",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = Color(0xFFF62229)
-                            )
-                        )
-                        Text(
-                            text = "${transactionToBeDeleted.size} Transactions",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
+                title = "Delete All",
+                subtitle = "${transactionToBeDeleted.size} transactions",
+                onClick = {
+                    viewModel.updateOpenDeleteAllDialog(true)
                 }
-            }
+            )
         }
     }
 
+    // Show the delete dialog for single transaction
     DataDeletionDialog(
         transaction = transactionScreenUiState.selectedTransactionToDelete,
         onDialogShow = transactionScreenUiState.openDeleteDialog,
-        onDelete = viewModel::deleteTransaction,
+        onDelete = {
+            viewModel.deleteTransaction(transactionToBeDeleted)
+            scope.launch {
+                swipedState.value?.reset()
+            }
+        },
     ) {
         viewModel.updateOpenDeleteDialog(false)
         scope.launch {
             swipedState.value?.reset()
         }
+    }
+
+    // Show the delete dialog for many transaction
+    DataDeletionDialog(
+        size = transactionToBeDeleted.size,
+        onDialogShow = transactionScreenUiState.openDeleteAllDialog,
+        onDelete = {
+            viewModel.deleteAllTransactions(transactionToBeDeleted)
+        },
+    ) {
+        viewModel.updateOpenDeleteAllDialog(false)
     }
 
     UpdateTransactionBottomDrawerSheet(
@@ -301,19 +284,14 @@ private fun TransactionScreenContent(
 ) {
     when (transactionDataState) {
         is DataState.Success -> {
-            val transactionDataState = transactionDataState.data
-            if (transactionDataState.transactions.isEmpty()) {
-                TransactionScreenEmpty()
-            } else {
-                TransactionScreenLazyList(
-                    swipedState = swipedState,
-                    transactionDataState = transactionDataState,
-                    updateSelectedTransaction = updateSelectedTransaction,
-                    updateSelectedTransactionToDelete = updateSelectedTransactionToDelete,
-                    transactionToBeDeleted = transactionToBeDeleted,
-                    onTransactionView = onTransactionView
-                )
-            }
+            TransactionScreenLazyList(
+                swipedState = swipedState,
+                transactionDataState = transactionDataState.data,
+                updateSelectedTransaction = updateSelectedTransaction,
+                updateSelectedTransactionToDelete = updateSelectedTransactionToDelete,
+                transactionToBeDeleted = transactionToBeDeleted,
+                onTransactionView = onTransactionView
+            )
         }
 
         is DataState.Error -> {
@@ -325,24 +303,31 @@ private fun TransactionScreenContent(
         }
     }
 }
+
 @Composable
-private fun TransactionScreenEmpty() {
-    Column(
+fun TransactionScreenEmpty() {
+    Box(
         modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        contentAlignment = Alignment.Center
     ) {
         Column(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Image(
-                painter = painterResource(id = R.drawable.ic_empty_transactions),
-                contentDescription = "Empty List",
-                modifier = Modifier.size(30.dp)
+                painter = painterResource(R.drawable.ic_empty_transactions),
+                contentDescription = "No Transactions",
+                modifier = Modifier.size(120.dp)
             )
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = "No transaction available.",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            )
+            Text(
+                "Go back and add some transactions.",
                 style = MaterialTheme.typography.bodyMedium.copy(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -387,6 +372,10 @@ private fun TransactionScreenLoading() {
     ) {
         item(key = "loading_summary") {
             TransactionScreenMainSummaryShimmer()
+        }
+
+        stickyHeader(key = "loading_header") {
+            TransactionScreenListItemHeaderShimmer()
         }
 
         (0..6).forEach { idx ->

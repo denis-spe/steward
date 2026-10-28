@@ -2,7 +2,6 @@
 package com.den.steward.backend.useCase
 
 import com.den.steward.backend.entitles.Transaction
-import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.services.AccountService
 import com.den.steward.backend.services.StorageService
 import javax.inject.Inject
@@ -25,27 +24,28 @@ class DataDeletionUseCase @Inject constructor(
             goalToolUseCase.cancel(transaction.id)
         }
 
-        val transactionId = when(transaction.type) {
-            TransactionType.ATTAIN -> (transaction as Transaction.Attain).goal.id
-            TransactionType.ACHIEVEMENT -> (transaction as Transaction.Achievement).goal.id
-            TransactionType.SETTLEMENT -> (transaction as Transaction.Settlement).debt.id
-            TransactionType.REPAYMENT -> (transaction as Transaction.Repayment).lent.id
-            TransactionType.PLAN_FULFILLMENT -> (transaction as Transaction.PlanFulfillment).plan.id
+        val transactionId = when (transaction) {
+            is Transaction.Attain -> transaction.goal.id.ifBlank { null }
+            is Transaction.Achievement -> transaction.goal.id.ifBlank { null }
+            is Transaction.Settlement -> transaction.debt.id.ifBlank { null }
+            is Transaction.Repayment -> transaction.lent.id.ifBlank { transaction.lentId.ifBlank { null } }
+            is Transaction.PlanFulfillment -> transaction.plan.id.ifBlank { null }
             else -> null
         }
-        val fulfillmentId = when(transaction.type) {
-            TransactionType.ATTAIN -> (transaction as Transaction.Attain).id
-            TransactionType.ACHIEVEMENT -> (transaction as Transaction.Achievement).id
-            TransactionType.SETTLEMENT -> (transaction as Transaction.Settlement).id
-            TransactionType.REPAYMENT -> (transaction as Transaction.Repayment).id
-            TransactionType.PLAN_FULFILLMENT -> (transaction as Transaction.PlanFulfillment).id
+        val fulfillmentId = when (transaction) {
+            is Transaction.Attain -> transaction.id.ifBlank { null }
+            is Transaction.Achievement -> transaction.id.ifBlank { null }
+            is Transaction.Settlement -> transaction.id.ifBlank { null }
+            is Transaction.Repayment -> transaction.id.ifBlank { null }
+            is Transaction.PlanFulfillment -> transaction.id.ifBlank { null }
             else -> null
         }
 
-        if (transactionId == null || fulfillmentId == null) {
+        val result = if (transactionId.isNullOrBlank() || fulfillmentId.isNullOrBlank()) {
             storageService.deleteTransaction(userId, transaction.id)
-            return
+        } else {
+            storageService.deleteFulfillment(userId, transactionId, fulfillmentId, transaction)
         }
-        storageService.deleteFulfillment(userId, transactionId, fulfillmentId, transaction)
+        result.getOrThrow()
     }
 }

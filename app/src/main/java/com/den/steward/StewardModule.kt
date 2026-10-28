@@ -21,13 +21,14 @@ import javax.inject.Singleton
 object StewardModule {
 
     // Changed to your computer's local IP to allow physical device connection
-    private const val EMULATOR_IP = "10.16.17.215"
+    private const val USE_EMULATOR = true
+    private const val EMULATOR_IP = "10.223.113.215"
 
     @Singleton
     @Provides
     fun provideFirebaseAuth(): FirebaseAuth {
         val auth = FirebaseAuth.getInstance()
-        if (BuildConfig.DEBUG) {
+        if (USE_EMULATOR && BuildConfig.DEBUG) {
             // FIXED PORT: Corrected from 9090 to 9099
             auth.useEmulator(EMULATOR_IP, 9099)
         }
@@ -52,7 +53,7 @@ object StewardModule {
         firestore.firestoreSettings = settings
         FirebaseFirestore.setLoggingEnabled(true)
 
-        if (BuildConfig.DEBUG) {
+        if (USE_EMULATOR && BuildConfig.DEBUG) {
             // FIXED CONNECTION: Calling directly on the instance inside the correct lifecycle order
             firestore.useEmulator(EMULATOR_IP, 8080)
         }

@@ -5,5 +5,6 @@ import com.den.steward.backend.entitles.Transaction
 
 data class TransactionScreenUiState(
     val selectedTransactionToDelete: Transaction? = null,
-    val openDeleteDialog: Boolean = false
+    val openDeleteDialog: Boolean = false,
+    val openDeleteAllDialog: Boolean = false
 )

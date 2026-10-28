@@ -16,8 +16,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
@@ -32,16 +30,26 @@ import com.den.steward.backend.entitles.Transaction
 @Composable
 fun DataDeletionDialog(
     transaction: Transaction? = null,
+    size: Int = 0,
     onDialogShow: Boolean,
     onDelete: () -> Unit = {},
     onDismissRequest: () -> Unit,
 ) {
-    if (onDialogShow && transaction != null) {
-        Dialog(
-            onDismissRequest = onDismissRequest,
-        ) {
+    if (!onDialogShow) return
+
+    Dialog(
+        onDismissRequest = onDismissRequest,
+    ) {
+        if (transaction != null) {
+
             DataDeletionContent(
                 transaction = transaction,
+                onDelete = onDelete,
+                onDismissRequest = onDismissRequest,
+            )
+        } else {
+            DataDeletionContent(
+                size = size,
                 onDelete = onDelete,
                 onDismissRequest = onDismissRequest,
             )
@@ -103,6 +111,89 @@ fun DataDeletionContent(
                 )
                 Text(
                     "Are you sure you want to delete this transaction?",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = MaterialTheme.typography.titleMedium.fontWeight,
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            Spacer(
+                modifier = Modifier.height(5.dp)
+            )
+
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(
+                    onClick = {
+                        onDismissRequest()
+                    }
+                ) {
+                    Text("Cancel")
+                }
+
+                TextButton(
+                    onClick = onDelete,
+                    colors = ButtonDefaults.textButtonColors().copy(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text(
+                        "Delete",
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DataDeletionContent(
+    size: Int,
+    onDelete: () -> Unit = {},
+    onDismissRequest: () -> Unit,
+) {
+
+    Card {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.WarningAmber,
+                contentDescription = "Warning Icon",
+                tint = MaterialTheme.colorScheme.error
+            )
+
+            Spacer(
+                modifier = Modifier.height(5.dp)
+            )
+
+            Text(
+                "Delete $size transactions?",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = MaterialTheme.typography.titleLarge.fontWeight
+            )
+
+            Spacer(
+                modifier = Modifier.height(5.dp)
+            )
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    "This action cannot be undone.",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = MaterialTheme.typography.titleSmall.fontWeight
+                )
+                Text(
+                    "Are you sure you want to delete these transactions?",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = MaterialTheme.typography.titleMedium.fontWeight,
                     textAlign = TextAlign.Center
