@@ -100,7 +100,7 @@ fun HomeScreen(
             onClose = { topDrawerState.value = false },
             onSettingsClick = {
                 topDrawerState.value = false
-                backStack.addLast(SettingsRouter)
+                backStack.add(SettingsRouter)
             },
             onHomeClick = {
                 topDrawerState.value = false

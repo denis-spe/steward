@@ -42,10 +42,11 @@ import androidx.navigation3.runtime.NavKey
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.Filter
+import com.den.steward.backend.states.OverviewData
 import com.den.steward.backend.states.overviewTabState.OverviewSummary
-import com.den.steward.backend.viewModels.OverviewData
 import com.den.steward.helper.formatToAmount
 import com.den.steward.ui.componentExtenison.shimmerEffect
+import com.den.steward.ui.screens.screenManager.LiabilityRouter
 import com.den.steward.ui.screens.screenManager.TransactionRouter
 
 @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
@@ -123,27 +124,18 @@ internal fun OverviewGoalList(transactions: List<Transaction>) {
 }
 
 @Composable
-internal fun OverviewDebtList(transactions: List<Transaction>) {
+internal fun OverviewLiabilityList(transactions: List<Transaction>) {
     LazyRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(horizontal = 4.dp)
     ) {
-        items(transactions, key = { "overview_debt_${it.id}" }) { transaction ->
-            OverviewDebtItem(transaction = transaction)
-        }
-    }
-}
-
-@Composable
-internal fun OverviewLoanList(transactions: List<Transaction>) {
-    LazyRow(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(horizontal = 4.dp)
-    ) {
-        items(transactions, key = { "overview_loan_${it.id}" }) { transaction ->
-            OverviewLoanItem(transaction = transaction)
+        items(transactions, key = { "overview_${it.type.name}_${it.id}" }) { transaction ->
+            if (transaction is Transaction.Debt) {
+                OverviewDebtItem(transaction = transaction)
+            } else {
+                OverviewLoanItem(transaction = transaction)
+            }
         }
     }
 }
@@ -190,12 +182,12 @@ internal fun OverviewLazyList(
                             onClick = {
                                 when (header) {
                                     "Transactions" -> {
-                                        backStack.addLast(TransactionRouter)
+                                        backStack.add(TransactionRouter)
                                     }
                                     "Goal" -> Filter.GOAL
-                                    "Debt" -> Filter.DEBT
-                                    "Lent" -> Filter.LENT
-                                    else -> Filter.ALL
+                                    "Liabilities" -> {
+                                        backStack.add(LiabilityRouter)
+                                    }
                                 }
                             },
                             colors = IconButtonDefaults.filledIconButtonColors()
@@ -227,15 +219,9 @@ internal fun OverviewLazyList(
                         }
                     }
 
-                    "Debt" -> {
-                        item(key = "debt") {
-                            OverviewDebtList(transactions = transactions)
-                        }
-                    }
-
-                    "Lent" -> {
-                        item(key = "lent") {
-                            OverviewLoanList(transactions = transactions)
+                    "Liabilities" -> {
+                        item(key = "liabilities") {
+                            OverviewLiabilityList(transactions = transactions)
                         }
                     }
                 }
@@ -250,7 +236,7 @@ internal fun OverviewLazyList(
 
 @Composable
 internal fun OverviewListLoading() {
-    val headers = listOf("Transactions", "Goal", "Debt", "Lent")
+    val headers = listOf("Transactions", "Goal", "Liabilities")
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -318,7 +304,7 @@ internal fun OverviewListLoading() {
                     }
                 }
 
-                "Debt" -> {
+                "Liabilities" -> {
                     item {
                         LazyRow(
                             modifier = Modifier.fillMaxWidth(),
@@ -327,20 +313,6 @@ internal fun OverviewListLoading() {
                         ) {
                             items(3) {
                                 OverviewDebtItemShimmer()
-                            }
-                        }
-                    }
-                }
-
-                "Lent" -> {
-                    item {
-                        LazyRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            contentPadding = PaddingValues(horizontal = 4.dp)
-                        ) {
-                            items(3) {
-                                OverviewLoanItemShimmer()
                             }
                         }
                     }

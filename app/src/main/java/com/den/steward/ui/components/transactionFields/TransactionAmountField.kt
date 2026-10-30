@@ -63,6 +63,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.den.steward.R
 import com.den.steward.backend.entitles.Transaction
+import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.helper.formatToAmount
 import com.den.steward.helper.getCurrencySymbol
 import com.den.steward.helper.setTextAndPlaceCursorAtEnd
@@ -271,7 +272,6 @@ fun TransactionAmountField(
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionAmountFieldFulfilment(
     state: TextFieldState,
@@ -280,7 +280,7 @@ fun TransactionAmountFieldFulfilment(
     selectedTransaction: MutableState<Transaction?>,
     onSetItem: (transaction: Transaction) -> Unit,
 ) {
-    val expand = remember { mutableStateOf(false) }
+    val expand = remember { mutableStateOf(true) }
     if (transactionName == null) return
 
     val fulfilmentName = when (transactionName) {
@@ -288,6 +288,14 @@ fun TransactionAmountFieldFulfilment(
         "Debt" -> "settlement"
         else -> "attainment"
     }
+
+    val parentColor = colorResource(
+        when (transactionName) {
+            "Lent" -> TransactionType.LENT.color
+            "Debt" -> TransactionType.DEBT.color
+            else -> TransactionType.GOAL.color
+        }
+    )
 
     Column(
         modifier = Modifier
@@ -302,13 +310,13 @@ fun TransactionAmountFieldFulfilment(
             shape = MaterialTheme.shapes.medium,
             colors = CardDefaults.outlinedCardColors(
                 containerColor = if (selectedTransaction.value != null)
-                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f)
+                    parentColor.copy(alpha = 0.1f)
                 else Color.Transparent
             ),
             border = BorderStroke(
                 width = 1.dp,
                 color = if (selectedTransaction.value != null)
-                    MaterialTheme.colorScheme.primary
+                    parentColor
                 else MaterialTheme.colorScheme.outline
             )
         ) {
@@ -326,7 +334,7 @@ fun TransactionAmountFieldFulfilment(
                     contentDescription = null,
                     modifier = Modifier.size(20.dp),
                     tint = if (selectedTransaction.value != null)
-                        MaterialTheme.colorScheme.primary
+                        parentColor
                     else MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.width(12.dp))
@@ -336,7 +344,7 @@ fun TransactionAmountFieldFulfilment(
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.bodyLarge,
                     color = if (selectedTransaction.value != null)
-                        MaterialTheme.colorScheme.primary
+                        parentColor
                     else MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
@@ -366,6 +374,14 @@ fun FulfillmentList(
     selectedTransaction: MutableState<Transaction?>,
     onSetItem: (transaction: Transaction) -> Unit
 ) {
+    val parentColor = colorResource(
+        when (transactionName) {
+            "Lent" -> TransactionType.LENT.color
+            "Debt" -> TransactionType.DEBT.color
+            else -> TransactionType.GOAL.color
+        }
+    )
+
     ModalBottomSheet(
         onDismissRequest = {
             expand.value = false
@@ -433,7 +449,7 @@ fun FulfillmentList(
                             },
                             modifier = Modifier.fillMaxWidth(),
                             border = if (isSelected)
-                                BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                                BorderStroke(2.dp, parentColor)
                             else
                                 CardDefaults.outlinedCardBorder()
                         ) {
@@ -468,7 +484,7 @@ fun FulfillmentList(
                                         Icon(
                                             imageVector = Icons.Rounded.Close, // Reusing close as a marker or check
                                             contentDescription = "Selected",
-                                            tint = MaterialTheme.colorScheme.primary
+                                            tint = parentColor
                                         )
                                     }
                                 },

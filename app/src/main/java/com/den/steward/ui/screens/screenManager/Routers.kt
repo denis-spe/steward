@@ -30,12 +30,6 @@ data object ForgotPasswordRouter: NavKey
 @Serializable
 data object SettingsRouter: NavKey
 
-@Serializable
-data object DebtRouter : NavKey
-
-
-@Serializable
-data object LentRouter : NavKey
 
 @Serializable
 data object GoalRouter : NavKey
@@ -43,3 +37,7 @@ data object GoalRouter : NavKey
 
 @Serializable
 data object TransactionRouter : NavKey
+
+
+@Serializable
+data object LiabilityRouter : NavKey

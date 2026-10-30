@@ -9,6 +9,7 @@ import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.OrderBy
+import com.den.steward.backend.states.OverviewData
 import com.den.steward.backend.states.OverviewUiState
 import com.den.steward.backend.states.SortBy
 import com.den.steward.backend.states.overviewTabState.OverviewSummary
@@ -27,11 +28,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import javax.inject.Inject
-
-data class OverviewData(
-    val summary: OverviewSummary,
-    val groupedTransactions: Map<String, List<Transaction>>
-)
 
 @HiltViewModel
 class OverviewViewModel @Inject constructor(
@@ -113,8 +109,7 @@ class OverviewViewModel @Inject constructor(
                         }
                         .groupBy { transaction ->
                         when (transaction.type) {
-                            TransactionType.LENT -> "Lent"
-                            TransactionType.DEBT -> "Debt"
+                            TransactionType.LENT, TransactionType.DEBT -> "Liabilities"
                             TransactionType.GOAL -> "Goal"
                             else -> "Transactions"
                         }
@@ -123,9 +118,8 @@ class OverviewViewModel @Inject constructor(
                             when (key) {
                                 "Transactions" -> 0
                                 "Goal" -> 1
-                                "Debt" -> 2
-                                "Lent" -> 3
-                                else -> 4
+                                "Liabilities" -> 2
+                                else -> 3
                             }
                         }
                     ).mapValues { (_, transactions) ->
