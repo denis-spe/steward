@@ -94,10 +94,10 @@ class GoalWorker @AssistedInject constructor(
             if (endAtMillis > now) return endAtMillis      // deadline still in the future
             if (endAtMillis <= 0L) return null             // no deadline set
 
-            val nowLocal = LocalDateTime.ofInstant(Instant.ofEpochMilli(now), zone)
             val anchor = LocalDateTime.ofInstant(Instant.ofEpochMilli(endAtMillis), zone)
 
-            return recurrence.next(nowLocal, anchor)
+            // Prevent schedule drift by projecting strictly from anchor
+            return recurrence.next(anchor, anchor)
                 ?.atZone(zone)
                 ?.toInstant()
                 ?.toEpochMilli()
@@ -118,7 +118,7 @@ class GoalWorker @AssistedInject constructor(
                 return
             }
 
-            Log.w(TAG, "Scheduled to happen at ${endAtMillis.toLocalDateTime().formatedDateTime}")
+            Log.w(TAG, "Scheduled to happen at ${target.toLocalDateTime().formatedDateTime}")
             enqueueAt(context, transactionId, target, policy)
         }
 
@@ -166,32 +166,49 @@ class GoalWorker @AssistedInject constructor(
                 return Result.success()
             }
 
+            // Guard against duplicate processing if this cycle was already processed
+            val alreadyProcessed = goal.achievement.any { it.endAt == goal.endAt }
+            if (alreadyProcessed) {
+                Log.i(
+                    TAG,
+                    "Goal cycle for $transactionId at endAt=${goal.endAt} was already processed."
+                )
+                WorkManager.getInstance(appContext).cancelUniqueWork(transactionId)
+                return Result.success()
+            }
+
+            // Execute atomic backend update prior to notifications
+            val updatedGoal = goalToolUseCase.resetGoalAttain(goal).getOrThrow()
+
+            // Compute actual achievement metrics from current goal data
             val totalAttain = goal.percentage.toInt()
             val finalStatus = if (totalAttain >= 100) GoalStatus.COMPLETED else GoalStatus.FAILED
 
             val message = when (finalStatus) {
-                GoalStatus.COMPLETED -> "You achieved your goal"
-                GoalStatus.FAILED -> "You failed to achieve your goal"
-                else -> "Your goal cycle has ended"
+                GoalStatus.COMPLETED -> appContext.getString(R.string.goal_achieved_message)
+                GoalStatus.FAILED -> appContext.getString(R.string.goal_failed_message)
+                else -> appContext.getString(R.string.goal_cycle_ended_message)
             }
 
             val bigMessage = when (finalStatus) {
-                GoalStatus.COMPLETED -> "Congratulations! You achieved ${totalAttain}% of your goal"
+                GoalStatus.COMPLETED -> appContext.getString(
+                    R.string.goal_achieved_big_message,
+                    totalAttain
+                )
                 GoalStatus.FAILED -> {
                     if (totalAttain == 0) {
-                        "You didn't even try to achieve your goal"
+                        appContext.getString(R.string.goal_failed_zero_attain)
                     } else {
-                        "You managed to achieve ${totalAttain}% of your goal which is less than the target"
+                        appContext.getString(R.string.goal_failed_partial_attain, totalAttain)
                     }
                 }
-
                 else -> null
             }
 
             val notificationTitle =
                 if (goal.label.isNotBlank()) "${goal.label.title} Goal Cycle" else "Goal Cycle"
 
-            // Send notification FIRST so user is notified immediately at deadline
+            // Dispatch notification after state change succeeds
             notificationSource.showNotification(
                 NotificationEntity(
                     title = notificationTitle,
@@ -202,10 +219,6 @@ class GoalWorker @AssistedInject constructor(
                 )
             )
 
-            // resetGoalAttain creates the achievement, deletes Attain documents,
-            // and updates the goal cycle in one Firestore batch.
-            val updatedGoal = goalToolUseCase.resetGoalAttain(goal).getOrThrow()
-
             if (updatedGoal.repeatable != Recurrence.Once) {
                 schedule(
                     context = appContext,
@@ -214,6 +227,8 @@ class GoalWorker @AssistedInject constructor(
                     recurrence = updatedGoal.repeatable,
                     policy = ExistingWorkPolicy.REPLACE
                 )
+            } else {
+                WorkManager.getInstance(appContext).cancelUniqueWork(transactionId)
             }
 
             Log.i(TAG, "Goal cycle processed successfully: $transactionId")

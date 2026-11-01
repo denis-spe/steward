@@ -10,6 +10,7 @@ import com.den.steward.helper.toTransaction
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Source
+import com.google.firebase.firestore.WriteBatch
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -225,25 +226,60 @@ class StorageService @Inject constructor(
         }
 
         return try {
+            val userGoalDocRef = docRef.document(userId)
+                .collection(TRANSACTION_COLLECTION)
+                .document(transaction.id)
 
-            addGoalAchieved(
-                userId,
-                transaction
-            )
-            deleteAttainDocs(
-                userId,
-                transaction.id
+            // 1. Fetch subcollection documents BEFORE starting batch operations
+            val attainSnapshot = userGoalDocRef
+                .collection(ATTAIN_COLLECTION)
+                .get()
+                .await()
+
+            val achievedRef = userGoalDocRef
+                .collection(ACHIEVEMENT_COLLECTION)
+                .document("cycle_${transaction.endAt}")
+
+            val achievedValue = if (transaction.attain.isNotEmpty()) {
+                transaction.attain.sumOf { it.value }
+            } else {
+                attainSnapshot.documents.sumOf { it.getDouble("value") ?: 0.0 }
+            }
+            val status = if (achievedValue >= transaction.value) {
+                GoalStatus.COMPLETED
+            } else {
+                GoalStatus.FAILED
+            }
+
+            val achievement = Transaction.Achievement(
+                id = achievedRef.id,
+                value = achievedValue,
+                createdAt = System.currentTimeMillis(),
+                startAt = transaction.startedAt,
+                endAt = transaction.endAt,
+                goal = transaction,
+                status = status
             )
 
             val newTransaction = transaction.nextCycle()
 
-            updateTransaction(
-                userId,
-                transaction.id,
-                newTransaction.copy(
-                    attain = emptyList(),
-                )
-            )
+            // 2. Perform write operations in batches (handling Firestore's 500-operation limit)
+            // Combine all deletions + update + achievement set operations
+            val allOperations = mutableListOf<(WriteBatch) -> Unit>()
+
+            allOperations.add { batch -> batch.set(achievedRef, achievement.toMap) }
+            allOperations.add { batch -> batch.set(userGoalDocRef, newTransaction.toMap) }
+
+            attainSnapshot.documents.forEach { doc ->
+                allOperations.add { batch -> batch.delete(doc.reference) }
+            }
+
+            // Chunk operations by 500 to adhere to Firestore limits
+            allOperations.chunked(500).forEach { operationChunk ->
+                val batch = docRef.firestore.batch()
+                operationChunk.forEach { op -> op(batch) }
+                batch.commit().await()
+            }
 
             Result.success(newTransaction)
         } catch (e: CancellationException) {

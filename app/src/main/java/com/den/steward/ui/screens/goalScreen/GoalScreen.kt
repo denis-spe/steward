@@ -272,14 +272,14 @@ private fun GoalScreenTopAppBar(
                 title = {
                     Column {
                         Text(
-                            text = "Liabilities",
+                            text = "Goals",
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold
                             )
                         )
 
                         Text(
-                            text = "All debt and lent transactions",
+                            text = "Showing you all your goals in one place",
                             style = MaterialTheme.typography.bodySmall.copy(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

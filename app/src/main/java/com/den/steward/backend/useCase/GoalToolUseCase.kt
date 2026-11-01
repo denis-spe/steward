@@ -31,6 +31,12 @@ class GoalToolUseCase @Inject constructor(
     }
 
     fun schedule(transactionId: String, endAtMillis: Long, recurrence: Recurrence) {
+        if (recurrence == Recurrence.Once && endAtMillis <= System.currentTimeMillis()) {
+            Log.d(TAG, "Skipping schedule for completed/past One-time Goal: $transactionId")
+            cancel(transactionId)
+            return
+        }
+
         Log.d(
             TAG,
             "Attempting to schedule worker for Goal: $transactionId at $endAtMillis, recurrence=$recurrence"

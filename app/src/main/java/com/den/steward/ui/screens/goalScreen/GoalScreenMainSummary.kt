@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -20,6 +19,7 @@ import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ExposureZero
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,7 +32,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.den.steward.backend.states.goalState.GoalMainSummary
 import com.den.steward.ui.componentExtenison.shimmerEffect
-import com.den.steward.ui.screens.homeScreen.tabs.todayTab.VerticalDivider
 
 @Composable
 fun GoalScreenMainSummaryShimmer() {
@@ -95,48 +94,55 @@ fun GoalScreenMainSummaryShimmer() {
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(45.dp, 17.dp)
-                            .clip(MaterialTheme.shapes.small)
-                            .shimmerEffect(),
-                    )
 
-                    Box(
+                OutlinedCard {
+                    Column(
                         modifier = Modifier
-                            .size(35.dp, 18.dp)
-                            .clip(MaterialTheme.shapes.small)
-                            .shimmerEffect(),
-                    )
+                            .width(120.dp)
+                            .padding(vertical = 10.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp), // Match spacing here
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(45.dp, 17.dp)
+                                .clip(MaterialTheme.shapes.small)
+                                .shimmerEffect(),
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .size(35.dp, 18.dp)
+                                .clip(MaterialTheme.shapes.small)
+                                .shimmerEffect(),
+                        )
+                    }
                 }
 
-                VerticalDivider(
-                    modifier = Modifier
-                        .height(60.dp)
-                        .padding(horizontal = 10.dp)
-                )
+                Spacer(modifier = Modifier.width(5.dp))
 
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(5.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Box(
+                OutlinedCard {
+                    Column(
                         modifier = Modifier
-                            .size(50.dp, 17.dp)
-                            .clip(MaterialTheme.shapes.small)
-                            .shimmerEffect(),
-                    )
+                            .width(120.dp)
+                            .padding(vertical = 10.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp), // Match spacing here
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(50.dp, 17.dp)
+                                .clip(MaterialTheme.shapes.small)
+                                .shimmerEffect(),
+                        )
 
-                    Box(
-                        modifier = Modifier
-                            .size(50.dp, 18.dp)
-                            .clip(MaterialTheme.shapes.small)
-                            .shimmerEffect(),
-                    )
+                        Box(
+                            modifier = Modifier
+                                .size(50.dp, 18.dp)
+                                .clip(MaterialTheme.shapes.small)
+                                .shimmerEffect(),
+                        )
+                    }
                 }
             }
         }
@@ -232,52 +238,59 @@ fun GoalScreenMainSummary(goalMainSummary: GoalMainSummary) {
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        "(${state.totalCompletedAchievementPercent}%) Completed",
-                        style = MaterialTheme.typography.titleSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    )
 
-                    Text(
-                        "${state.totalCompletedAchievement}",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = green
+                OutlinedCard {
+                    Column(
+                        modifier = Modifier
+                            .width(120.dp)
+                            .padding(vertical = 10.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp), // Match spacing here
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            "(${state.totalCompletedAchievementPercent}%) Completed",
+                            style = MaterialTheme.typography.titleSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         )
-                    )
+
+                        Text(
+                            "${state.totalCompletedAchievement}",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = green
+                            )
+                        )
+                    }
                 }
 
-                VerticalDivider(
-                    modifier = Modifier
-                        .height(60.dp)
-                        .padding(horizontal = 10.dp)
-                )
+                Spacer(modifier = Modifier.width(5.dp))
 
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(5.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        "(${state.totalFailedAchievementPercent}%) Failed",
-                        style = MaterialTheme.typography.titleSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                OutlinedCard {
+                    Column(
+                        modifier = Modifier
+                            .width(120.dp)
+                            .padding(vertical = 10.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp), // Match spacing here
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            "(${state.totalFailedAchievementPercent}%) Failed",
+                            style = MaterialTheme.typography.titleSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         )
-                    )
 
-                    Text(
-                        state.totalFailedAchievement.toString(),
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = red
+                        Text(
+                            state.totalFailedAchievement.toString(),
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = red
+                            )
                         )
-                    )
+                    }
                 }
             }
         }

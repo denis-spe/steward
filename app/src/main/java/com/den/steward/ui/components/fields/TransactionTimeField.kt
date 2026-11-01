@@ -83,7 +83,7 @@ private fun TransactionTimeFieldItem(
     val border = if (isNowActive) BorderStroke(1.dp, color) else null
 
     TransactionFieldCard(
-        title = "Once",
+        title = "Tme",
         modifier = modifier,
         leadingContent = {
             Image(

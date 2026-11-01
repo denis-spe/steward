@@ -2,10 +2,8 @@
 package com.den.steward.ui.screens.goalScreen
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,7 +23,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBoxState
 import androidx.compose.material3.Text
@@ -38,16 +35,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.den.steward.R
-import com.den.steward.backend.entitles.PaymentMethod
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.goalState.GoalDataState
@@ -192,7 +186,6 @@ private fun GoalListItem(
             val title = transaction.getLabel
             val icon = transaction.getIcon
             val amount = transaction.getFormattedAmountOrValue
-            val paymentMethod = transaction.getPaymentMethodOrNull ?: PaymentMethod.CASH
             val typeColor = transaction.type.color
             val typeLabel = transaction.type.label
             val date = transaction.createdAt.toLocalDateTime().formatedDateTime
@@ -200,9 +193,6 @@ private fun GoalListItem(
             val status = transaction.getStatus
             val statusColor = transaction.getStatusColor
             val totalFulfill = (transaction.getFulfillmentTotalSum ?: 0.0).formatToAmount()
-            val childrenTypeLabel = if (transaction.type == TransactionType.DEBT)
-                "Settled"
-            else "Repaid"
             val childrenTypeColor = if (transaction.type == TransactionType.DEBT)
                 TransactionType.SETTLEMENT.color
             else TransactionType.REPAYMENT.color
@@ -218,16 +208,13 @@ private fun GoalListItem(
     val icon = painterResource(id = state.icon)
     val red = Color(0xFFF44336)
     val typeColor = colorResource(id = state.typeColor)
-    val typeIcon = painterResource(id = state.typeIcon)
-    val typeLabel = stringResource(id = state.typeLabel)
     val statusColor = colorResource(id = state.statusColor)
-    val childrenTypeColor = colorResource(id = state.childrenTypeColor)
     val background = if (selected) Color.LightGray.copy(0.08f)
     else typeColor.copy(0.1f)
 
     SwipeDismiss(
         dismissState = dismissState,
-        shape = MaterialTheme.shapes.small,
+        shape = MaterialTheme.shapes.extraLarge,
         onDelete = {
             onDelete(dismissState)
         },
@@ -236,7 +223,7 @@ private fun GoalListItem(
         }
     ) {
         Surface(
-            shape = MaterialTheme.shapes.small,
+            shape = MaterialTheme.shapes.extraLarge,
             color = background.compositeOver(
                 MaterialTheme.colorScheme.surface
             ),
@@ -267,12 +254,12 @@ private fun GoalListItem(
                     ) {
                         Box(
                             modifier = Modifier
+                                .clip(CircleShape)
                                 .background(
                                     color = typeColor.copy(0.5f),
                                     shape = MaterialTheme.shapes.small
                                 )
-                                .size(60.dp)
-                                .clip(CircleShape),
+                                .size(60.dp),
                             contentAlignment = Alignment.Center
                         ) {
 
@@ -302,45 +289,24 @@ private fun GoalListItem(
                             )
 
 
-                            Row(
-                                modifier = Modifier.padding(top = 3.dp),
-                                horizontalArrangement = Arrangement.spacedBy(5.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                            Card(
+                                colors = CardDefaults.cardColors().copy(
+                                    containerColor = statusColor.copy(0.2f),
+                                    contentColor = statusColor
+                                ),
+                                shape = RectangleShape
                             ) {
-                                Card(
-                                    colors = CardDefaults.cardColors().copy(
-                                        containerColor = typeColor.copy(0.2f),
-                                        contentColor = typeColor
-                                    ),
-                                    shape = RectangleShape
+                                Box(
+                                    modifier = Modifier.padding(5.dp),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Box(
-                                        modifier = Modifier.padding(2.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = typeLabel,
-                                            style = MaterialTheme.typography.bodySmall
+                                    Text(
+                                        state.status ?: "",
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = statusColor
                                         )
-                                    }
-                                }
-
-                                OutlinedCard(
-                                    border = BorderStroke(1.dp, statusColor),
-                                    shape = MaterialTheme.shapes.small
-                                ) {
-                                    Box(
-                                        modifier = Modifier.padding(5.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            state.status ?: "",
-                                            style = MaterialTheme.typography.bodySmall.copy(
-                                                fontWeight = FontWeight.Bold,
-                                                color = statusColor
-                                            )
-                                        )
-                                    }
+                                    )
                                 }
                             }
                         }
@@ -357,31 +323,8 @@ private fun GoalListItem(
                             )
                         )
 
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(5.dp)
-                        ) {
-                            Text(
-                                text = state.paymentMethod.label,
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            )
-                            Image(
-                                painter = painterResource(state.paymentMethod.icon),
-                                contentDescription = "Payment Method Icon",
-                                modifier = Modifier.size(15.dp)
-                            )
-                            Image(
-                                painter = typeIcon,
-                                contentDescription = "Transaction Type Icon",
-                                modifier = Modifier.size(15.dp),
-                                colorFilter = ColorFilter.tint(typeColor)
-                            )
-                        }
-
                         Text(
-                            "${state.totalFulfill} ${state.childrenTypeLabel}",
+                            "${state.totalFulfill} Attained",
                             style = MaterialTheme.typography.bodySmall.copy(
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -414,7 +357,7 @@ private fun GoalListItem(
 @Composable
 fun GoalListItemShimmer() {
     Surface(
-        shape = MaterialTheme.shapes.small,
+        shape = MaterialTheme.shapes.extraLarge,
         color = Color.LightGray.copy(0.1f),
     ) {
         Row(
@@ -432,7 +375,7 @@ fun GoalListItemShimmer() {
                 Box(
                     modifier = Modifier
                         .size(50.dp)
-                        .clip(MaterialTheme.shapes.small)
+                        .clip(CircleShape)
                         .shimmerEffect()
                 )
 
@@ -473,13 +416,6 @@ fun GoalListItemShimmer() {
                                 .clip(MaterialTheme.shapes.small)
                                 .shimmerEffect()
                         )
-
-                        Box(
-                            modifier = Modifier
-                                .size(43.dp, 24.dp)
-                                .clip(MaterialTheme.shapes.small)
-                                .shimmerEffect()
-                        )
                     }
                 }
             }
@@ -495,43 +431,6 @@ fun GoalListItemShimmer() {
                         .clip(MaterialTheme.shapes.small)
                         .shimmerEffect()
                 )
-
-                Spacer(
-                    modifier = Modifier.height(3.dp)
-                )
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(43.dp, 20.dp)
-                            .clip(MaterialTheme.shapes.small)
-                            .shimmerEffect()
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .size(15.dp)
-                            .border(
-                                1.dp, Color.LightGray,
-                                MaterialTheme.shapes.small
-                            )
-                            .clip(MaterialTheme.shapes.small)
-                            .shimmerEffect()
-                    )
-                    Box(
-                        modifier = Modifier
-                            .size(15.dp)
-                            .border(
-                                1.dp, Color.LightGray,
-                                MaterialTheme.shapes.small
-                            )
-                            .clip(MaterialTheme.shapes.small)
-                            .shimmerEffect()
-                    )
-                }
 
                 Spacer(
                     modifier = Modifier.height(3.dp)

@@ -41,7 +41,7 @@ import java.time.LocalTime
 fun TimeDialog(
     title: String,
     color: Color,
-    headerTitle: String = "Once",
+    headerTitle: String = "Time",
     showTimePicker: MutableState<Boolean>,
     localTimeState: LocalTime,
     onTimeChange: (LocalTime) -> Unit

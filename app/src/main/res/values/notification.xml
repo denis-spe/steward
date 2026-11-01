@@ -1,0 +1,10 @@
+<resources>
+    <!-- Goal Worker Notifications -->
+    <string name="goal_achieved_message">You achieved your goal</string>
+    <string name="goal_failed_message">You failed to achieve your goal</string>
+    <string name="goal_cycle_ended_message">Your goal cycle has ended</string>
+
+    <string name="goal_achieved_big_message">Congratulations! You achieved %1$d%% of your goal</string>
+    <string name="goal_failed_zero_attain">You didn\'t even try to achieve your goal</string>
+    <string name="goal_failed_partial_attain">You managed to achieve %1$d%% of your goal which is less than the target</string>
+</resources>
