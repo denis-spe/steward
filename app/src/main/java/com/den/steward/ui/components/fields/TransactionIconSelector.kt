@@ -1,5 +1,5 @@
 // Bless be the name of the LORD
-package com.den.steward.ui.components.transactionFields
+package com.den.steward.ui.components.fields
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement

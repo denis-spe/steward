@@ -1,10 +1,14 @@
 // Glory be to the LORD GOD of hosts
 package com.den.steward.backend.states.transactionScreenState
 
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.runtime.Stable
 import com.den.steward.backend.entitles.Transaction
 
+@Stable
 data class TransactionScreenUiState(
     val selectedTransactionToDelete: Transaction? = null,
     val openDeleteDialog: Boolean = false,
-    val openDeleteAllDialog: Boolean = false
+    val openDeleteAllDialog: Boolean = false,
+    val searchTextState: TextFieldState = TextFieldState(),
 )

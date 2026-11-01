@@ -24,8 +24,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.viewModels.DataAdditionViewModel
 import com.den.steward.ui.components.bottomDrawerSheet.BottomDrawerSheet
-import com.den.steward.ui.components.transactionFields.ExchangeAmountField
-import com.den.steward.ui.components.transactionFields.TransactionFieldState
+import com.den.steward.ui.components.fields.ExchangeAmountField
+import com.den.steward.ui.components.fields.TransactionFieldState
 import com.den.steward.ui.components.transactionbuttons.ExchangeAccountButton
 import com.den.steward.ui.components.transactionbuttons.TransactionButtons
 

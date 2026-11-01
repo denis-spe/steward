@@ -3,11 +3,8 @@
 package com.den.steward.ui.dataAddition
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateBounds
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -26,10 +23,8 @@ import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material.icons.filled.Restore
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -41,12 +36,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -60,16 +51,14 @@ import androidx.compose.ui.unit.dp
 import com.den.steward.backend.entitles.PlanStatus
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
-import com.den.steward.backend.states.DataAdditionState
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.PlanTabUiState
-import com.den.steward.helper.calculateFlow
 import com.den.steward.helper.formatToAmount
 import com.den.steward.ui.components.bottomDrawerSheet.BottomDrawerSheet
-import com.den.steward.ui.components.transactionFields.PlanFulfillmentAmountField
-import com.den.steward.ui.components.transactionFields.PlanFulfillmentLabelField
-import com.den.steward.ui.components.transactionFields.TransactionFieldState
-import com.den.steward.ui.components.transactionFields.TransactionTypeSelector
+import com.den.steward.ui.components.fields.PlanFulfillmentAmountField
+import com.den.steward.ui.components.fields.PlanFulfillmentLabelField
+import com.den.steward.ui.components.fields.TransactionFieldState
+import com.den.steward.ui.components.fields.TransactionTypeSelector
 
 @Composable
 fun AddPlanFulfillment(
@@ -96,7 +85,8 @@ fun AddPlanFulfillment(
         Icon(
             imageVector = Icons.Default.Add,
             contentDescription = "Add",
-            modifier = Modifier.size(23.dp)
+            modifier = Modifier
+                .size(23.dp)
                 .padding(5.dp)
         )
     }
@@ -558,7 +548,8 @@ fun PlanFulfillmentForm(
 ) {
 
     Column(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
             .padding(16.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally

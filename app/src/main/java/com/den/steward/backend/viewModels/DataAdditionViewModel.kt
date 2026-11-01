@@ -17,7 +17,7 @@ import com.den.steward.backend.useCase.AddDataUseCase
 import com.den.steward.backend.useCase.DataFetchUseCase
 import com.den.steward.helper.toEpochMillis
 import com.den.steward.ui.components.SelectedIcon
-import com.den.steward.ui.components.transactionFields.TransactionFieldState
+import com.den.steward.ui.components.fields.TransactionFieldState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted

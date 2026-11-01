@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -34,9 +36,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.den.steward.backend.entitles.PaymentMethod
@@ -186,6 +190,7 @@ private fun TransactionListItem(
             val typeColor = transaction.type.color
             val date = transaction.createdAt.toLocalDateTime().formatedDateTime
             val typeIcon = transaction.type.icon
+            val typeLabel = transaction.type.label
         }
     }
 
@@ -199,6 +204,7 @@ private fun TransactionListItem(
     val red = Color(0xFFF44336)
     val typeColor = colorResource(id = state.typeColor)
     val typeIcon = painterResource(id = state.typeIcon)
+    val typeLabel = stringResource(id = state.typeLabel)
     val background = if (selected) Color.LightGray.copy(0.08f)
     else typeColor.copy(0.1f)
 
@@ -276,6 +282,23 @@ private fun TransactionListItem(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             )
+                            Card(
+                                colors = CardDefaults.cardColors().copy(
+                                    containerColor = typeColor.copy(0.2f),
+                                    contentColor = typeColor
+                                ),
+                                shape = RectangleShape
+                            ) {
+                                Box(
+                                    modifier = Modifier.padding(2.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = typeLabel,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                            }
                         }
                     }
 

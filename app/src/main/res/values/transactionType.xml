@@ -17,7 +17,7 @@
 
     <string name="earning_desc">Record money you\'ve received, like a salary or side income</string>
     <string name="expense_desc">Record money you\'ve spent on bills, purchases, or other costs</string>
-    <string name="lent_desc">Track money you borrowed and need to pay back</string>
+    <string name="lent_desc">Track money you gave to someone that needs to be paid back</string>
     <string name="debt_desc">Track money you owe to someone and need to repay</string>
     <string name="repayment_desc">Log a payment received against a loan you gave out</string>
     <string name="refund_desc">Log a payment you\'ve made toward a debt you owe</string>

@@ -1,7 +1,7 @@
 package com.den.steward.backend.viewModels
 
 import android.content.Context
-import android.util.Log
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -23,16 +23,24 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.time.debounce
 import java.time.LocalDate
 import javax.inject.Inject
+
+private data class TransactionScreenController(
+    val transactions: DataState<List<Transaction>>,
+    val search: String
+)
 
 @HiltViewModel
 class TransactionScreenViewModel @Inject constructor(
@@ -45,66 +53,102 @@ class TransactionScreenViewModel @Inject constructor(
     companion object {
         private const val TAG = "TransactionScreenVM"
     }
+
     private val _transactionScreenUiState = MutableStateFlow(TransactionScreenUiState())
     val transactionScreenUiState = _transactionScreenUiState.asStateFlow()
 
     val dataUpdateState = updateTransaction.dataUpdateState
 
+    @OptIn(FlowPreview::class)
+    private val debouncedSearchQueryFlow =
+        snapshotFlow { _transactionScreenUiState.value.searchTextState.text }
+            .map { it.toString().trim() } // Convert CharSequence to String and trim spaces
+            .distinctUntilChanged()       // Don't re-trigger if text variations match
+            .debounce(java.time.Duration.ofMillis(300))
 
-    val transactionDataState = dataFetchUseCase.fetchAllTransactions.map { state ->
-        when (state) {
-            is DataState.Success -> {
-                val transactions = state.data.filterNot {
-                    it.type in listOf(
-                        TransactionType.ACHIEVEMENT, TransactionType.ATTAIN,
-                        TransactionType.PLAN_FULFILLMENT, TransactionType.PLAN,
-                        TransactionType.REPAYMENT, TransactionType.SETTLEMENT,
-                        TransactionType.LENT, TransactionType.DEBT, TransactionType.GOAL
+    val transactionDataState =
+        combine(
+            dataFetchUseCase.fetchAllTransactions,
+            debouncedSearchQueryFlow
+        ) { transactions, search ->
+            TransactionScreenController(
+                transactions,
+                search
+            )
+        }.map { transactionScreenController ->
+            val (transactions, search) = transactionScreenController
+
+            when (transactions) {
+                is DataState.Success -> {
+                    val transactions = transactions.data.filterNot {
+                        it.type in listOf(
+                            TransactionType.ACHIEVEMENT, TransactionType.ATTAIN,
+                            TransactionType.PLAN_FULFILLMENT, TransactionType.PLAN,
+                            TransactionType.REPAYMENT, TransactionType.SETTLEMENT,
+                            TransactionType.LENT, TransactionType.DEBT, TransactionType.GOAL
+                        )
+                    }.filter { transaction ->
+                        val typeLabel = context.getString(transaction.type.label)
+
+                        transaction.getLabel.contains(search, ignoreCase = true) ||
+                                transaction.getNote.contains(search, ignoreCase = true) ||
+                                transaction.getStatus?.contains(
+                                    search,
+                                    ignoreCase = true
+                                ) ?: false ||
+                                transaction.getAffectedAmount?.label?.contains(
+                                    search,
+                                    ignoreCase = true
+                                ) ?: false ||
+                                transaction.getPaymentMethodOrNull?.label?.contains(
+                                    search,
+                                    ignoreCase = true
+                                ) ?: false ||
+                                typeLabel.contains(search, ignoreCase = true)
+                    }
+
+                    val now = LocalDate.now()
+
+                    val totalSum = transactions.sumOf { it.getAmountOrValue ?: 0.0 }
+
+                    val incomingPercent =
+                        if (totalSum == 0.0) 0.0 else (transactions.incoming / totalSum) * 100
+                    val outgoingPercent =
+                        if (totalSum == 0.0) 0.0 else (transactions.outgoing / totalSum) * 100
+
+                    val transactionMainSummary = TransactionMainSummary(
+                        netFlow = transactions.calculateFlow,
+                        incoming = transactions.incoming,
+                        outgoing = transactions.outgoing,
+                        incomingPercent = incomingPercent,
+                        outgoingPercent = outgoingPercent
                     )
+
+                    val transactionDataState = TransactionDataState(
+                        transactions = transactions.groupBy {
+                            val createdAt = it.createdAt.toLocalDateTime()
+                            when {
+                                now == createdAt.toLocalDate() -> "Today"
+                                now.minusDays(1) == createdAt.toLocalDate() -> "Yesterday"
+                                else -> createdAt.formattedDate
+                            }
+                        }.toImmutableMap(),
+                        transactionMainSummary = transactionMainSummary
+                    )
+
+                    DataState.Success(transactionDataState)
                 }
 
-                val now = LocalDate.now()
-
-                val totalSum = transactions.sumOf { it.getAmountOrValue ?: 0.0 }
-
-                val incomingPercent =
-                    if (totalSum == 0.0) 0.0 else (transactions.incoming / totalSum) * 100
-                val outgoingPercent =
-                    if (totalSum == 0.0) 0.0 else (transactions.outgoing / totalSum) * 100
-
-                val transactionMainSummary = TransactionMainSummary(
-                    netFlow = transactions.calculateFlow,
-                    incoming = transactions.incoming,
-                    outgoing = transactions.outgoing,
-                    incomingPercent = incomingPercent,
-                    outgoingPercent = outgoingPercent
-                )
-
-                val transactionDataState = TransactionDataState(
-                    transactions = transactions.groupBy {
-                        val createdAt = it.createdAt.toLocalDateTime()
-                        when {
-                            now == createdAt.toLocalDate() -> "Today"
-                            now.minusDays(1) == createdAt.toLocalDate() -> "Yesterday"
-                            else -> createdAt.formattedDate
-                        }
-                    }.toImmutableMap(),
-                    transactionMainSummary = transactionMainSummary
-                )
-
-                DataState.Success(transactionDataState)
+                is DataState.Error -> DataState.Error(transactions.message)
+                is DataState.Loading -> DataState.Loading
             }
-
-            is DataState.Error -> DataState.Error(state.message)
-            is DataState.Loading -> DataState.Loading
         }
-    }
-        .distinctUntilChanged()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = DataState.Loading
-        )
+            .distinctUntilChanged()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = DataState.Loading
+            )
 
     // ===================== Delete =====================
     fun deleteTransaction(transactionToBeDeleted: SnapshotStateList<Transaction>? = null) {
@@ -145,25 +189,14 @@ class TransactionScreenViewModel @Inject constructor(
     }
 
     fun deleteAllTransactions(transactionToBeDeleted: SnapshotStateList<Transaction>) {
-        val itemsToDelete = transactionToBeDeleted.toList()
+        val itemsToDelete = transactionToBeDeleted.toList().map { it.id }
         updateOpenDeleteAllDialog(false)
+        transactionToBeDeleted.clear()
 
         viewModelScope.launch(Dispatchers.IO) {
-            runCatching {
-                // Ideally, update your deletionUseCase to handle a list:
-                // deletionUseCase.deleteTransactions(itemsToDelete)
-                // Or loop synchronously on IO if batching isn't available yet:
-                itemsToDelete.forEach { transaction ->
-                    deletionUseCase.deleteTransaction(transaction)
-                }
-            }.onSuccess {
-                // Clear all at once on the Main thread when batch operation finishes
-                launch(Dispatchers.Main) {
-                    transactionToBeDeleted.clear()
-                }
-            }.onFailure { e ->
-                Log.e(TAG, "Failed to delete transactions", e)
-            }
+            deletionUseCase.deletingMultipleTransaction(
+                transactionIds = itemsToDelete
+            )
         }
     }
 

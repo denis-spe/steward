@@ -460,4 +460,23 @@ sealed class Transaction {
                 else -> null
             }
         }
+
+    val getRemaining: Double?
+        get() {
+            return when (this) {
+                is Debt -> {
+                    this.remainingAmount
+                }
+
+                is Lent -> {
+                    this.remainingAmount
+                }
+
+                is Goal -> {
+                    this.remainingValue
+                }
+
+                else -> null
+            }
+        }
 }

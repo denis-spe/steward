@@ -9,7 +9,7 @@ import com.den.steward.backend.entitles.Recurrence
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.ui.components.SelectedIcon
-import com.den.steward.ui.components.transactionFields.TransactionFieldState
+import com.den.steward.ui.components.fields.TransactionFieldState
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime

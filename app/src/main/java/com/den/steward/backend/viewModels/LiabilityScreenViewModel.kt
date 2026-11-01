@@ -1,7 +1,7 @@
 package com.den.steward.backend.viewModels
 
 import android.content.Context
-import android.util.Log
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -21,16 +21,24 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.time.debounce
 import java.time.LocalDate
 import javax.inject.Inject
+
+private data class LiabilityController(
+    val transactions: DataState<List<Transaction>>,
+    val search: String
+)
 
 @HiltViewModel
 class LiabilityScreenViewModel @Inject constructor(
@@ -49,11 +57,47 @@ class LiabilityScreenViewModel @Inject constructor(
 
     val dataUpdateState = updateTransaction.dataUpdateState
 
+    @OptIn(FlowPreview::class)
+    private val debouncedSearchQueryFlow =
+        snapshotFlow { _liabilityScreenUiState.value.searchTextState.text }
+            .map { it.toString().trim() } // Convert CharSequence to String and trim spaces
+            .distinctUntilChanged()       // Don't re-trigger if text variations match
+            .debounce(java.time.Duration.ofMillis(300))
 
-    val liabilityDataState = dataFetchUseCase.fetchAllTransactions.map { state ->
-        when (state) {
+
+    val liabilityDataState = combine(
+        dataFetchUseCase.fetchAllTransactions,
+        debouncedSearchQueryFlow
+    ) { transactions, search ->
+        LiabilityController(
+            transactions,
+            search
+        )
+    }.map { liabilityController ->
+        val (transactions, search) = liabilityController
+
+        when (transactions) {
             is DataState.Success -> {
-                val transactions = state.data
+                val transactions = transactions.data
+                    .filter { transaction ->
+                        val typeLabel = context.getString(transaction.type.label)
+
+                        transaction.getLabel.contains(search, ignoreCase = true) ||
+                                transaction.getNote.contains(search, ignoreCase = true) ||
+                                transaction.getStatus?.contains(
+                                    search,
+                                    ignoreCase = true
+                                ) ?: false ||
+                                transaction.getAffectedAmount?.label?.contains(
+                                    search,
+                                    ignoreCase = true
+                                ) ?: false ||
+                                transaction.getPaymentMethodOrNull?.label?.contains(
+                                    search,
+                                    ignoreCase = true
+                                ) ?: false ||
+                                typeLabel.contains(search, ignoreCase = true)
+                    }
 
                 val liabilities = listOf(
                     TransactionType.DEBT,
@@ -126,7 +170,7 @@ class LiabilityScreenViewModel @Inject constructor(
                 DataState.Success(liabilityDataState)
             }
 
-            is DataState.Error -> DataState.Error(state.message)
+            is DataState.Error -> DataState.Error(transactions.message)
             is DataState.Loading -> DataState.Loading
         }
     }
@@ -176,25 +220,14 @@ class LiabilityScreenViewModel @Inject constructor(
     }
 
     fun deleteAllTransactions(transactionToBeDeleted: SnapshotStateList<Transaction>) {
-        val itemsToDelete = transactionToBeDeleted.toList()
+        val itemsToDelete = transactionToBeDeleted.toList().map { it.id }
         updateOpenDeleteAllDialog(false)
+        transactionToBeDeleted.clear()
 
         viewModelScope.launch(Dispatchers.IO) {
-            runCatching {
-                // Ideally, update your deletionUseCase to handle a list:
-                // deletionUseCase.deleteTransactions(itemsToDelete)
-                // Or loop synchronously on IO if batching isn't available yet:
-                itemsToDelete.forEach { transaction ->
-                    deletionUseCase.deleteTransaction(transaction)
-                }
-            }.onSuccess {
-                // Clear all at once on the Main thread when batch operation finishes
-                launch(Dispatchers.Main) {
-                    transactionToBeDeleted.clear()
-                }
-            }.onFailure { e ->
-                Log.e(TAG, "Failed to delete transactions", e)
-            }
+            deletionUseCase.deletingMultipleTransaction(
+                transactionIds = itemsToDelete
+            )
         }
     }
 

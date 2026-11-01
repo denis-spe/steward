@@ -43,4 +43,9 @@ interface Storage {
         oldFulfillmentId: String,
         newFulfillment: Transaction
     ): Result<Unit>
+
+    suspend fun deletingMultipleTransaction(
+        userId: String,
+        transactionIds: List<String>
+    ): Result<Unit>
 }

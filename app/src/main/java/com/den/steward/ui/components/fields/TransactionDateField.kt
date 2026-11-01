@@ -1,5 +1,5 @@
 // Glory be to LORD our GOD
-package com.den.steward.ui.components.transactionFields
+package com.den.steward.ui.components.fields
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image

@@ -1,6 +1,6 @@
 // Love the LORD your GOD with all your soul and with all your mind and with all your heart
 // and with all your might and love your neighbor as yourself
-package com.den.steward.ui.components.transactionFields
+package com.den.steward.ui.components.fields
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -13,7 +13,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp

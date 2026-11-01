@@ -28,9 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.den.steward.backend.states.transactionScreenState.TransactionMainSummary
 import com.den.steward.helper.formatToAmount
@@ -129,14 +127,14 @@ fun TransactionScreenMainSummaryShimmer() {
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(45.dp, 17.dp)
+                            .size(60.dp, 17.dp)
                             .clip(MaterialTheme.shapes.small)
                             .shimmerEffect(),
                     )
 
                     Box(
                         modifier = Modifier
-                            .size(35.dp, 18.dp)
+                            .size(60.dp, 18.dp)
                             .clip(MaterialTheme.shapes.small)
                             .shimmerEffect(),
                     )
@@ -222,7 +220,8 @@ fun TransactionScreenMainSummary(transactionMainSummary: TransactionMainSummary)
                 Text(
                     state.netFlow,
                     style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = state.color
                     )
                 )
             }
@@ -239,21 +238,10 @@ fun TransactionScreenMainSummary(transactionMainSummary: TransactionMainSummary)
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        buildAnnotatedString {
-                            append("(")
-                            withStyle(
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = FontWeight.Bold
-                                ).toSpanStyle()
-                            ) {
-                                append("${state.incomingPercent}%")
-                            }
-
-                            append(") Incoming")
-                        },
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        "(${state.incomingPercent}%) Incoming",
+                        style = MaterialTheme.typography.titleSmall.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Bold
                         )
                     )
 
@@ -277,21 +265,10 @@ fun TransactionScreenMainSummary(transactionMainSummary: TransactionMainSummary)
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        buildAnnotatedString {
-                            append("(")
-                            withStyle(
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = FontWeight.Bold
-                                ).toSpanStyle()
-                            ) {
-                                append("${state.outgoingPercent}%")
-                            }
-
-                            append(") Outgoing")
-                        },
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        "(${state.outgoingPercent}%) Outgoing",
+                        style = MaterialTheme.typography.titleSmall.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Bold
                         )
                     )
 

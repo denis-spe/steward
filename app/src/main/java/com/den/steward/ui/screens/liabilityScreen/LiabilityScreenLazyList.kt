@@ -2,6 +2,7 @@
 package com.den.steward.ui.screens.liabilityScreen
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -17,10 +18,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBoxState
 import androidx.compose.material3.Text
@@ -34,15 +39,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.den.steward.R
 import com.den.steward.backend.entitles.PaymentMethod
 import com.den.steward.backend.entitles.Transaction
+import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.liabilityScreenState.LiabilityDataState
+import com.den.steward.helper.formatToAmount
 import com.den.steward.helper.formatedDateTime
 import com.den.steward.helper.toLocalDateTime
 import com.den.steward.ui.componentExtenison.shimmerEffect
@@ -185,8 +194,18 @@ private fun LiabilityListItem(
             val amount = transaction.getFormattedAmountOrValue
             val paymentMethod = transaction.getPaymentMethodOrNull ?: PaymentMethod.CASH
             val typeColor = transaction.type.color
+            val typeLabel = transaction.type.label
             val date = transaction.createdAt.toLocalDateTime().formatedDateTime
             val typeIcon = transaction.type.icon
+            val status = transaction.getStatus
+            val statusColor = transaction.getStatusColor
+            val totalFulfill = (transaction.getFulfillmentTotalSum ?: 0.0).formatToAmount()
+            val childrenTypeLabel = if (transaction.type == TransactionType.DEBT)
+                "Settled"
+            else "Repaid"
+            val childrenTypeColor = if (transaction.type == TransactionType.DEBT)
+                TransactionType.SETTLEMENT.color
+            else TransactionType.REPAYMENT.color
         }
     }
 
@@ -200,6 +219,9 @@ private fun LiabilityListItem(
     val red = Color(0xFFF44336)
     val typeColor = colorResource(id = state.typeColor)
     val typeIcon = painterResource(id = state.typeIcon)
+    val typeLabel = stringResource(id = state.typeLabel)
+    val statusColor = colorResource(id = state.statusColor)
+    val childrenTypeColor = colorResource(id = state.childrenTypeColor)
     val background = if (selected) Color.LightGray.copy(0.08f)
     else typeColor.copy(0.1f)
 
@@ -228,7 +250,9 @@ private fun LiabilityListItem(
             )
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -247,11 +271,8 @@ private fun LiabilityListItem(
                                     color = typeColor.copy(0.5f),
                                     shape = MaterialTheme.shapes.small
                                 )
-                                .border(
-                                    1.dp, typeColor,
-                                    MaterialTheme.shapes.small
-                                )
-                                .size(60.dp),
+                                .size(60.dp)
+                                .clip(CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
 
@@ -265,23 +286,67 @@ private fun LiabilityListItem(
                             verticalArrangement = Arrangement.Center,
                             horizontalAlignment = Alignment.Start
                         ) {
+
                             Text(
                                 text = state.title,
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                             )
+
                             Text(
                                 text = state.date,
                                 style = MaterialTheme.typography.bodySmall.copy(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             )
+
+
+                            Row(
+                                modifier = Modifier.padding(top = 3.dp),
+                                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Card(
+                                    colors = CardDefaults.cardColors().copy(
+                                        containerColor = typeColor.copy(0.2f),
+                                        contentColor = typeColor
+                                    ),
+                                    shape = RectangleShape
+                                ) {
+                                    Box(
+                                        modifier = Modifier.padding(2.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = typeLabel,
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                    }
+                                }
+
+                                OutlinedCard(
+                                    border = BorderStroke(1.dp, statusColor),
+                                    shape = MaterialTheme.shapes.small
+                                ) {
+                                    Box(
+                                        modifier = Modifier.padding(5.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            state.status ?: "",
+                                            style = MaterialTheme.typography.bodySmall.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                color = statusColor
+                                            )
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
 
                     Column(
-                        modifier = Modifier.padding(end = 10.dp),
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.End
                     ) {
@@ -314,6 +379,14 @@ private fun LiabilityListItem(
                                 colorFilter = ColorFilter.tint(typeColor)
                             )
                         }
+
+                        Text(
+                            "${state.totalFulfill} ${state.childrenTypeLabel}",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        )
                     }
                 }
 
@@ -345,7 +418,9 @@ fun LiabilityListItemShimmer() {
         color = Color.LightGray.copy(0.1f),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -357,10 +432,6 @@ fun LiabilityListItemShimmer() {
                 Box(
                     modifier = Modifier
                         .size(50.dp)
-                        .border(
-                            1.dp, Color.LightGray,
-                            MaterialTheme.shapes.small
-                        )
                         .clip(MaterialTheme.shapes.small)
                         .shimmerEffect()
                 )
@@ -386,6 +457,30 @@ fun LiabilityListItemShimmer() {
                             .clip(MaterialTheme.shapes.small)
                             .shimmerEffect()
                     )
+
+                    Spacer(
+                        modifier = Modifier.height(3.dp)
+                    )
+
+                    Row(
+                        modifier = Modifier.padding(top = 3.dp),
+                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp, 20.dp)
+                                .clip(MaterialTheme.shapes.small)
+                                .shimmerEffect()
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .size(43.dp, 24.dp)
+                                .clip(MaterialTheme.shapes.small)
+                                .shimmerEffect()
+                        )
+                    }
                 }
             }
 
@@ -399,6 +494,10 @@ fun LiabilityListItemShimmer() {
                         .size(35.dp, 20.dp)
                         .clip(MaterialTheme.shapes.small)
                         .shimmerEffect()
+                )
+
+                Spacer(
+                    modifier = Modifier.height(3.dp)
                 )
 
                 Row(
@@ -433,6 +532,17 @@ fun LiabilityListItemShimmer() {
                             .shimmerEffect()
                     )
                 }
+
+                Spacer(
+                    modifier = Modifier.height(3.dp)
+                )
+
+                Box(
+                    modifier = Modifier
+                        .size(50.dp, 15.dp)
+                        .clip(MaterialTheme.shapes.small)
+                        .shimmerEffect()
+                )
             }
         }
     }

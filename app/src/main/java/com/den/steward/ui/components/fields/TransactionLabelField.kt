@@ -1,5 +1,5 @@
 // Bless be the LORD GOD
-package com.den.steward.ui.components.transactionFields
+package com.den.steward.ui.components.fields
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -48,7 +48,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.den.steward.R
 import com.den.steward.helper.setTextAndPlaceCursorAtEnd
-import kotlin.text.ifEmpty
 
 @Composable
 fun TransactionLabelField(

@@ -48,4 +48,13 @@ class DataDeletionUseCase @Inject constructor(
         }
         result.getOrThrow()
     }
+
+    suspend fun deletingMultipleTransaction(
+        transactionIds: List<String>
+    ) {
+        storageService.deletingMultipleTransaction(
+            userId,
+            transactionIds
+        )
+    }
 }

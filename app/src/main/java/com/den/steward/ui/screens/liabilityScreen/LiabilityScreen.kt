@@ -2,6 +2,7 @@
 // with all your might and love your neighbor as your self
 package com.den.steward.ui.screens.liabilityScreen
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -9,10 +10,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Sort
@@ -25,6 +29,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBoxState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -42,8 +47,10 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -59,6 +66,7 @@ import com.den.steward.backend.viewModels.LiabilityScreenViewModel
 import com.den.steward.helper.pop
 import com.den.steward.ui.components.DataDeletionDialog
 import com.den.steward.ui.components.DeleteAllButton
+import com.den.steward.ui.components.fields.WideSearchTextField
 import com.den.steward.ui.dataUpdate.UpdateTransactionBottomDrawerSheet
 import kotlinx.coroutines.launch
 
@@ -85,6 +93,7 @@ fun LiabilityScreen(
         Scaffold(
             topBar = {
                 LiabilityScreenTopAppBar(
+                    searchTextState = liabilityScreenUiState.searchTextState,
                     scrollBehavior = scrollBehavior
                 ) {
                     backStack.pop()
@@ -183,7 +192,9 @@ fun LiabilityScreen(
 }
 
 @Composable
-private fun LiabilityScreenHeaderAction() {
+private fun LiabilityScreenHeaderAction(
+    onSearchClick: () -> Unit
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.End
@@ -207,7 +218,7 @@ private fun LiabilityScreenHeaderAction() {
         }
 
         IconButton(
-            onClick = { }
+            onClick = onSearchClick
         ) {
             Icon(
                 imageVector = Icons.Outlined.Search,
@@ -221,6 +232,7 @@ private fun LiabilityScreenHeaderAction() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LiabilityScreenTopAppBar(
+    searchTextState: TextFieldState,
     scrollBehavior: TopAppBarScrollBehavior,
     onBackClick: () -> Unit,
 ) {
@@ -228,48 +240,83 @@ private fun LiabilityScreenTopAppBar(
         targetValue = if (scrollBehavior.state.overlappedFraction > 0f) 2.dp else 0.dp,
         label = "TopAppBarShadow"
     )
+    val showSearch = remember { mutableStateOf(false) }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusRequester = remember { FocusRequester() }
 
-    TopAppBar(
-        title = {
-            Column {
-                Text(
-                    text = "Transactions",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold
-                    )
-                )
+    AnimatedContent(
+        targetState = showSearch.value,
+        modifier = Modifier.fillMaxWidth(),
+    ) { state ->
 
-                Text(
-                    text = "View all your transactions",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                )
-            }
-        },
-
-        actions = {
-            LiabilityScreenHeaderAction()
-        },
-
-        navigationIcon = {
-            FilledIconButton(
-                onClick = onBackClick,
-                colors = IconButtonDefaults.iconButtonColors().copy(
-                    containerColor = Color.LightGray.copy(0.2f)
-                )
+        if (state) {
+            Surface(
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back"
-                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                ) {
+                    WideSearchTextField(
+                        focusRequester = focusRequester,
+                        state = searchTextState,
+                        onSearchClick = {}
+                    ) {
+                        showSearch.value = false
+                    }
+                }
             }
-        },
+        } else {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(
+                            text = "Liabilities",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
 
-        modifier = Modifier.shadow(shadowElevation),
+                        Text(
+                            text = "All debt and lent transactions",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        )
+                    }
+                },
 
-        scrollBehavior = scrollBehavior
-    )
+                actions = {
+                    LiabilityScreenHeaderAction(
+                        onSearchClick = {
+                            keyboardController?.show()
+                            showSearch.value = true
+                        }
+                    )
+                },
+
+                navigationIcon = {
+                    FilledIconButton(
+                        onClick = onBackClick,
+                        colors = IconButtonDefaults.iconButtonColors().copy(
+                            containerColor = Color.LightGray.copy(0.2f)
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                },
+
+                modifier = Modifier.shadow(shadowElevation),
+
+                scrollBehavior = scrollBehavior
+            )
+
+        }
+    }
 }
 
 @Composable

@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ReceiptLong
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.FloatingActionButtonElevation
@@ -27,19 +26,18 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataAdditionState
 import com.den.steward.backend.viewModels.DataAdditionViewModel
-import com.den.steward.ui.components.SelectedIcon
 import com.den.steward.ui.components.bottomDrawerSheet.BottomDrawerSheet
 import com.den.steward.ui.components.bottomDrawerSheet.BottomDrawerSheetItem
-import com.den.steward.ui.components.transactionFields.TransactionAffectAmount
-import com.den.steward.ui.components.transactionFields.TransactionAmountField
-import com.den.steward.ui.components.transactionFields.TransactionDateField
-import com.den.steward.ui.components.transactionFields.TransactionFieldState
-import com.den.steward.ui.components.transactionFields.TransactionIconSelector
-import com.den.steward.ui.components.transactionFields.TransactionLabelField
-import com.den.steward.ui.components.transactionFields.TransactionNoteField
-import com.den.steward.ui.components.transactionFields.TransactionPaymentMethodField
-import com.den.steward.ui.components.transactionFields.TransactionRecurrenceField
-import com.den.steward.ui.components.transactionFields.TransactionTimeField
+import com.den.steward.ui.components.fields.TransactionAffectAmount
+import com.den.steward.ui.components.fields.TransactionAmountField
+import com.den.steward.ui.components.fields.TransactionDateField
+import com.den.steward.ui.components.fields.TransactionFieldState
+import com.den.steward.ui.components.fields.TransactionIconSelector
+import com.den.steward.ui.components.fields.TransactionLabelField
+import com.den.steward.ui.components.fields.TransactionNoteField
+import com.den.steward.ui.components.fields.TransactionPaymentMethodField
+import com.den.steward.ui.components.fields.TransactionRecurrenceField
+import com.den.steward.ui.components.fields.TransactionTimeField
 import com.den.steward.ui.components.transactionbuttons.TransactionButtons
 import com.den.steward.ui.theme.ExtendedTheme
 

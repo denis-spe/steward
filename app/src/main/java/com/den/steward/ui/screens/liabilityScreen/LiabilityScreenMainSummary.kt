@@ -28,9 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.den.steward.backend.states.liabilityScreenState.LiabilityMainSummary
 import com.den.steward.helper.formatToAmount
@@ -129,14 +127,14 @@ fun LiabilityScreenMainSummaryShimmer() {
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(45.dp, 17.dp)
+                            .size(50.dp, 17.dp)
                             .clip(MaterialTheme.shapes.small)
                             .shimmerEffect(),
                     )
 
                     Box(
                         modifier = Modifier
-                            .size(35.dp, 18.dp)
+                            .size(50.dp, 18.dp)
                             .clip(MaterialTheme.shapes.small)
                             .shimmerEffect(),
                     )
@@ -222,7 +220,8 @@ fun LiabilityScreenMainSummary(liabilityMainSummary: LiabilityMainSummary) {
                 Text(
                     state.liabilityFlow,
                     style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = state.color
                     )
                 )
             }
@@ -239,20 +238,9 @@ fun LiabilityScreenMainSummary(liabilityMainSummary: LiabilityMainSummary) {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        buildAnnotatedString {
-                            append("(")
-                            withStyle(
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = FontWeight.Bold
-                                ).toSpanStyle()
-                            ) {
-                                append("${state.paidLiabilityPercent}%")
-                            }
-
-                            append(") Paid")
-                        },
-                        style = MaterialTheme.typography.bodySmall.copy(
+                        "(${state.paidLiabilityPercent}%) Paid",
+                        style = MaterialTheme.typography.titleSmall.copy(
+                            fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     )
@@ -277,20 +265,9 @@ fun LiabilityScreenMainSummary(liabilityMainSummary: LiabilityMainSummary) {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        buildAnnotatedString {
-                            append("(")
-                            withStyle(
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = FontWeight.Bold
-                                ).toSpanStyle()
-                            ) {
-                                append("${state.unpaidLiabilityPercent}%")
-                            }
-
-                            append(") Unpaid")
-                        },
-                        style = MaterialTheme.typography.bodySmall.copy(
+                        "(${state.unpaidLiabilityPercent}%) unpaid",
+                        style = MaterialTheme.typography.titleSmall.copy(
+                            fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     )

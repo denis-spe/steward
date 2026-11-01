@@ -6,7 +6,7 @@ import com.den.steward.backend.entitles.PaymentMethod
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.states.DataUpdateState
 import com.den.steward.ui.components.SelectedIcon
-import com.den.steward.ui.components.transactionFields.TransactionFieldState
+import com.den.steward.ui.components.fields.TransactionFieldState
 
 @Immutable
 interface UpdateTransactionInf {

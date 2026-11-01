@@ -17,7 +17,7 @@ import com.den.steward.backend.useCase.DataFetchUseCase
 import com.den.steward.backend.useCase.DataFilterUseCase
 import com.den.steward.backend.useCase.UpdateDateUseCase
 import com.den.steward.helper.toEpochMillis
-import com.den.steward.ui.components.transactionFields.TransactionFieldState
+import com.den.steward.ui.components.fields.TransactionFieldState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow

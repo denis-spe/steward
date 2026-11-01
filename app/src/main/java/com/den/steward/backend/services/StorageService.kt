@@ -496,6 +496,46 @@ class StorageService @Inject constructor(
         }
     }
 
+
+    override suspend fun deletingMultipleTransaction(
+        userId: String,
+        transactionIds: List<String>
+    ): Result<Unit> {
+        if (userId.isBlank() || transactionIds.isEmpty()) {
+            return Result.failure(IllegalArgumentException("User ID and transaction IDs are required"))
+        }
+
+        return try {
+            val subcollections = listOf(
+                REPAYMENT_COLLECTION,
+                SETTLEMENT_COLLECTION,
+                ATTAIN_COLLECTION,
+                ACHIEVEMENT_COLLECTION,
+                PLAN_COLLECTION
+            )
+
+            // Delete main transaction documents in batches of at most 500 (Firestore WriteBatch limit)
+            transactionIds.chunked(500).forEach { chunk ->
+                val batch = docRef.firestore.batch()
+                chunk.forEach { transactionId ->
+                    val transactionRef = docRef.document(userId)
+                        .collection(TRANSACTION_COLLECTION)
+                        .document(transactionId)
+                    batch.delete(transactionRef)
+                }
+                batch.commit().await()
+            }
+
+            Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to delete transactions=$transactionIds for user=$userId", e)
+            Result.failure(e)
+        }
+    }
+
+
     override suspend fun deleteFulfillment(
         userId: String,
         transactionId: String,

@@ -9,14 +9,16 @@ import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.Affected
 import com.den.steward.backend.states.DataState
-import com.den.steward.backend.states.yesterdayTabState.YesterdayTransactionSummary
 import com.den.steward.backend.states.Filter
 import com.den.steward.backend.states.OrderBy
 import com.den.steward.backend.states.SortAndFilterState
 import com.den.steward.backend.states.SortBy
 import com.den.steward.backend.states.yesterdayTabState.YesterdayTabState
+import com.den.steward.backend.states.yesterdayTabState.YesterdayTransactionSummary
 import com.den.steward.backend.states.yesterdayTabState.YesterdayUiState
 import com.den.steward.backend.useCase.DataDeletionUseCase
+import com.den.steward.backend.useCase.DataFetchUseCase
+import com.den.steward.backend.useCase.UpdateTransactionUseCase
 import com.den.steward.helper.calculateFlow
 import com.den.steward.helper.filterAndSortTodayTransactions
 import com.den.steward.helper.getStartOfDayMillis
@@ -34,8 +36,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import com.den.steward.backend.useCase.DataFetchUseCase
-import com.den.steward.backend.useCase.UpdateTransactionUseCase
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
@@ -136,8 +136,8 @@ class YesterdayViewModel @Inject constructor(
             lowTransactionActivityLabel = lowTransaction?.key?.name ?: "",
             incoming = incoming,
             outgoing = outgoing,
-            incomingPercentage = ((incoming / totalTransactionAmount) * 100).toInt(),
-            outgoingPercentage = ((outgoing / totalTransactionAmount) * 100).toInt()
+            incomingPercentage = if (totalTransactionAmount > 0.0) ((incoming / totalTransactionAmount) * 100).toInt() else 0,
+            outgoingPercentage = if (totalTransactionAmount > 0.0) ((outgoing / totalTransactionAmount) * 100).toInt() else 0
         )
     }
     private fun handleChartDataCollection(transactions: List<Transaction>): ChartDataCollection {

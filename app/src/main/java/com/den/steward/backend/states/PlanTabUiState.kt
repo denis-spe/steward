@@ -5,7 +5,7 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.Immutable
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
-import com.den.steward.ui.components.transactionFields.TransactionFieldState
+import com.den.steward.ui.components.fields.TransactionFieldState
 import java.time.LocalDate
 import java.time.LocalTime
 

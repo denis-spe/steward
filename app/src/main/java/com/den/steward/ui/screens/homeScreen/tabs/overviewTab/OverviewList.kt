@@ -41,11 +41,11 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.states.DataState
-import com.den.steward.backend.states.Filter
 import com.den.steward.backend.states.OverviewData
 import com.den.steward.backend.states.overviewTabState.OverviewSummary
 import com.den.steward.helper.formatToAmount
 import com.den.steward.ui.componentExtenison.shimmerEffect
+import com.den.steward.ui.screens.screenManager.GoalRouter
 import com.den.steward.ui.screens.screenManager.LiabilityRouter
 import com.den.steward.ui.screens.screenManager.TransactionRouter
 
@@ -184,7 +184,9 @@ internal fun OverviewLazyList(
                                     "Transactions" -> {
                                         backStack.add(TransactionRouter)
                                     }
-                                    "Goal" -> Filter.GOAL
+                                    "Goal" -> {
+                                        backStack.add(GoalRouter)
+                                    }
                                     "Liabilities" -> {
                                         backStack.add(LiabilityRouter)
                                     }

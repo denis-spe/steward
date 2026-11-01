@@ -8,8 +8,8 @@ import com.den.steward.backend.entitles.Transaction
 import com.den.steward.helper.formatResult
 import com.den.steward.helper.toLocalDateTime
 import com.den.steward.ui.components.SelectedIcon
+import com.den.steward.ui.components.fields.TransactionFieldState
 import com.den.steward.ui.components.icons
-import com.den.steward.ui.components.transactionFields.TransactionFieldState
 import java.time.LocalDate
 import java.time.LocalTime
 

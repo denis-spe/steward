@@ -1,4 +1,4 @@
-package com.den.steward.ui.components.transactionFields
+package com.den.steward.ui.components.fields
 
 sealed class TransactionFieldState {
     data object Initial : TransactionFieldState()

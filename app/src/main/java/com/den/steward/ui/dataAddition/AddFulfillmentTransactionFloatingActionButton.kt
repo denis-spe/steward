@@ -7,39 +7,38 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AssignmentTurnedIn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.FloatingActionButtonElevation
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import com.den.steward.backend.entitles.TransactionType
-import com.den.steward.backend.viewModels.DataAdditionViewModel
-import com.den.steward.ui.components.bottomDrawerSheet.BottomDrawerSheet
-import com.den.steward.ui.components.bottomDrawerSheet.BottomDrawerSheetItem
-
-import androidx.compose.material.icons.rounded.AssignmentTurnedIn
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.backend.entitles.Transaction
+import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataAdditionState
 import com.den.steward.backend.states.DataState
-import com.den.steward.ui.components.transactionFields.TransactionAffectAmount
-import com.den.steward.ui.components.transactionFields.TransactionAmountField
-import com.den.steward.ui.components.transactionFields.TransactionDateField
-import com.den.steward.ui.components.transactionFields.TransactionFieldState
-import com.den.steward.ui.components.transactionFields.TransactionNoteField
-import com.den.steward.ui.components.transactionFields.TransactionPaymentMethodField
-import com.den.steward.ui.components.transactionFields.TransactionTimeField
+import com.den.steward.backend.viewModels.DataAdditionViewModel
+import com.den.steward.ui.components.bottomDrawerSheet.BottomDrawerSheet
+import com.den.steward.ui.components.bottomDrawerSheet.BottomDrawerSheetItem
+import com.den.steward.ui.components.fields.TransactionAffectAmount
+import com.den.steward.ui.components.fields.TransactionAmountField
+import com.den.steward.ui.components.fields.TransactionDateField
+import com.den.steward.ui.components.fields.TransactionFieldState
+import com.den.steward.ui.components.fields.TransactionNoteField
+import com.den.steward.ui.components.fields.TransactionPaymentMethodField
+import com.den.steward.ui.components.fields.TransactionTimeField
 import com.den.steward.ui.components.transactionbuttons.TransactionButtons
 import com.den.steward.ui.theme.ExtendedTheme
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -80,8 +79,17 @@ fun AddFulfillmentTransactionFloatingActionButton(
                     it == TransactionType.ATTAIN
         }.forEach { type ->
             val label = stringResource(id = type.label)
+            val parentType = when (type) {
+                TransactionType.REPAYMENT -> TransactionType.LENT
+                TransactionType.SETTLEMENT -> TransactionType.DEBT
+                TransactionType.ATTAIN -> TransactionType.GOAL
+                else -> null
+            } ?: return@forEach
+            val parentTypeLabel = stringResource(parentType.label)
+
+
             BottomDrawerSheetItem(
-                title = label,
+                title = "$parentTypeLabel $label",
                 description = stringResource(id = type.description),
                 icon = {
                     Icon(

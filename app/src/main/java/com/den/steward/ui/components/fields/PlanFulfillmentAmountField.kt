@@ -1,5 +1,5 @@
 // Bless be the LORD of host and our LORD JESUS CHRIST
-package com.den.steward.ui.components.transactionFields
+package com.den.steward.ui.components.fields
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
