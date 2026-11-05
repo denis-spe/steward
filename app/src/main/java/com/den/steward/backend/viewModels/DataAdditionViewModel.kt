@@ -12,6 +12,7 @@ import com.den.steward.backend.entitles.Recurrence
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.DataAdditionState
+import com.den.steward.backend.states.DataNotifier
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.useCase.AddDataUseCase
 import com.den.steward.backend.useCase.DataFetchUseCase
@@ -47,6 +48,11 @@ class DataAdditionViewModel @Inject constructor(
     val dataAdditionState = _dataAdditionState.asStateFlow()
 
     // ============= State updates ===========
+
+    fun updateDataNotifier(dataNotifier: DataNotifier?) {
+        _dataAdditionState.update { it.copy(dataNotifier = dataNotifier) }
+    }
+
     /**
      * Updates the show transaction addition bottom sheet state
      * @param show The new value for showTransactionAdditionBottomSheet
@@ -364,6 +370,16 @@ class DataAdditionViewModel @Inject constructor(
         // 3. Perform asynchronous database operation
         viewModelScope.launch {
             try {
+                _dataAdditionState.update {
+                    it.copy(
+                        dataNotifier = DataNotifier(
+                            text = "$labelText added successfully",
+                            icon = selectedIcon.icon,
+                            color = transactionType.color
+                        )
+                    )
+                }
+
                 addDataUseCase.addTransaction(
                     DataTransferToViewModel(
                         label = labelText,
@@ -381,6 +397,7 @@ class DataAdditionViewModel @Inject constructor(
                         toPaymentMethod = toPayment
                     )
                 )
+
             } catch (e: Exception) {
                 Log.e(TAG, "Error adding transaction of type $transactionType", e)
             }

@@ -103,4 +103,5 @@ data class DataAdditionState(
     val showRampingBottomSheet: Boolean = false,
     val fromPayment: PaymentMethod = PaymentMethod.CARD,
     val toPayment: PaymentMethod = PaymentMethod.CASH,
+    val dataNotifier: DataNotifier? = null
 )

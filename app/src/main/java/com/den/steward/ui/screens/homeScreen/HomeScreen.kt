@@ -2,21 +2,38 @@ package com.den.steward.ui.screens.homeScreen
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavBackStack
@@ -31,6 +48,8 @@ import com.den.steward.ui.screens.homeScreen.tabs.planTab.PlanTab
 import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTab
 import com.den.steward.ui.screens.homeScreen.tabs.yesterdayTab.YesterdayTab
 import com.den.steward.ui.screens.screenManager.SettingsRouter
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 @Composable
@@ -44,6 +63,13 @@ fun HomeScreen(
     val dataAdditionState by dataAdditionViewModel.dataAdditionState.collectAsStateWithLifecycle()
     val userState by homeViewModel.userState.collectAsStateWithLifecycle()
     val topDrawerState = remember { mutableStateOf(false) }
+
+    LaunchedEffect(dataAdditionState.dataNotifier) {
+        delay(4000.milliseconds)
+        if (dataAdditionState.dataNotifier != null) {
+            dataAdditionViewModel.updateDataNotifier(null)
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -133,6 +159,54 @@ fun HomeScreen(
             MainFloatingActionButton(
                 dataAdditionViewModel = dataAdditionViewModel
             )
+        }
+
+        AnimatedVisibility(
+            visible = dataAdditionState.dataNotifier != null,
+            enter = slideInVertically { it } + fadeIn(),
+            exit = slideOutVertically { it } + fadeOut()
+        ) {
+
+            val dataNotifier = dataAdditionState.dataNotifier ?: return@AnimatedVisibility
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .navigationBarsPadding()
+                    .padding(16.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                Surface(
+                    color = MaterialTheme.colorScheme.background,
+                    shape = MaterialTheme.shapes.extraLarge,
+                    shadowElevation = 3.dp
+                ) {
+                    Row(
+                        modifier = Modifier.padding(5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Surface(
+                            color = colorResource(dataNotifier.color),
+                            shape = CircleShape
+                        ) {
+                            Box(
+                                modifier = Modifier.padding(5.dp)
+                            ) {
+                                Image(
+                                    painter = painterResource(dataNotifier.icon),
+                                    contentDescription = null,
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            dataNotifier.text,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
         }
     }
 }

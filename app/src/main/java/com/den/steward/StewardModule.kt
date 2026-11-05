@@ -20,17 +20,15 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object StewardModule {
 
-    // Changed to your computer's local IP to allow physical device connection
-    private const val USE_EMULATOR = true
-    private const val EMULATOR_IP = "10.223.113.215"
-
     @Singleton
     @Provides
     fun provideFirebaseAuth(): FirebaseAuth {
         val auth = FirebaseAuth.getInstance()
-        if (USE_EMULATOR && BuildConfig.DEBUG) {
-            // FIXED PORT: Corrected from 9090 to 9099
-            auth.useEmulator(EMULATOR_IP, 9099)
+        val emulatorHost = BuildConfig.EMULATOR_HOST
+        val emulatorPort = BuildConfig.FIREAUTH_PORT
+
+        if (BuildConfig.USE_EMULATOR) {
+            auth.useEmulator(emulatorHost, emulatorPort)
         }
         return auth
     }
@@ -39,6 +37,8 @@ object StewardModule {
     @Provides
     fun provideFirebaseFirestore(): FirebaseFirestore {
         val firestore = FirebaseFirestore.getInstance()
+        val emulatorHost = BuildConfig.EMULATOR_HOST
+        val emulatorPort = BuildConfig.FIRESTORE_PORT
 
         // Enable persistent disk caching even in debug mode to ensure diagram
         // data survives app restarts and local synchronization delays.
@@ -53,9 +53,8 @@ object StewardModule {
         firestore.firestoreSettings = settings
         FirebaseFirestore.setLoggingEnabled(true)
 
-        if (USE_EMULATOR && BuildConfig.DEBUG) {
-            // FIXED CONNECTION: Calling directly on the instance inside the correct lifecycle order
-            firestore.useEmulator(EMULATOR_IP, 8080)
+        if (BuildConfig.USE_EMULATOR) {
+            firestore.useEmulator(emulatorHost, emulatorPort)
         }
 
         return firestore

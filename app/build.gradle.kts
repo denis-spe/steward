@@ -19,10 +19,15 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "com.den.steward.HiltTestRunner"
+        buildConfigField("String", "EMULATOR_HOST", "\"10.131.8.215\"")
+        buildConfigField("int", "FIREAUTH_PORT", "9099")
+        buildConfigField("int", "FIRESTORE_PORT", "8080")
+        buildConfigField("boolean", "USE_EMULATOR", "false")
     }
 
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -32,10 +37,16 @@ android {
             optimization {
                 enable = true
             }
+            // App 2: Package name -> com.den.steward (Connects to Firebase Cloud)
+            resValue("string", "app_name", "Steward")
+            buildConfigField("boolean", "USE_EMULATOR", "false")
         }
 
         debug {
             isMinifyEnabled = false
+            applicationIdSuffix = ".debug"
+            resValue("string", "app_name", "Steward (Emulator)")
+            buildConfigField("boolean", "USE_EMULATOR", "true")
         }
 
         create("benchmark") {
@@ -53,6 +64,7 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+        resValues = true
     }
 }
 
