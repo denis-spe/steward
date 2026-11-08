@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.R
 import com.den.steward.backend.entitles.Transaction
+import com.den.steward.backend.states.DataNotifier
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.Filter
 import com.den.steward.backend.states.Filter.Companion.icon
@@ -49,6 +50,7 @@ import com.den.steward.backend.states.yesterdayTabState.YesterdayTransactionSumm
 import com.den.steward.backend.viewModels.YesterdayViewModel
 import com.den.steward.ui.componentExtenison.shimmerEffect
 import com.den.steward.ui.components.DataDeletionDialog
+import com.den.steward.ui.components.TransactionViewDeleteUpdateActivity
 import com.den.steward.ui.components.charts.collections.ChartDataCollection
 import com.den.steward.ui.dataUpdate.UpdateTransactionBottomDrawerSheet
 import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabListEmpty
@@ -65,7 +67,8 @@ fun YesterdayTabList(
     sortAndFilterState: SortAndFilterState,
     updateIsFilterExpanded: (isExpanded: Boolean) -> Unit,
     updateIsSortByExpanded: (isExpanded: Boolean) -> Unit,
-    updateIsOrderExpanded: (isExpanded: Boolean) -> Unit
+    updateIsOrderExpanded: (isExpanded: Boolean) -> Unit,
+    onDataNotifier: (DataNotifier?) -> Unit
 ) {
 
     Crossfade(
@@ -96,7 +99,8 @@ fun YesterdayTabList(
                     sortAndFilterState = sortAndFilterState,
                     updateIsOrderExpanded = updateIsOrderExpanded,
                     updateIsFilterExpanded = updateIsFilterExpanded,
-                    updateIsSortByExpanded = updateIsSortByExpanded
+                    updateIsSortByExpanded = updateIsSortByExpanded,
+                    onDataNotifier = onDataNotifier
                 )
             }
 
@@ -136,12 +140,15 @@ fun YesterdayTabLazyList(
     sortAndFilterState: SortAndFilterState,
     updateIsFilterExpanded: (isExpanded: Boolean) -> Unit,
     updateIsSortByExpanded: (isExpanded: Boolean) -> Unit,
-    updateIsOrderExpanded: (isExpanded: Boolean) -> Unit
+    updateIsOrderExpanded: (isExpanded: Boolean) -> Unit,
+    onDataNotifier: (DataNotifier?) -> Unit
 ) {
     var swipedState by remember { mutableStateOf<SwipeToDismissBoxState?>(null) }
     val scope = rememberCoroutineScope()
     val yesterdayUiState by yesterdayViewModel.yesterdayUiState.collectAsStateWithLifecycle()
     val dataUpdateState by yesterdayViewModel.dataUpdateState.collectAsStateWithLifecycle()
+    val selectedTransactionForView = remember { mutableStateOf<Transaction?>(null) }
+
 
     LazyColumn(
         modifier = modifier,
@@ -209,6 +216,9 @@ fun YesterdayTabLazyList(
                     onUpdate = {
                         swipedState = yesterdayItemDismissState
                         yesterdayViewModel.updateTransaction.updateSelectedTransaction(transaction)
+                    },
+                    onClick = {
+                        selectedTransactionForView.value = transaction
                     }
                 )
             }
@@ -226,43 +236,32 @@ fun YesterdayTabLazyList(
         }
     }
 
-    DataDeletionDialog(
-        transaction = yesterdayUiState.selectedTransactionToDelete,
-        onDialogShow = yesterdayUiState.openDeleteDialog,
-        onDelete = yesterdayViewModel::deleteTransaction,
-        onDismissRequest = {
-            yesterdayViewModel.updateOpenDeleteDialog(false)
-            scope.launch {
-                swipedState?.reset()
-            }
-        }
-    )
 
-    UpdateTransactionBottomDrawerSheet(
+    // View, Delete dialogs and Update bottom sheet
+    TransactionViewDeleteUpdateActivity(
+        selectedTransactionToDelete = yesterdayUiState.selectedTransactionToDelete,
+        selectedTransactionForView = selectedTransactionForView,
         dataUpdateState = dataUpdateState,
-        updateCorrectNote = yesterdayViewModel.updateTransaction::updateCurrentNote,
-        updateCorrectLabel = yesterdayViewModel.updateTransaction::updateCurrentLabel,
+        swipedState = swipedState,
+        onDataNotifier = onDataNotifier,
+        isDeleteDialogOpen = yesterdayUiState.openDeleteDialog,
+        scope = scope,
+        onUpdateTransaction = yesterdayViewModel::onUpdateTransaction,
+        onResetUpdateTransaction = yesterdayViewModel.updateTransaction::onReset,
+        onLocalTimeChangeUpdate = yesterdayViewModel.updateTransaction::onLocalTimeChangeUpdate,
+        onLocalDateChangeUpdate = yesterdayViewModel.updateTransaction::onLocalDateChangeUpdate,
+        updateCurrentNote = yesterdayViewModel.updateTransaction::updateCurrentNote,
+        updateCurrentLabel = yesterdayViewModel.updateTransaction::updateCurrentLabel,
         updateSelectedIcon = yesterdayViewModel.updateTransaction::updateSelectedIcon,
         updatePaymentMethod = yesterdayViewModel.updateTransaction::updatePaymentMethod,
-        updateCorrectAmount = yesterdayViewModel.updateTransaction::updateCurrentAmount,
+        onExchange = yesterdayViewModel.updateTransaction::onExchange,
+        deleteTransaction = yesterdayViewModel::deleteTransaction,
+        updateCurrentAmount = yesterdayViewModel.updateTransaction::updateCurrentAmount,
         updateIsLabelCorrect = yesterdayViewModel.updateTransaction::updateIsLabelCorrect,
         updateIsAmountCorrect = yesterdayViewModel.updateTransaction::updateIsAmountCorrect,
         updateIsAffectingAmount = yesterdayViewModel.updateTransaction::updateIsAffectingAmount,
-        onLocalTimeChange = yesterdayViewModel.updateTransaction::onLocalTimeChangeUpdate,
-        onLocalDateChange = yesterdayViewModel.updateTransaction::onLocalDateChangeUpdate,
-        onExchange = yesterdayViewModel.updateTransaction::onExchange,
-        onTransactionUpdate = {
-            yesterdayViewModel.onUpdateTransaction()
-            scope.launch {
-                swipedState?.reset()
-            }
-        },
-        reset =  {
-            yesterdayViewModel.updateTransaction.onReset()
-            scope.launch {
-                swipedState?.reset()
-            }
-        }
+        updateSelectedTransactionToDelete = yesterdayViewModel::updateSelectedTransactionToDelete,
+        updateOpenDeleteDialog = yesterdayViewModel::updateOpenDeleteDialog
     )
 }
 

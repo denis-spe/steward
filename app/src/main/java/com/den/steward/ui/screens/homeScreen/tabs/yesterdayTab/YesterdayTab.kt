@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.den.steward.backend.states.DataNotifier
 import com.den.steward.backend.viewModels.YesterdayViewModel
 import com.den.steward.ui.components.FilterBottomSheet
 import com.den.steward.ui.components.OrderByBottomSheet
@@ -21,7 +22,8 @@ import com.den.steward.ui.components.SortByBottomSheet
 @Composable
 fun YesterdayTab(
     padding: PaddingValues,
-    yesterdayViewModel: YesterdayViewModel = hiltViewModel()
+    yesterdayViewModel: YesterdayViewModel = hiltViewModel(),
+    onDataNotifier: (dataNotifier: DataNotifier?) -> Unit = {}
 ) {
 
     val sortAndFilterState by yesterdayViewModel.sortAndFilterState.collectAsStateWithLifecycle()
@@ -42,7 +44,8 @@ fun YesterdayTab(
             sortAndFilterState = sortAndFilterState,
             updateIsSortByExpanded = yesterdayViewModel::updateIsSortByExpanded,
             updateIsFilterExpanded = yesterdayViewModel::updateIsFilterExpanded,
-            updateIsOrderExpanded = yesterdayViewModel::updateIsOrderExpanded
+            updateIsOrderExpanded = yesterdayViewModel::updateIsOrderExpanded,
+            onDataNotifier = onDataNotifier
         )
     }
 

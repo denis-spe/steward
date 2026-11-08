@@ -324,6 +324,7 @@ class UpdateTransactionUseCase @Inject constructor(
                 transactionId = transaction.id,
                 newTransaction = newTransaction
             )
+
             if (newTransaction is Transaction.Goal) {
                 goalToolUseCase.schedule(
                     transactionId = newTransaction.id,

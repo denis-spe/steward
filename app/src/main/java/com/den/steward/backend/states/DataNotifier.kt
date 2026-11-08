@@ -6,5 +6,6 @@ import com.den.steward.R
 data class DataNotifier(
     val text: String = "",
     val icon: Int = R.drawable.description,
-    val color: Int = R.color.steward_icon
+    val color: Int = R.color.steward_icon,
+    val amount: String = ""
 )

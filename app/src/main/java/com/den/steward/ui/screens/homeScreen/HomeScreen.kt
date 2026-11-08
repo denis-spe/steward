@@ -13,6 +13,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,7 +27,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import com.den.steward.backend.states.DataNotifier
 import com.den.steward.backend.states.HomeTab
 import com.den.steward.backend.viewModels.DataAdditionViewModel
 import com.den.steward.backend.viewModels.HomeViewModel
@@ -48,8 +50,6 @@ import com.den.steward.ui.screens.homeScreen.tabs.planTab.PlanTab
 import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTab
 import com.den.steward.ui.screens.homeScreen.tabs.yesterdayTab.YesterdayTab
 import com.den.steward.ui.screens.screenManager.SettingsRouter
-import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.milliseconds
 
 @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 @Composable
@@ -64,12 +64,12 @@ fun HomeScreen(
     val userState by homeViewModel.userState.collectAsStateWithLifecycle()
     val topDrawerState = remember { mutableStateOf(false) }
 
-    LaunchedEffect(dataAdditionState.dataNotifier) {
-        delay(4000.milliseconds)
-        if (dataAdditionState.dataNotifier != null) {
-            dataAdditionViewModel.updateDataNotifier(null)
-        }
+    val dataNotifier = when {
+        homeUiState.dataNotifier != null -> homeUiState.dataNotifier
+        dataAdditionState.dataNotifier != null -> dataAdditionState.dataNotifier
+        else -> null
     }
+
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -88,33 +88,38 @@ fun HomeScreen(
             when (homeUiState.currentTab) {
                 HomeTab.TODAY -> {
                     TodayTab(
-                        padding = padding
+                        padding = padding,
+                        onDataNotifier = homeViewModel::updateDataNotifier
                     )
                 }
 
                 HomeTab.YESTERDAY -> {
                     YesterdayTab(
-                        padding = padding
+                        padding = padding,
+                        onDataNotifier = homeViewModel::updateDataNotifier
                     )
                 }
 
                 HomeTab.ALL -> {
                     AllTab(
                         padding = padding,
-                        homeViewModel = homeViewModel
+                        homeViewModel = homeViewModel,
+                        onDataNotifier = homeViewModel::updateDataNotifier
                     )
                 }
 
                 HomeTab.OVERVIEW -> {
                     OverviewTab(
                         padding = padding,
-                        backStack = backStack
+                        backStack = backStack,
+                        onDataNotifier = homeViewModel::updateDataNotifier
                     )
                 }
 
                 HomeTab.PLAN -> {
                     PlanTab(
                         padding = padding,
+                        onDataNotifier = homeViewModel::updateDataNotifier
                     )
                 }
             }
@@ -161,48 +166,61 @@ fun HomeScreen(
             )
         }
 
-        AnimatedVisibility(
-            visible = dataAdditionState.dataNotifier != null,
-            enter = slideInVertically { it } + fadeIn(),
-            exit = slideOutVertically { it } + fadeOut()
+        Notifier(dataNotifier)
+
+    }
+}
+
+@Composable
+fun BoxScope.Notifier(dataNotifier: DataNotifier?) {
+    AnimatedVisibility(
+        visible = dataNotifier != null,
+        enter = slideInVertically { it } + fadeIn(),
+        exit = slideOutVertically { it } + fadeOut(),
+        modifier = Modifier.align(Alignment.BottomCenter)
+    ) {
+
+        val dataNotifier = dataNotifier ?: return@AnimatedVisibility
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .navigationBarsPadding()
+                .padding(16.dp),
+            contentAlignment = Alignment.BottomCenter
         ) {
-
-            val dataNotifier = dataAdditionState.dataNotifier ?: return@AnimatedVisibility
-
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .navigationBarsPadding()
-                    .padding(16.dp),
-                contentAlignment = Alignment.BottomCenter
+            Surface(
+                color = MaterialTheme.colorScheme.background,
+                shape = MaterialTheme.shapes.extraLarge,
+                shadowElevation = 3.dp
             ) {
-                Surface(
-                    color = MaterialTheme.colorScheme.background,
-                    shape = MaterialTheme.shapes.extraLarge,
-                    shadowElevation = 3.dp
+                Row(
+                    modifier = Modifier.padding(5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    Row(
-                        modifier = Modifier.padding(5.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
+                    Surface(
+                        color = colorResource(dataNotifier.color),
+                        shape = CircleShape
                     ) {
-                        Surface(
-                            color = colorResource(dataNotifier.color),
-                            shape = CircleShape
+                        Box(
+                            modifier = Modifier.padding(5.dp)
                         ) {
-                            Box(
-                                modifier = Modifier.padding(5.dp)
-                            ) {
-                                Image(
-                                    painter = painterResource(dataNotifier.icon),
-                                    contentDescription = null,
-                                )
-                            }
+                            Image(
+                                painter = painterResource(dataNotifier.icon),
+                                contentDescription = null,
+                            )
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
                         Text(
                             dataNotifier.text,
                             style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            dataNotifier.amount,
+                            style = MaterialTheme.typography.bodySmall
                         )
                     }
                 }

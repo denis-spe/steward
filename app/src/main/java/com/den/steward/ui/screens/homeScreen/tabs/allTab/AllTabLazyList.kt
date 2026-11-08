@@ -32,6 +32,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.den.steward.R
 import com.den.steward.backend.entitles.Transaction
+import com.den.steward.backend.states.DataNotifier
 import com.den.steward.backend.states.allTabState.AllUiState
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.DataUpdateState
@@ -44,8 +45,8 @@ import com.den.steward.backend.states.allTabState.AllTabDataState
 import com.den.steward.backend.viewModels.AllViewModel
 import com.den.steward.ui.components.TransactionViewDialog
 import com.den.steward.ui.components.DataDeletionDialog
+import com.den.steward.ui.components.TransactionViewDeleteUpdateActivity
 import com.den.steward.ui.dataUpdate.UpdateTransactionBottomDrawerSheet
-import com.den.steward.ui.dataUpdate.UpdateTransactionInf
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.coroutines.launch
 
@@ -57,6 +58,7 @@ fun AllTabLazyList(
     dataUpdateState: DataUpdateState,
     allViewModel: AllViewModel,
     sortAndFilterState: SortAndFilterState,
+    onDataNotifier: (DataNotifier?) -> Unit,
 ) {
     val (chartDataState, summaryState) = remember(allTabDataState) {
         when (allTabDataState) {
@@ -66,6 +68,7 @@ fun AllTabLazyList(
         }
     }
     var swipedState by remember { mutableStateOf<SwipeToDismissBoxState?>(null) }
+    val selectedTransactionForView = remember { mutableStateOf<Transaction?>(null) }
     val scope = rememberCoroutineScope()
 
     Surface(
@@ -147,7 +150,7 @@ fun AllTabLazyList(
                                     dismissState = dismissState,
                                     transaction = transaction,
                                     onClick = {
-                                        allViewModel.updateSelectedTransactionForView(transaction)
+                                        selectedTransactionForView.value = transaction
                                     },
                                     onUpdate = {
                                         swipedState = dismissState
@@ -254,53 +257,31 @@ fun AllTabLazyList(
         }
     )
 
-    allUiState.selectedTransactionForView?.let { transaction ->
-        TransactionViewDialog(
-            transaction = transaction,
-            onShow = true,
-            onDismissRequest = { allViewModel.updateSelectedTransactionForView(null) }
-        )
-    }
-
-
-
-    DataDeletionDialog(
-        transaction = allUiState.selectedTransactionToDelete,
-        onDialogShow = allUiState.openDeleteDialog,
-        onDelete = allViewModel::deleteTransaction,
-        onDismissRequest = {
-            allViewModel.updateOpenDeleteDialog(false)
-            scope.launch {
-                swipedState?.reset()
-            }
-        }
-    )
-
-    UpdateTransactionBottomDrawerSheet(
+    // View, Delete dialogs and Update bottom sheet
+    TransactionViewDeleteUpdateActivity(
+        selectedTransactionToDelete = allUiState.selectedTransactionToDelete,
+        selectedTransactionForView = selectedTransactionForView,
         dataUpdateState = dataUpdateState,
-        updateCorrectNote = allViewModel.updateTransaction::updateCurrentNote,
-        updateCorrectLabel = allViewModel.updateTransaction::updateCurrentLabel,
+        swipedState = swipedState,
+        onDataNotifier = onDataNotifier,
+        isDeleteDialogOpen = allUiState.openDeleteDialog,
+        scope = scope,
+        onUpdateTransaction = allViewModel::onUpdateTransaction,
+        onResetUpdateTransaction = allViewModel.updateTransaction::onReset,
+        onLocalTimeChangeUpdate = allViewModel.updateTransaction::onLocalTimeChangeUpdate,
+        onLocalDateChangeUpdate = allViewModel.updateTransaction::onLocalDateChangeUpdate,
+        updateCurrentNote = allViewModel.updateTransaction::updateCurrentNote,
+        updateCurrentLabel = allViewModel.updateTransaction::updateCurrentLabel,
         updateSelectedIcon = allViewModel.updateTransaction::updateSelectedIcon,
         updatePaymentMethod = allViewModel.updateTransaction::updatePaymentMethod,
-        updateCorrectAmount = allViewModel.updateTransaction::updateCurrentAmount,
+        onExchange = allViewModel.updateTransaction::onExchange,
+        deleteTransaction = allViewModel::deleteTransaction,
+        updateCurrentAmount = allViewModel.updateTransaction::updateCurrentAmount,
         updateIsLabelCorrect = allViewModel.updateTransaction::updateIsLabelCorrect,
         updateIsAmountCorrect = allViewModel.updateTransaction::updateIsAmountCorrect,
         updateIsAffectingAmount = allViewModel.updateTransaction::updateIsAffectingAmount,
-        onLocalTimeChange = allViewModel.updateTransaction::onLocalTimeChangeUpdate,
-        onLocalDateChange = allViewModel.updateTransaction::onLocalDateChangeUpdate,
-        onExchange = allViewModel.updateTransaction::onExchange,
-        onTransactionUpdate = {
-            allViewModel.onUpdateTransaction()
-            scope.launch {
-                swipedState?.reset()
-            }
-        },
-        reset =  {
-            allViewModel.updateTransaction.onReset()
-            scope.launch {
-                swipedState?.reset()
-            }
-        }
+        updateSelectedTransactionToDelete = allViewModel::updateSelectedTransactionToDelete,
+        updateOpenDeleteDialog = allViewModel::updateOpenDeleteDialog
     )
 }
 

@@ -13,6 +13,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import com.den.steward.backend.states.DataNotifier
 import com.den.steward.backend.viewModels.OverviewViewModel
 
 @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
@@ -20,7 +21,8 @@ import com.den.steward.backend.viewModels.OverviewViewModel
 fun OverviewTab(
     padding: PaddingValues,
     overviewViewModel: OverviewViewModel = hiltViewModel(),
-    backStack: NavBackStack<NavKey>
+    backStack: NavBackStack<NavKey>,
+    onDataNotifier: (dataNotifier: DataNotifier?) -> Unit = {}
 ) {
     val overviewDataState by overviewViewModel.overviewData
         .collectAsStateWithLifecycle()

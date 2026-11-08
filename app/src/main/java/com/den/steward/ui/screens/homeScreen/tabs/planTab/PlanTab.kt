@@ -12,13 +12,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.den.steward.backend.states.DataNotifier
 import com.den.steward.backend.viewModels.PlanTabViewModel
 import com.den.steward.ui.components.TransactionViewDialog
 
 @Composable
 fun PlanTab(
     padding: PaddingValues,
-    planTabViewModel: PlanTabViewModel = hiltViewModel()
+    planTabViewModel: PlanTabViewModel = hiltViewModel(),
+    onDataNotifier: (dataNotifier: DataNotifier?) -> Unit = {}
 ) {
     val planTransactionsState by planTabViewModel.planTransactions.collectAsStateWithLifecycle()
     val planFulfillmentState by planTabViewModel.planFulfillmentTransactions.collectAsStateWithLifecycle()

@@ -27,6 +27,7 @@ import androidx.compose.material3.SwipeToDismissBoxState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,8 +43,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.den.steward.R
+import com.den.steward.backend.entitles.PaymentMethod
 import com.den.steward.backend.entitles.Transaction
+import com.den.steward.backend.states.DataNotifier
 import com.den.steward.backend.states.DataState
+import com.den.steward.backend.states.DataUpdateState
 import com.den.steward.backend.states.Filter
 import com.den.steward.backend.states.Filter.Companion.icon
 import com.den.steward.backend.states.OrderBy
@@ -53,10 +57,16 @@ import com.den.steward.backend.viewModels.TodayViewModel
 import com.den.steward.helper.formatToAmount
 import com.den.steward.ui.componentExtenison.shimmerEffect
 import com.den.steward.ui.components.DataDeletionDialog
+import com.den.steward.ui.components.SelectedIcon
+import com.den.steward.ui.components.TransactionViewDeleteUpdateActivity
 import com.den.steward.ui.components.TransactionViewDialog
+import com.den.steward.ui.components.fields.TransactionFieldState
 import com.den.steward.ui.dataUpdate.UpdateTransactionBottomDrawerSheet
 import com.den.steward.ui.theme.ExtendedTheme
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.LocalTime
 
 private val icon_size = 80.dp
 
@@ -65,6 +75,7 @@ fun TodayTabList(
     modifier: Modifier = Modifier,
     todayViewModel: TodayViewModel,
     todayTabDataState: DataState<TodayTabDataState>,
+    onDataNotifier: (DataNotifier?) -> Unit,
 ) {
     Crossfade(
         targetState = todayTabDataState,
@@ -83,7 +94,8 @@ fun TodayTabList(
                 TodayTabLazyList(
                     modifier = modifier,
                     todayViewModel = todayViewModel,
-                    todayTabDataState = state.data
+                    todayTabDataState = state.data,
+                    onDataNotifier = onDataNotifier
                 )
             }
 
@@ -275,7 +287,8 @@ fun TodayTabListPanelButton(
 fun TodayTabLazyList(
     modifier: Modifier = Modifier,
     todayViewModel: TodayViewModel,
-    todayTabDataState: TodayTabDataState
+    todayTabDataState: TodayTabDataState,
+    onDataNotifier: (DataNotifier?) -> Unit
 ) {
     val sortAndFilterState by todayViewModel.sortAndFilterState.collectAsStateWithLifecycle()
     val todayUiState by todayViewModel.todayUiState.collectAsStateWithLifecycle()
@@ -395,50 +408,31 @@ fun TodayTabLazyList(
         }
     }
 
-    selectedTransactionForView.value?.let { transaction ->
-        TransactionViewDialog(
-            transaction = transaction,
-            onShow = true,
-            onDismissRequest = { selectedTransactionForView.value = null }
-        )
-    }
-
-    DataDeletionDialog(
-        transaction = todayUiState.selectedTransactionToDelete,
-        onDialogShow = todayUiState.openDeleteDialog,
-        onDelete = todayViewModel::deleteTransaction,
-    ) {
-        todayViewModel.updateOpenDeleteDialog(false)
-        scope.launch {
-            swipedState?.reset()
-        }
-    }
-
-    UpdateTransactionBottomDrawerSheet(
+    // View, Delete dialogs and Update bottom sheet
+    TransactionViewDeleteUpdateActivity(
+        selectedTransactionToDelete = todayUiState.selectedTransactionToDelete,
+        selectedTransactionForView = selectedTransactionForView,
         dataUpdateState = dataUpdateState,
-        updateCorrectNote = todayViewModel.updateTransaction::updateCurrentNote,
-        updateCorrectLabel = todayViewModel.updateTransaction::updateCurrentLabel,
+        swipedState = swipedState,
+        onDataNotifier = onDataNotifier,
+        isDeleteDialogOpen = todayUiState.openDeleteDialog,
+        scope = scope,
+        onUpdateTransaction = todayViewModel::onUpdateTransaction,
+        onResetUpdateTransaction = todayViewModel.updateTransaction::onReset,
+        onLocalTimeChangeUpdate = todayViewModel.updateTransaction::onLocalTimeChangeUpdate,
+        onLocalDateChangeUpdate = todayViewModel.updateTransaction::onLocalDateChangeUpdate,
+        updateCurrentNote = todayViewModel.updateTransaction::updateCurrentNote,
+        updateCurrentLabel = todayViewModel.updateTransaction::updateCurrentLabel,
         updateSelectedIcon = todayViewModel.updateTransaction::updateSelectedIcon,
         updatePaymentMethod = todayViewModel.updateTransaction::updatePaymentMethod,
-        updateCorrectAmount = todayViewModel.updateTransaction::updateCurrentAmount,
+        onExchange = todayViewModel.updateTransaction::onExchange,
+        deleteTransaction = todayViewModel::deleteTransaction,
+        updateCurrentAmount = todayViewModel.updateTransaction::updateCurrentAmount,
         updateIsLabelCorrect = todayViewModel.updateTransaction::updateIsLabelCorrect,
         updateIsAmountCorrect = todayViewModel.updateTransaction::updateIsAmountCorrect,
         updateIsAffectingAmount = todayViewModel.updateTransaction::updateIsAffectingAmount,
-        onLocalTimeChange = todayViewModel.updateTransaction::onLocalTimeChangeUpdate,
-        onLocalDateChange = todayViewModel.updateTransaction::onLocalDateChangeUpdate,
-        onExchange = todayViewModel.updateTransaction::onExchange,
-        onTransactionUpdate = {
-            todayViewModel.onUpdateTransaction()
-            scope.launch {
-                swipedState?.reset()
-            }
-        },
-        reset =  {
-            todayViewModel.updateTransaction.onReset()
-            scope.launch {
-                swipedState?.reset()
-            }
-        }
+        updateSelectedTransactionToDelete = todayViewModel::updateSelectedTransactionToDelete,
+        updateOpenDeleteDialog = todayViewModel::updateOpenDeleteDialog
     )
 }
 

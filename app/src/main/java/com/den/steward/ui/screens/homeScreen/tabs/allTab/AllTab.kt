@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.den.steward.backend.states.DataNotifier
 import com.den.steward.backend.useCase.PeriodDataHandleUseCase
 import com.den.steward.backend.viewModels.AllViewModel
 import com.den.steward.backend.viewModels.HomeViewModel
@@ -36,7 +37,8 @@ import kotlinx.coroutines.launch
 fun AllTab(
     padding: PaddingValues,
     allViewModel: AllViewModel = hiltViewModel(),
-    homeViewModel: HomeViewModel
+    homeViewModel: HomeViewModel,
+    onDataNotifier: (dataNotifier: DataNotifier?) -> Unit = {}
 ) {
     val pagerState = rememberPagerState(
         initialPage = PeriodDataHandleUseCase.INITIAL_PAGE,
@@ -187,7 +189,8 @@ fun AllTab(
             transactions = transactions,
             allUiState = allUiState,
             dataUpdateState = dataUpdateState,
-            allViewModel = allViewModel
+            allViewModel = allViewModel,
+            onDataNotifier = onDataNotifier
         )
     }
 }

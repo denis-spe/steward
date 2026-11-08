@@ -74,6 +74,8 @@ dependencies {
             because("Fixes PendingIntent crash on Android 12+")
         }
     }
+
+    implementation (libs.compose.charts)
     implementation(platform(libs.firebase.bom))
     implementation(libs.androidx.ui)
     implementation(libs.firebase.auth)

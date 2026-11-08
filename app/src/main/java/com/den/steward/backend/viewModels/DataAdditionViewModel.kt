@@ -16,10 +16,12 @@ import com.den.steward.backend.states.DataNotifier
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.useCase.AddDataUseCase
 import com.den.steward.backend.useCase.DataFetchUseCase
+import com.den.steward.helper.formatToAmount
 import com.den.steward.helper.toEpochMillis
 import com.den.steward.ui.components.SelectedIcon
 import com.den.steward.ui.components.fields.TransactionFieldState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -33,6 +35,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel
 class DataAdditionViewModel @Inject constructor(
@@ -48,11 +51,6 @@ class DataAdditionViewModel @Inject constructor(
     val dataAdditionState = _dataAdditionState.asStateFlow()
 
     // ============= State updates ===========
-
-    fun updateDataNotifier(dataNotifier: DataNotifier?) {
-        _dataAdditionState.update { it.copy(dataNotifier = dataNotifier) }
-    }
-
     /**
      * Updates the show transaction addition bottom sheet state
      * @param show The new value for showTransactionAdditionBottomSheet
@@ -294,8 +292,18 @@ class DataAdditionViewModel @Inject constructor(
         val transactionType = TransactionType.EXCHANGE
         val fromPaymentMethod = currentState.fromPayment
         val toPaymentMethod = currentState.toPayment
+
+        // 2. Show notification INSTANTLY and reset UI input fields
+        val notifier = DataNotifier(
+            text = "Exchange to $toPaymentMethod ",
+            icon = toPaymentMethod.icon,
+            color = transactionType.color,
+            amount = amount.toDoubleOrNull()?.formatToAmount() ?: ""
+        )
+
         // 2. Reset the state IMMEDIATELY (wiping UI fields)
         reset()
+        _dataAdditionState.update { it.copy(dataNotifier = notifier) }
 
         viewModelScope.launch {
             try {
@@ -316,6 +324,12 @@ class DataAdditionViewModel @Inject constructor(
                 // 4. In case of error, stop the loading state and maybe keep the sheet closed or notify user
                 _dataAdditionState.update { it.copy(isSaving = false) }
             }
+        }
+
+        // 4. Automatically clear notification state after 4 seconds
+        viewModelScope.launch {
+            delay(4000.milliseconds)
+            _dataAdditionState.update { it.copy(dataNotifier = null) }
         }
     }
 
@@ -364,22 +378,20 @@ class DataAdditionViewModel @Inject constructor(
         val fromPayment = currentState.fromPayment
         val toPayment = currentState.toPayment
 
-        // 2. Reset the state IMMEDIATELY (wiping UI fields)
-        reset()
+        // 2. Show notification INSTANTLY and reset UI input fields
+        val notifier = DataNotifier(
+            text = "$labelText added successfully",
+            icon = selectedIcon.icon,
+            color = transactionType.color,
+            amount = amountText.toDoubleOrNull()?.formatToAmount() ?: ""
+        )
 
-        // 3. Perform asynchronous database operation
+        reset()
+        _dataAdditionState.update { it.copy(dataNotifier = notifier) }
+
+        // 3. Perform asynchronous database operation in background
         viewModelScope.launch {
             try {
-                _dataAdditionState.update {
-                    it.copy(
-                        dataNotifier = DataNotifier(
-                            text = "$labelText added successfully",
-                            icon = selectedIcon.icon,
-                            color = transactionType.color
-                        )
-                    )
-                }
-
                 addDataUseCase.addTransaction(
                     DataTransferToViewModel(
                         label = labelText,
@@ -397,10 +409,15 @@ class DataAdditionViewModel @Inject constructor(
                         toPaymentMethod = toPayment
                     )
                 )
-
             } catch (e: Exception) {
                 Log.e(TAG, "Error adding transaction of type $transactionType", e)
             }
+        }
+
+        // 4. Automatically clear notification state after 4 seconds
+        viewModelScope.launch {
+            delay(4000.milliseconds)
+            _dataAdditionState.update { it.copy(dataNotifier = null) }
         }
     }
 
@@ -488,8 +505,15 @@ class DataAdditionViewModel @Inject constructor(
             return
         }
 
-        // Immediately update state to indicate saving and close the sheet
+        // Immediately update state to indicate saving and close the sheet with instant notification
+        val notifier = DataNotifier(
+            text = "${currentState.selectedFulfillmentTransactionType.name.lowercase().replaceFirstChar { it.uppercase() }} added successfully",
+            icon = parent.getSelectedIcon.icon,
+            amount = amountValue.formatToAmount()
+        )
+
         reset()
+        _dataAdditionState.update { it.copy(dataNotifier = notifier) }
 
         viewModelScope.launch {
             try {
@@ -503,6 +527,12 @@ class DataAdditionViewModel @Inject constructor(
                 Log.e(TAG, "Error adding fulfillment transaction", e)
                 _dataAdditionState.update { it.copy(isSaving = false) }
             }
+        }
+
+        // Automatically clear notification state after 4 seconds
+        viewModelScope.launch {
+            delay(4000.milliseconds)
+            _dataAdditionState.update { it.copy(dataNotifier = null) }
         }
     }
 

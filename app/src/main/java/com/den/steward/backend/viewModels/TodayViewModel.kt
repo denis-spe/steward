@@ -273,7 +273,7 @@ class TodayViewModel @Inject constructor(
         }
 
         // Reset the state
-        updateSelectedTransactionToDelete(null)
+//        updateSelectedTransactionToDelete(null)
         updateOpenDeleteDialog(false)
     }
 
