@@ -33,22 +33,18 @@ import androidx.compose.ui.unit.dp
 import com.den.steward.R
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.states.DataNotifier
-import com.den.steward.backend.states.allTabState.AllUiState
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.DataUpdateState
 import com.den.steward.backend.states.SortAndFilterState
+import com.den.steward.backend.states.allTabState.AllTabDataState
+import com.den.steward.backend.states.allTabState.AllUiState
+import com.den.steward.backend.viewModels.AllViewModel
 import com.den.steward.ui.components.FilterBottomSheet
 import com.den.steward.ui.components.OrderByBottomSheet
 import com.den.steward.ui.components.PeriodTypeBottomSelector
 import com.den.steward.ui.components.SortByBottomSheet
-import com.den.steward.backend.states.allTabState.AllTabDataState
-import com.den.steward.backend.viewModels.AllViewModel
-import com.den.steward.ui.components.TransactionViewDialog
-import com.den.steward.ui.components.DataDeletionDialog
 import com.den.steward.ui.components.TransactionViewDeleteUpdateActivity
-import com.den.steward.ui.dataUpdate.UpdateTransactionBottomDrawerSheet
 import kotlinx.collections.immutable.ImmutableMap
-import kotlinx.coroutines.launch
 
 @Composable
 fun AllTabLazyList(
@@ -62,7 +58,9 @@ fun AllTabLazyList(
 ) {
     val (chartDataState, summaryState) = remember(allTabDataState) {
         when (allTabDataState) {
-            is DataState.Success -> DataState.Success(allTabDataState.data.chartDataCollection) to DataState.Success(allTabDataState.data.allTransactionSummary)
+            is DataState.Success -> DataState.Success(allTabDataState.data.lineChartDataCollection) to DataState.Success(
+                allTabDataState.data.allTransactionSummary
+            )
             is DataState.Error -> DataState.Error(allTabDataState.message) to DataState.Error(allTabDataState.message)
             is DataState.Loading -> DataState.Loading to DataState.Loading
         }
@@ -75,7 +73,8 @@ fun AllTabLazyList(
         color = MaterialTheme.colorScheme.background
     ) {
         LazyColumn(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
                 .padding(horizontal = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
@@ -288,7 +287,8 @@ fun AllTabLazyList(
 @Composable
 private fun AllTabLazyListEmpty() {
     Column(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
             .padding(40.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -324,7 +324,9 @@ private fun AllTabLazyListEmpty() {
 @Composable
 fun AllTabLazyListError(message: String) {
     Column(
-        modifier = Modifier.fillMaxWidth().padding(40.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(40.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text("Error: $message", color = MaterialTheme.colorScheme.error)

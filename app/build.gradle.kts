@@ -19,7 +19,7 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "com.den.steward.HiltTestRunner"
-        buildConfigField("String", "EMULATOR_HOST", "\"10.131.8.215\"")
+        buildConfigField("String", "EMULATOR_HOST", "\"192.168.43.53\"")
         buildConfigField("int", "FIREAUTH_PORT", "9099")
         buildConfigField("int", "FIRESTORE_PORT", "8080")
         buildConfigField("boolean", "USE_EMULATOR", "false")

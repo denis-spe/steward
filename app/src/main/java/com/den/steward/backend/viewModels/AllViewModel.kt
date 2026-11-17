@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,6 +14,7 @@ import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.states.Affected
 import com.den.steward.backend.states.DataState
 import com.den.steward.backend.states.Filter
+import com.den.steward.backend.states.LineChartDataCollection
 import com.den.steward.backend.states.OrderBy
 import com.den.steward.backend.states.PeriodType
 import com.den.steward.backend.states.SortAndFilterState
@@ -27,10 +29,9 @@ import com.den.steward.backend.useCase.UpdateTransactionUseCase
 import com.den.steward.helper.calculateFlow
 import com.den.steward.helper.formattedDate
 import com.den.steward.helper.toLocalDateTime
-import com.den.steward.ui.components.charts.collections.ChartData
-import com.den.steward.ui.components.charts.collections.ChartDataCollection
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import ir.ehsannarmani.compose_charts.models.Line
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.persistentListOf
@@ -394,11 +395,11 @@ class AllViewModel @Inject constructor(
                             .mapValues { (_, grouped) -> grouped.map { it.transaction } }
                             .toImmutableMap()
 
-                        val chartDataCollection = when (periodType) {
-                            PeriodType.DAY -> chartDataCollectionByHour(timedTransactions)
-                            PeriodType.WEEK -> chartDataCollectionByWeekDay(timedTransactions)
-                            PeriodType.MONTH -> chartDataCollectionByMonthDay(timedTransactions)
-                            PeriodType.YEAR -> chartDataCollectionByMonth(timedTransactions)
+                        val lineChartDataCollection = when (periodType) {
+                            PeriodType.DAY -> buildHourlyChartData(timedTransactions)
+                            PeriodType.WEEK -> buildWeekdayChartData(timedTransactions)
+                            PeriodType.MONTH -> buildDayOfMonthChartData(timedTransactions)
+                            PeriodType.YEAR -> buildMonthlyChartData(timedTransactions)
                         }
 
                         val allTransactionSummary = handleAllTabSummary(timedTransactions)
@@ -406,7 +407,7 @@ class AllViewModel @Inject constructor(
                         DataState.Success(
                             AllTabDataState(
                                 transactions = transactions,
-                                chartDataCollection = chartDataCollection,
+                                lineChartDataCollection = lineChartDataCollection,
                                 allTransactionSummary = allTransactionSummary
                             )
                         )
@@ -691,8 +692,9 @@ class AllViewModel @Inject constructor(
      */
     private fun buildChartDataCollection(
         timedTransactions: List<TimedTransaction>,
-        keyOf: (LocalDateTime) -> Int
-    ): ChartDataCollection {
+        keyOf: (LocalDateTime) -> Int,
+        labelFormat: (Int) -> String
+    ): LineChartDataCollection {
         // Single pass: drop GOAL/ATTAIN and non-amount-affecting transactions together,
         // instead of two separate filter() passes over the list.
         val filtered = timedTransactions.filter { (transaction, _) ->
@@ -703,40 +705,74 @@ class AllViewModel @Inject constructor(
 
         val allUniqueKeys = filtered.map { keyOf(it.dateTime) }.distinct().sorted()
 
-        val chartData = filtered.groupBy { it.transaction.type }
+        val lineData = filtered.groupBy { it.transaction.type }
             .map { (type, grouped) ->
                 val (color, label) = typeStyle.getValue(type)
 
                 val keyedData = grouped.groupBy { keyOf(it.dateTime) }
 
-                val x = allUniqueKeys.map { it.toDouble() }
-                val y = allUniqueKeys.map { key ->
+                val linePoints = allUniqueKeys.map { key ->
                     keyedData[key]?.sumOf { it.transaction.getAmountOrValue ?: 0.0 } ?: 0.0
                 }
 
-                ChartData(
-                    x = x,
-                    y = y,
-                    label = label,
-                    color = color
+                Line(
+                    values = linePoints,
+                    color = SolidColor(color),
+                    label = label
                 )
             }
             .toImmutableList()
 
-        return ChartDataCollection(chartData = chartData)
+        return LineChartDataCollection(
+            lineData = lineData,
+            xAxisLabels = allUniqueKeys.map(labelFormat).toImmutableList()
+        )
     }
 
-    private fun chartDataCollectionByHour(timedTransactions: List<TimedTransaction>): ChartDataCollection =
-        buildChartDataCollection(timedTransactions) { it.hour }
+    private fun buildHourlyChartData(timedTransactions: List<TimedTransaction>): LineChartDataCollection =
+        buildChartDataCollection(timedTransactions, keyOf = { it.hour }) { "${it}hr" }
 
-    private fun chartDataCollectionByWeekDay(timedTransactions: List<TimedTransaction>): ChartDataCollection =
-        buildChartDataCollection(timedTransactions) { it.dayOfWeek.value }
+    private fun buildWeekdayChartData(timedTransactions: List<TimedTransaction>): LineChartDataCollection =
+        buildChartDataCollection(timedTransactions, { it.dayOfWeek.value }) {
+            when (it) {
+                1 -> "Mon"
+                2 -> "Tue"
+                3 -> "Wed"
+                4 -> "Thu"
+                5 -> "Fri"
+                6 -> "Sat"
+                7 -> "Sun"
+                else -> ""
+            }
+        }
 
-    private fun chartDataCollectionByMonthDay(timedTransactions: List<TimedTransaction>): ChartDataCollection =
-        buildChartDataCollection(timedTransactions) { it.dayOfMonth }
+    private fun buildDayOfMonthChartData(timedTransactions: List<TimedTransaction>): LineChartDataCollection =
+        buildChartDataCollection(timedTransactions, { it.dayOfMonth }) {
+            when (it) {
+                1 -> "1st"
+                2 -> "2nd"
+                3 -> "3rd"
+                else -> "${it}th"
+            }
+        }
 
-    private fun chartDataCollectionByMonth(timedTransactions: List<TimedTransaction>): ChartDataCollection =
-        buildChartDataCollection(timedTransactions) { it.monthValue }
-
+    private fun buildMonthlyChartData(timedTransactions: List<TimedTransaction>): LineChartDataCollection =
+        buildChartDataCollection(timedTransactions, { it.monthValue }) {
+            when (it) {
+                1 -> "Jan"
+                2 -> "Feb"
+                3 -> "Mar"
+                4 -> "Apr"
+                5 -> "May"
+                6 -> "Jun"
+                7 -> "Jul"
+                8 -> "Aug"
+                9 -> "Sep"
+                10 -> "Oct"
+                11 -> "Nov"
+                12 -> "Dec"
+                else -> ""
+            }
+        }
 
 }

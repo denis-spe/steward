@@ -39,6 +39,7 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,14 +55,15 @@ import androidx.compose.ui.unit.dp
 import com.den.steward.backend.states.yesterdayTabState.YesterdayTransactionSummary
 import com.den.steward.helper.formatToAmount
 import com.den.steward.ui.componentExtenison.shimmerEffect
-import com.den.steward.ui.components.charts.VicoBarChart
-import com.den.steward.ui.components.charts.collections.ChartDataCollection
+import com.den.steward.ui.components.charts.ComposeBarChart
+import ir.ehsannarmani.compose_charts.models.Bars
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.launch
 
 @Composable
 fun YesterdayTabStatisticView(
     yesterdayTransactionSummary: YesterdayTransactionSummary,
-    chartDataCollection: ChartDataCollection
+    chartDataCollection: ImmutableList<Bars>
 ) {
     val tabs = listOf(
         "Trend Chart",
@@ -223,18 +225,17 @@ fun YesterdayTabBarChartEmpty() {
 
 @Composable
 fun YesterdayTabBarChart(
-    chartDataCollection: ChartDataCollection
+    chartDataCollection: ImmutableList<Bars>
 ) {
 
     YesterdayStatisticLayout {
-        if (chartDataCollection.chartData.isEmpty()) {
+        if (chartDataCollection.isEmpty()) {
            YesterdayTabBarChartEmpty()
         } else {
-            VicoBarChart(
-                chartDataCollection = chartDataCollection,
-                modifier = Modifier.fillMaxSize(),
-                thickness = 3.dp,
-                xValueFormatter = { value -> "${value.toInt()}hr" }
+            ComposeBarChart(
+                data = remember {
+                    chartDataCollection
+                }
             )
         }
     }

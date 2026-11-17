@@ -52,21 +52,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.den.steward.R
 import com.den.steward.backend.states.DataState
+import com.den.steward.backend.states.LineChartDataCollection
 import com.den.steward.backend.states.PeriodType
 import com.den.steward.backend.states.allTabState.AllTransactionSummary
 import com.den.steward.helper.formatToAmount
 import com.den.steward.helper.formattedDate
 import com.den.steward.helper.title
 import com.den.steward.ui.componentExtenison.shimmerEffect
-import com.den.steward.ui.components.charts.VicoLineChart
-import com.den.steward.ui.components.charts.collections.ChartDataCollection
-import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
+import com.den.steward.ui.components.charts.ComposeLineChart
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 @Composable
 fun AllTabSummaryCard(
-    allTransactionChartData: DataState<ChartDataCollection>,
+    allTransactionChartData: DataState<LineChartDataCollection>,
     allTransactionSummary: DataState<AllTransactionSummary>,
     selectedDate: LocalDate,
     periodType: PeriodType
@@ -155,7 +154,7 @@ fun AllTabSummaryCard(
 
 @Composable
 fun AllTabSummaryChart(
-    allTransactionChartData: DataState<ChartDataCollection>,
+    allTransactionChartData: DataState<LineChartDataCollection>,
     periodType: PeriodType
 ) {
     Column(
@@ -168,39 +167,45 @@ fun AllTabSummaryChart(
         when (allTransactionChartData) {
             is DataState.Success -> {
                 val chartData = allTransactionChartData.data
-                if (chartData.chartData.isEmpty()) {
+                if (chartData.xAxisLabels.isEmpty() || chartData.lineData.isEmpty()) {
                     AllTabSummaryChartEmptyView()
                 } else {
-                    VicoLineChart(
-                        chartDataCollection = chartData,
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalItemPlacer = remember {
-                            HorizontalAxis.ItemPlacer.aligned(spacing = { 1 })
-                        },
-                        xValueFormatter = { value: Double ->
-                            when (periodType) {
-                                PeriodType.DAY -> "${value.toInt()}h"
-                                PeriodType.WEEK -> {
-                                    val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-                                    val index = value.toInt() - 1
-                                    days.getOrElse(index) { " " }
-                                }
-
-                                PeriodType.MONTH -> value.toInt().toString()
-                                PeriodType.YEAR -> {
-                                    val months = listOf(
-                                        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                                        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-                                    )
-                                    val index = value.toInt() - 1
-                                    months.getOrElse(index) { " " }
-                                }
-                            }
-                        },
-                        yValueFormatter = { value: Double ->
-                            value.toInt().formatToAmount()
+                    ComposeLineChart(
+                        labels = remember { chartData.xAxisLabels },
+                        data = remember {
+                            chartData.lineData
                         }
                     )
+//                    VicoLineChart(
+//                        chartDataCollection = chartData,
+//                        modifier = Modifier.fillMaxSize(),
+//                        horizontalItemPlacer = remember {
+//                            HorizontalAxis.ItemPlacer.aligned(spacing = { 1 })
+//                        },
+//                        xValueFormatter = { value: Double ->
+//                            when (periodType) {
+//                                PeriodType.DAY -> "${value.toInt()}h"
+//                                PeriodType.WEEK -> {
+//                                    val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+//                                    val index = value.toInt() - 1
+//                                    days.getOrElse(index) { " " }
+//                                }
+//
+//                                PeriodType.MONTH -> value.toInt().toString()
+//                                PeriodType.YEAR -> {
+//                                    val months = listOf(
+//                                        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+//                                        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+//                                    )
+//                                    val index = value.toInt() - 1
+//                                    months.getOrElse(index) { " " }
+//                                }
+//                            }
+//                        },
+//                        yValueFormatter = { value: Double ->
+//                            value.toInt().formatToAmount()
+//                        }
+//                    )
                 }
             }
 

@@ -49,15 +49,12 @@ import com.den.steward.backend.states.yesterdayTabState.YesterdayTabState
 import com.den.steward.backend.states.yesterdayTabState.YesterdayTransactionSummary
 import com.den.steward.backend.viewModels.YesterdayViewModel
 import com.den.steward.ui.componentExtenison.shimmerEffect
-import com.den.steward.ui.components.DataDeletionDialog
 import com.den.steward.ui.components.TransactionViewDeleteUpdateActivity
-import com.den.steward.ui.components.charts.collections.ChartDataCollection
-import com.den.steward.ui.dataUpdate.UpdateTransactionBottomDrawerSheet
 import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabListEmpty
 import com.den.steward.ui.screens.homeScreen.tabs.todayTab.TodayTabListError
 import com.den.steward.ui.theme.ExtendedTheme
+import ir.ehsannarmani.compose_charts.models.Bars
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.coroutines.launch
 
 @Composable
 fun YesterdayTabList(
@@ -136,11 +133,11 @@ fun YesterdayTabLazyList(
     yesterdayViewModel: YesterdayViewModel,
     transactions: ImmutableList<Transaction>,
     yesterdayTransactionSummary: YesterdayTransactionSummary,
-    chartDataCollection: ChartDataCollection,
+    chartDataCollection: ImmutableList<Bars>,
     sortAndFilterState: SortAndFilterState,
-    updateIsFilterExpanded: (isExpanded: Boolean) -> Unit,
-    updateIsSortByExpanded: (isExpanded: Boolean) -> Unit,
-    updateIsOrderExpanded: (isExpanded: Boolean) -> Unit,
+    updateIsFilterExpanded: (Boolean) -> Unit,
+    updateIsSortByExpanded: (Boolean) -> Unit,
+    updateIsOrderExpanded: (Boolean) -> Unit,
     onDataNotifier: (DataNotifier?) -> Unit
 ) {
     var swipedState by remember { mutableStateOf<SwipeToDismissBoxState?>(null) }

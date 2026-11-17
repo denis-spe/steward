@@ -2,6 +2,7 @@ package com.den.steward.backend.viewModels
 
 import android.content.Context
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -25,10 +26,10 @@ import com.den.steward.helper.getStartOfDayMillis
 import com.den.steward.helper.incoming
 import com.den.steward.helper.outgoing
 import com.den.steward.helper.toLocalDateTime
-import com.den.steward.ui.components.charts.collections.ChartData
-import com.den.steward.ui.components.charts.collections.ChartDataCollection
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import ir.ehsannarmani.compose_charts.models.Bars
+import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -140,7 +141,8 @@ class YesterdayViewModel @Inject constructor(
             outgoingPercentage = if (totalTransactionAmount > 0.0) ((outgoing / totalTransactionAmount) * 100).toInt() else 0
         )
     }
-    private fun handleChartDataCollection(transactions: List<Transaction>): ChartDataCollection {
+
+    private fun handleChartDataCollection(transactions: List<Transaction>): PersistentList<Bars> {
         // 1. Filter out GOAL and ATTAIN transactions and transactions that don't affect the amount
         val filterNoneAmount = transactions.filter {
             it.type != TransactionType.GOAL &&
@@ -154,34 +156,28 @@ class YesterdayViewModel @Inject constructor(
 
         // 3. Group by type and create a ChartData for each group with aligned X values
         val chartData = filterNoneAmount.groupBy {
-            it.type
+            it.createdAt.toLocalDateTime().hour
         }
-            .map { (type, groupedTransactions) ->
-                val color = Color(ContextCompat.getColor(context, type.color))
-                val label = ContextCompat.getString(context, type.label)
+            .map { (hour, groupedTransactions) ->
+                Bars(
+                    label = "${hour.toString().padStart(2, '0')}hr",
+                    values = groupedTransactions.groupBy {
+                        it.type
+                    }.map { (type, transactions) ->
+                        val color = Color(ContextCompat.getColor(context, type.color))
+                        val label = ContextCompat.getString(context, type.label)
 
-                val hourlyData = groupedTransactions.groupBy {
-                    it.createdAt.toLocalDateTime().hour
-                }
-
-                val x = allUniqueHours.map { it.toDouble() }
-                val y = allUniqueHours.map { hour ->
-                    hourlyData[hour]?.sumOf { it.getAmountOrValue ?: 0.0 } ?: 0.0
-                }
-
-                ChartData(
-                    x = x,
-                    y = y,
-                    label = label,
-                    color = color
+                        Bars.Data(
+                            label = label,
+                            value = transactions.sumOf { it.getAmountOrValue ?: 0.0 },
+                            color = SolidColor(color)
+                        )
+                    }
                 )
             }
 
-
         // 3. Create a ChartDataCollection with the list of ChartData
-        return ChartDataCollection(
-            chartData = chartData.toPersistentList()
-        )
+        return chartData.toPersistentList()
     }
 
     fun updateFilter(filter: Filter) {
@@ -218,6 +214,7 @@ class YesterdayViewModel @Inject constructor(
             isSortByExpanded = false
         )
     }
+
     fun updateIsSortByExpanded(isExpanded: Boolean) {
         _sortAndFilterState.value = _sortAndFilterState.value.copy(
             isSortByExpanded = isExpanded
