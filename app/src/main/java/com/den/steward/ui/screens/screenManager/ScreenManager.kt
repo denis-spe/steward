@@ -37,6 +37,7 @@ import com.den.steward.ui.screens.authScreen.loginScreen.LoginScreen
 import com.den.steward.ui.screens.authScreen.registerScreen.EmailScreen
 import com.den.steward.ui.screens.authScreen.registerScreen.NameScreen
 import com.den.steward.ui.screens.authScreen.registerScreen.PasswordScreen
+import com.den.steward.ui.screens.detailScreen.GoalDetailScreen
 import com.den.steward.ui.screens.goalScreen.GoalScreen
 import com.den.steward.ui.screens.homeScreen.HomeScreen
 import com.den.steward.ui.screens.liabilityScreen.LiabilityScreen
@@ -139,6 +140,15 @@ fun EntryProviderScope<NavKey>.featureAEntryBuilder(
     // ====== Goal Screen =======
     entry<GoalRouter> {
         GoalScreen(
+            backStack = backStack
+        )
+    }
+
+    // ==== Goal Detail Screen =======
+    entry<GoalDetailRouter> { router ->
+        GoalDetailScreen(
+            transactionId = router.transactionId,
+            viewModel = hiltViewModel(),
             backStack = backStack
         )
     }

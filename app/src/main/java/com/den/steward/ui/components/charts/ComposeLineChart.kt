@@ -25,7 +25,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import com.den.steward.helper.formatToAmount
-import com.den.steward.ui.theme.ExtendedTheme
 import ir.ehsannarmani.compose_charts.LineChart
 import ir.ehsannarmani.compose_charts.models.DividerProperties
 import ir.ehsannarmani.compose_charts.models.DotProperties
@@ -72,7 +71,7 @@ fun ComposeLineChart(
             color = MaterialTheme.colorScheme.onSurface
         ),
         contentBuilder = {
-            it.toInt().formatToAmount()
+            it.formatToAmount()
         },
     ),
     dividerProperties: DividerProperties = DividerProperties(
@@ -131,29 +130,31 @@ fun ComposeLineChart(
                 dividerProperties = dividerProperties,
                 popupProperties = PopupProperties(
                     textStyle = TextStyle(
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = Color.White,
                         fontWeight = FontWeight.Medium
                     ),
                     contentBuilder = { popup ->
-                        selectedPopupLine.value = data.getOrNull(popup.dataIndex)
                         val amount = popup.value.formatToAmount()
                         val label = data.getOrNull(popup.dataIndex)?.label ?: ""
                         if (popup.value != 0.0) {
                             "$amount | $label"
                         } else {
-                            ""
+                            "0"
                         }
                     },
-                    containerColor = ExtendedTheme.colors.lightGray.copy(0.8f),
+                    containerColor = Color.Black.copy(0.8f),
                     mode = PopupProperties.Mode.PointMode(),
                     duration = 4200
                 ),
                 dotsProperties = DotProperties(
                     enabled = true,
-                    radius = 4.dp,
-                    strokeWidth = 2.dp,
-                    color = SolidColor(Color.LightGray),
-                    strokeColor = SolidColor(Color.Gray.copy(0.5f)),
+                    radius = 3.dp,
+                    strokeWidth = 4.dp,
+                    color = SolidColor(Color.DarkGray),
+                    strokeColor = SolidColor(Color.Black.copy(0.2f)),
+                    confirmDraw = { dot ->
+                        true
+                    }
                 )
             )
         }

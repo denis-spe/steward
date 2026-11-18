@@ -112,13 +112,19 @@ internal fun OverviewTransactionList(transactions: List<Transaction>) {
 }
 
 @Composable
-internal fun OverviewGoalList(transactions: List<Transaction>) {
+internal fun OverviewGoalList(
+    backStack: NavBackStack<NavKey>,
+    transactions: List<Transaction>
+) {
     Column(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.padding(horizontal = 4.dp)
     ) {
         transactions.forEach {
-            OverviewGoalItem(transaction = it)
+            OverviewGoalItem(
+                backStack = backStack,
+                transaction = it
+            )
         }
     }
 }
@@ -217,7 +223,10 @@ internal fun OverviewLazyList(
 
                     "Goal" -> {
                         item(key = "goal") {
-                            OverviewGoalList(transactions = transactions)
+                            OverviewGoalList(
+                                backStack = backStack,
+                                transactions = transactions
+                            )
                         }
                     }
 

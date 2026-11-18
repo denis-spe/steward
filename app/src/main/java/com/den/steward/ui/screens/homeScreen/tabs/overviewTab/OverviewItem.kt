@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -27,18 +25,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.den.steward.R
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.helper.formatToAmount
 import com.den.steward.helper.formattedTime
 import com.den.steward.helper.toLocalDateTime
 import com.den.steward.ui.componentExtenison.shimmerEffect
+import com.den.steward.ui.screens.screenManager.GoalDetailRouter
 
 @Composable
 fun OverviewTransactionItem(
@@ -114,12 +113,24 @@ fun OverviewTransactionItemShimmer() {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(modifier = Modifier.size(32.dp).clip(CircleShape).shimmerEffect())
-                Box(modifier = Modifier.size(80.dp, 16.dp).clip(MaterialTheme.shapes.small).shimmerEffect())
+                Box(modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .shimmerEffect())
+                Box(modifier = Modifier
+                    .size(80.dp, 16.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .shimmerEffect())
             }
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Box(modifier = Modifier.size(100.dp, 24.dp).clip(MaterialTheme.shapes.small).shimmerEffect())
-                Box(modifier = Modifier.size(60.dp, 12.dp).clip(MaterialTheme.shapes.small).shimmerEffect())
+                Box(modifier = Modifier
+                    .size(100.dp, 24.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .shimmerEffect())
+                Box(modifier = Modifier
+                    .size(60.dp, 12.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .shimmerEffect())
             }
         }
     }
@@ -127,6 +138,7 @@ fun OverviewTransactionItemShimmer() {
 
 @Composable
 fun OverviewGoalItem(
+    backStack: NavBackStack<NavKey>,
     transaction: Transaction
 ) {
     if (transaction !is Transaction.Goal) return
@@ -141,7 +153,10 @@ fun OverviewGoalItem(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        onClick = {
+            backStack.add(GoalDetailRouter(transaction.id))
+        }
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -229,15 +244,31 @@ fun OverviewGoalItemShimmer() {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Box(modifier = Modifier.size(40.dp).clip(CircleShape).shimmerEffect())
+                    Box(modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .shimmerEffect())
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Box(modifier = Modifier.size(120.dp, 18.dp).clip(MaterialTheme.shapes.small).shimmerEffect())
-                        Box(modifier = Modifier.size(80.dp, 12.dp).clip(MaterialTheme.shapes.small).shimmerEffect())
+                        Box(modifier = Modifier
+                            .size(120.dp, 18.dp)
+                            .clip(MaterialTheme.shapes.small)
+                            .shimmerEffect())
+                        Box(modifier = Modifier
+                            .size(80.dp, 12.dp)
+                            .clip(MaterialTheme.shapes.small)
+                            .shimmerEffect())
                     }
                 }
-                Box(modifier = Modifier.size(40.dp, 20.dp).clip(MaterialTheme.shapes.small).shimmerEffect())
+                Box(modifier = Modifier
+                    .size(40.dp, 20.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .shimmerEffect())
             }
-            Box(modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape).shimmerEffect())
+            Box(modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(CircleShape)
+                .shimmerEffect())
         }
     }
 }
@@ -323,12 +354,25 @@ fun OverviewLoanItemShimmer() {
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Box(modifier = Modifier.size(36.dp).clip(CircleShape).shimmerEffect())
+            Box(modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .shimmerEffect())
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Box(modifier = Modifier.size(100.dp, 16.dp).clip(MaterialTheme.shapes.small).shimmerEffect())
-                Box(modifier = Modifier.size(80.dp, 18.dp).clip(MaterialTheme.shapes.small).shimmerEffect())
+                Box(modifier = Modifier
+                    .size(100.dp, 16.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .shimmerEffect())
+                Box(modifier = Modifier
+                    .size(80.dp, 18.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .shimmerEffect())
             }
-            Box(modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape).shimmerEffect())
+            Box(modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .clip(CircleShape)
+                .shimmerEffect())
         }
     }
 }

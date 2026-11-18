@@ -41,3 +41,7 @@ data object TransactionRouter : NavKey
 
 @Serializable
 data object LiabilityRouter : NavKey
+
+
+@Serializable
+data class GoalDetailRouter(val transactionId: String) : NavKey

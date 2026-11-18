@@ -278,8 +278,12 @@ fun Double.formatToAmount(): String {
     // Resolve system currency symbol without full heavy instance creation where possible
     val symbol = getCurrencySymbol()
 
+    if (this == 0.0) {
+        return "$symbol 0.0"
+    }
+
     if (absValue < 1_000_000) {
-        val rounding = BigDecimal(this).setScale(2, RoundingMode.HALF_UP)
+        val rounding = BigDecimal(this).setScale(1, RoundingMode.HALF_UP)
         // Use Java/Kotlin built-in group formatting instead of heavy Regex replaces
         val formattedAmount = cachedNumberFormat.format(rounding.abs())
 

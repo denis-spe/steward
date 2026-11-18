@@ -17,12 +17,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import com.den.steward.helper.formatToAmount
-import com.den.steward.ui.theme.ExtendedTheme
 import ir.ehsannarmani.compose_charts.ColumnChart
 import ir.ehsannarmani.compose_charts.models.BarProperties
 import ir.ehsannarmani.compose_charts.models.Bars
@@ -135,13 +136,14 @@ fun ComposeBarChart(
                 dividerProperties = dividerProperties,
                 popupProperties = PopupProperties(
                     textStyle = TextStyle(
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = Color.White,
+                        fontWeight = FontWeight.Medium
                     ),
                     contentBuilder = { popup ->
                         val amount = popup.value.formatToAmount()
                         "$amount | ${selectedBar.value?.label}"
                     },
-                    containerColor = ExtendedTheme.colors.lightGray,
+                    containerColor = Color.Black.copy(0.8f),
                     mode = PopupProperties.Mode.PointMode(),
                     duration = 2200
                 )

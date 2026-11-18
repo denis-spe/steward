@@ -41,6 +41,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -59,6 +60,7 @@ import com.den.steward.backend.states.todayTabState.LiabilitiesPaymentStatsState
 import com.den.steward.helper.formatToAmount
 import com.den.steward.ui.componentExtenison.shimmerEffect
 import com.den.steward.ui.components.charts.DonutChartData
+import ir.ehsannarmani.compose_charts.models.Pie
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.launch
 
@@ -206,6 +208,15 @@ private fun TodayTabDonutChart(
     donutSummaryStat: String,
     donutChartCenterAmount: String
 ) {
+    val data = remember {
+        mutableStateOf(
+            listOf(
+                Pie(label = "Android", data = 20.0, color = Color.Red, selectedColor = Color.Green),
+                Pie(label = "Windows", data = 45.0, color = Color.Cyan, selectedColor = Color.Blue),
+                Pie(label = "Linux", data = 35.0, color = Color.Gray, selectedColor = Color.Yellow),
+            )
+        )
+    }
 
     TodayStatisticLayout {
         Row(
