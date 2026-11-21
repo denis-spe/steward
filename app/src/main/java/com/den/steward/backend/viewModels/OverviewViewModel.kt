@@ -143,8 +143,13 @@ class OverviewViewModel @Inject constructor(
                             comparator.reversed()
                         }
 
-                        transactions.sortedWith(finalComparator)
-                            .take(uiState.limitTransactionSize)
+
+
+                            transactions.sortedWith(finalComparator)
+                                .take(
+                                    if (transactions.isNotEmpty() && transactions[0] is Transaction.Goal)
+                                        5 else uiState.limitTransactionSize
+                                )
                     }
                     DataState.Success(groupedData)
                 }

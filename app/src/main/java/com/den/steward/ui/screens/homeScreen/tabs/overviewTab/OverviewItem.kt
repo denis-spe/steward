@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -149,6 +150,9 @@ fun OverviewGoalItem(
         label = "GoalProgressAnimation"
     )
 
+    val statusColor = colorResource(transaction.getStatusColor)
+    val statusLabel = transaction.getStatus ?: ""
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
@@ -195,12 +199,53 @@ fun OverviewGoalItem(
                         )
                     }
                 }
-                Text(
-                    text = "${percentage.toInt()}%",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = typeColor
-                )
+                Column(
+                    modifier = Modifier,
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.End
+                ) {
+                    Text(
+                        text = "${percentage.toInt()}%",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = typeColor
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                color = statusColor.copy(0.2f),
+                                MaterialTheme.shapes.small
+                            )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(5.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(5.dp)
+                                    .background(
+                                        statusColor,
+                                        CircleShape
+                                    )
+                            )
+
+
+                            Spacer(
+                                modifier = Modifier.size(2.dp)
+                            )
+
+                            Text(
+                                statusLabel,
+                                color = statusColor,
+                                fontWeight = FontWeight.Medium,
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    }
+                }
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -210,7 +255,7 @@ fun OverviewGoalItem(
                         .fillMaxWidth()
                         .height(8.dp)
                         .clip(CircleShape),
-                    color = typeColor,
+                    color = statusColor,
                     trackColor = typeColor.copy(alpha = 0.1f),
                     strokeCap = StrokeCap.Round
                 )

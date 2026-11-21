@@ -286,7 +286,7 @@ fun TodayTabLazyListItem(
                                         .padding(top = 5.dp)
                                         .height(6.dp)
                                         .clip(CircleShape),
-                                    color = typeColor,
+                                    color = colorResource(statusColorRes),
                                     trackColor = typeColor.copy(alpha = 0.1f),
                                     strokeCap = StrokeCap.Round
                                 )

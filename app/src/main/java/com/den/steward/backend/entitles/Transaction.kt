@@ -392,6 +392,7 @@ sealed class Transaction {
         is Goal -> this.status.label
         is Debt -> this.status.label
         is Plan -> this.status.label
+                is Achievement -> this.status.label
         is PlanFulfillment -> this.status.label
         else -> null
     }
@@ -403,6 +404,7 @@ sealed class Transaction {
             is Debt -> this.status.color
             is Goal -> this.status.color
             is Plan -> this.status.color
+            is Achievement -> this.status.color
             is PlanFulfillment -> this.status.color
             else -> this.type.color
         }

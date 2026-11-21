@@ -2,6 +2,7 @@ package com.den.steward.backend.services
 
 import android.util.Log
 import com.den.steward.backend.entitles.GoalStatus
+import com.den.steward.backend.entitles.Recurrence
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.services.service.Storage
 import com.den.steward.helper.nextCycle
@@ -261,7 +262,8 @@ class StorageService @Inject constructor(
                 status = status
             )
 
-            val newTransaction = transaction.nextCycle()
+            val newTransaction = if (transaction.repeatable != Recurrence.Once)
+                transaction.nextCycle() else transaction
 
             // 2. Perform write operations in batches (handling Firestore's 500-operation limit)
             // Combine all deletions + update + achievement set operations
@@ -270,8 +272,10 @@ class StorageService @Inject constructor(
             allOperations.add { batch -> batch.set(achievedRef, achievement.toMap) }
             allOperations.add { batch -> batch.set(userGoalDocRef, newTransaction.toMap) }
 
-            attainSnapshot.documents.forEach { doc ->
-                allOperations.add { batch -> batch.delete(doc.reference) }
+            if (transaction.repeatable != Recurrence.Once) {
+                attainSnapshot.documents.forEach { doc ->
+                    allOperations.add { batch -> batch.delete(doc.reference) }
+                }
             }
 
             // Chunk operations by 500 to adhere to Firestore limits

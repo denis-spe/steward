@@ -295,7 +295,7 @@ fun AllTabLazyListItem(
                                 .fillMaxWidth()
                                 .height(6.dp)
                                 .clip(CircleShape),
-                            color = typeColor,
+                            color = colorResource(uiData.statusColorRes),
                             trackColor = typeColor.copy(alpha = 0.1f),
                             strokeCap = StrokeCap.Round
                         )
