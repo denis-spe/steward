@@ -205,6 +205,8 @@ class GoalWorker @AssistedInject constructor(
                 else -> null
             }
 
+            Log.w("GoalWorker", "Goal cycle for $transactionId at endAt=${goal.endAt}")
+
             val notificationTitle =
                 if (goal.label.isNotBlank()) "${goal.label.title} Goal Cycle" else "Goal Cycle"
 

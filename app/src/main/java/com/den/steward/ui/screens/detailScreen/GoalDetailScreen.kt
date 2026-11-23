@@ -32,7 +32,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismissBoxState
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
@@ -48,6 +51,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
@@ -67,6 +71,7 @@ import com.den.steward.helper.pop
 import com.den.steward.helper.title
 import com.den.steward.helper.toLocalDateTime
 import com.den.steward.ui.components.BackButton
+import com.den.steward.ui.components.SwipeDismiss
 import io.androidpoet.drafter.gauge.GaugeChart
 import io.androidpoet.drafter.gauge.GaugeChartRenderer
 import io.androidpoet.drafter.gauge.model.GaugeData
@@ -159,8 +164,25 @@ fun GoalDetailScreenContent(
 
 @Composable
 fun GoalDetailAttainLazyList(transaction: Transaction.Goal) {
-    val attain = transaction.attain
-    val achievement = transaction.achievement
+    val attain = remember {
+        val attn =
+            transaction.attain
+                .sortedBy { it.createdAt.toLocalDateTime() }
+        if (attn.size > 7) {
+            attn.subList(0, 7)
+        } else {
+            attn
+        }
+    }
+    val achievement = remember {
+        val achieve = transaction.achievement
+            .sortedBy { it.createdAt.toLocalDateTime() }
+        if (achieve.size > 7) {
+            achieve.subList(0, 7)
+        } else {
+            achieve
+        }
+    }
     val scroll = rememberScrollState()
     val showAttain = remember { mutableStateOf(false) }
     val showAchievement = remember { mutableStateOf(false) }
@@ -175,6 +197,9 @@ fun GoalDetailAttainLazyList(transaction: Transaction.Goal) {
             .fillMaxWidth()
             .verticalScroll(scroll)
             .padding(10.dp)
+            .zIndex(0.9f),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (attain.isNotEmpty()) {
             OutlinedCard(
@@ -209,7 +234,16 @@ fun GoalDetailAttainLazyList(transaction: Transaction.Goal) {
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             attain.forEach { attainTransaction ->
-                                GoalDetailAttainListItem(attainTransaction)
+                                val dismissState = rememberSwipeToDismissBoxState(
+                                    positionalThreshold = { distance: Float ->
+                                        distance * 0.5f
+                                    }
+                                )
+
+                                GoalDetailAttainListItem(
+                                    attainTransaction,
+                                    dismissState = dismissState
+                                )
                             }
                         }
                     }
@@ -253,7 +287,15 @@ fun GoalDetailAttainLazyList(transaction: Transaction.Goal) {
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             achievement.forEach { achievementTransaction ->
-                                GoalDetailAchievementListItem(achievementTransaction)
+                                val dismissState = rememberSwipeToDismissBoxState(
+                                    positionalThreshold = { distance: Float ->
+                                        distance * 0.5f
+                                    }
+                                )
+                                GoalDetailAchievementListItem(
+                                    achievementTransaction,
+                                    dismissState = dismissState
+                                )
                             }
                         }
                     }
@@ -307,49 +349,72 @@ fun GoalDetailListHeader(
 }
 
 @Composable
-fun GoalDetailAttainListItem(transaction: Transaction) {
+fun GoalDetailAttainListItem(
+    transaction: Transaction,
+    modifier: Modifier = Modifier,
+    shape: Shape = MaterialTheme.shapes.small,
+    onUpdate: () -> Unit = {},
+    onDelete: (transaction: Transaction) -> Unit = {},
+    dismissState: SwipeToDismissBoxState,
+) {
     if (transaction !is Transaction.Attain) return
 
-    Surface {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+    SwipeDismiss(
+        shape = shape,
+        dismissState = dismissState,
+        onUpdate = onUpdate,
+        onDelete = { onDelete(transaction) },
+        modifier = modifier.padding(vertical = 4.dp)
+    ) {
+        Surface {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 10.dp)
             ) {
-                Text(
-                    text = transaction.getLabel,
-                    style = MaterialTheme.typography.labelMedium
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = transaction.getLabel,
+                        style = MaterialTheme.typography.labelMedium
+                    )
+
+                    Text(
+                        text = transaction.getFormattedAmountOrValue,
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                }
+
+                HorizontalDivider(
+                    thickness = 1.dp,
+                    color = Color.LightGray
                 )
 
                 Text(
-                    text = transaction.getFormattedAmountOrValue,
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        fontWeight = FontWeight.Bold
+                    text = transaction.createdAt.toLocalDateTime().formatedDateTime,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = Color.Gray
                     )
                 )
             }
-
-            HorizontalDivider(
-                thickness = 1.dp,
-                color = Color.LightGray
-            )
-
-            Text(
-                text = transaction.createdAt.toLocalDateTime().formatedDateTime,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    color = Color.Gray
-                )
-            )
         }
     }
 }
 
 @Composable
-fun GoalDetailAchievementListItem(transaction: Transaction) {
+fun GoalDetailAchievementListItem(
+    transaction: Transaction,
+    modifier: Modifier = Modifier,
+    shape: Shape = MaterialTheme.shapes.small,
+    onUpdate: () -> Unit = {},
+    onDelete: (transaction: Transaction) -> Unit = {},
+    dismissState: SwipeToDismissBoxState,
+) {
     if (transaction !is Transaction.Achievement) return
 
     val imgResId = if (transaction.status == GoalStatus.COMPLETED) {
@@ -360,71 +425,79 @@ fun GoalDetailAchievementListItem(transaction: Transaction) {
     val statusColor = colorResource(transaction.getStatusColor)
     val statusLabel = transaction.getStatus ?: ""
 
-    Surface {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 10.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+    SwipeDismiss(
+        shape = shape,
+        dismissState = dismissState,
+        onUpdate = onUpdate,
+        onDelete = { onDelete(transaction) },
+        modifier = modifier.padding(vertical = 4.dp)
+    ) {
+        Surface {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 10.dp)
             ) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Image(
-                        painter = painterResource(imgResId),
-                        contentDescription = "Achievement",
-                        modifier = Modifier.size(25.dp)
-                    )
-
-                    Column {
-                        Text(
-                            text = transaction.getLabel,
-                            style = MaterialTheme.typography.labelMedium
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        Image(
+                            painter = painterResource(imgResId),
+                            contentDescription = "Achievement",
+                            modifier = Modifier.size(25.dp)
                         )
 
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(5.dp)
-                        ) {
+                        Column {
                             Text(
-                                text = transaction.createdAt.toLocalDateTime().formatedDateTime,
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    color = Color.Gray
-                                )
+                                text = transaction.getLabel,
+                                style = MaterialTheme.typography.labelMedium
                             )
 
-                            Surface(
-                                color = statusColor.copy(0.2f),
-                                shape = MaterialTheme.shapes.small,
-                                border = BorderStroke(1.dp, statusColor)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(5.dp)
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(5.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center
-                                ) {
-                                    Text(
-                                        text = statusLabel,
-                                        color = statusColor,
-                                        style = MaterialTheme.typography.labelSmall
+                                Text(
+                                    text = transaction.createdAt.toLocalDateTime().formatedDateTime,
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        color = Color.Gray
                                     )
+                                )
+
+                                Surface(
+                                    color = statusColor.copy(0.2f),
+                                    shape = MaterialTheme.shapes.small,
+                                    border = BorderStroke(1.dp, statusColor)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(5.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        Text(
+                                            text = statusLabel,
+                                            color = statusColor,
+                                            style = MaterialTheme.typography.labelSmall
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                Text(
-                    text = transaction.getFormattedAmountOrValue,
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        fontWeight = FontWeight.Bold
+                    Text(
+                        text = transaction.getFormattedAmountOrValue,
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.Bold
+                        )
                     )
-                )
+                }
             }
         }
     }
@@ -527,7 +600,7 @@ fun GoalDetailScreenSummary(
                     transaction.value == remaining && transaction.status == GoalStatus.IN_PROGRESS ->
                         append("You haven't fulfilled your goal")
 
-                    transaction.value == remaining && transaction.status == GoalStatus.FAILED ->
+                    transaction.value == remaining || transaction.status == GoalStatus.FAILED ->
                         withStyle(
                             style = SpanStyle(
                                 color = errorColor,
@@ -574,7 +647,8 @@ fun GoalDetailScreenSummary(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 10.dp),
+            .padding(horizontal = 10.dp)
+            .zIndex(1f),
         shadowElevation = 10.dp,
         shape = MaterialTheme.shapes.small
     ) {

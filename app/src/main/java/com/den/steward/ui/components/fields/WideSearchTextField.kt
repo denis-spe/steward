@@ -38,6 +38,7 @@ fun WideSearchTextField(
             .fillMaxWidth()
             .focusRequester(focusRequester),
         colors = TextFieldDefaults.colors().copy(
+            focusedContainerColor = Color.Transparent,
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent
         ),

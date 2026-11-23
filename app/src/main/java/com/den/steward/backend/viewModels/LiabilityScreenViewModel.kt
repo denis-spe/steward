@@ -153,14 +153,16 @@ class LiabilityScreenViewModel @Inject constructor(
                 )
 
                 val groupedLiabilityTransaction = liabilityTransactions
-                    .groupBy {
-                        val createdAt = it.createdAt.toLocalDateTime()
-                        when {
-                            now == createdAt.toLocalDate() -> "Today"
-                            now.minusDays(1) == createdAt.toLocalDate() -> "Yesterday"
-                            else -> createdAt.formattedDate
+                    .groupBy { it.createdAt.toLocalDateTime().toLocalDate() }
+                    .toSortedMap(comparator = reverseOrder())
+                    .mapKeys { (key, _) ->
+                        when (key) {
+                            now -> "Today"
+                            now.minusDays(1) -> "Yesterday"
+                            else -> key.formattedDate
                         }
-                    }.toImmutableMap()
+                    }
+                    .toImmutableMap()
 
                 val liabilityDataState = LiabilityDataState(
                     liabilityTransactions = groupedLiabilityTransaction,

@@ -135,15 +135,20 @@ class GoalScreenViewModel @Inject constructor(
                         totalFailedAchievementPercent = totalFailedAchievementPercent
                     )
 
-                    val transactionDataState = GoalDataState(
-                        goalTransactions = transactions.groupBy {
-                            val createdAt = it.createdAt.toLocalDateTime()
-                            when {
-                                now == createdAt.toLocalDate() -> "Today"
-                                now.minusDays(1) == createdAt.toLocalDate() -> "Yesterday"
-                                else -> createdAt.formattedDate
+                    val groupedTransactions = transactions
+                        .groupBy { it.endAt.toLocalDateTime().toLocalDate() }
+                        .toSortedMap(comparator = reverseOrder())
+                        .mapKeys { (key, _) ->
+                            when (key) {
+                                now -> "Today"
+                                now.minusDays(1) -> "Yesterday"
+                                else -> key.formattedDate
                             }
-                        }.toImmutableMap(),
+                        }
+                        .toImmutableMap()
+
+                    val transactionDataState = GoalDataState(
+                        goalTransactions = groupedTransactions,
                         goalMainSummary = goalMainSummary
                     )
                     DataState.Success(transactionDataState)

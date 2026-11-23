@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.clearText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Sort
@@ -250,7 +251,9 @@ private fun TransactionScreenTopAppBar(
 
         if (state) {
             Surface(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.background,
+                shadowElevation = 2.dp
             ) {
                 Column(
                     modifier = Modifier
@@ -262,6 +265,7 @@ private fun TransactionScreenTopAppBar(
                         state = searchTextState,
                         onSearchClick = {}
                     ) {
+                        searchTextState.clearText()
                         showSearch.value = false
                     }
                 }

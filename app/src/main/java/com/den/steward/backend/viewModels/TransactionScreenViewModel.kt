@@ -123,16 +123,20 @@ class TransactionScreenViewModel @Inject constructor(
                         incomingPercent = incomingPercent,
                         outgoingPercent = outgoingPercent
                     )
+                    val groupedTransactions = transactions
+                        .groupBy { it.createdAt.toLocalDateTime().toLocalDate() }
+                        .toSortedMap(comparator = reverseOrder())
+                        .mapKeys { (key, _) ->
+                            when (key) {
+                                now -> "Today"
+                                now.minusDays(1) -> "Yesterday"
+                                else -> key.formattedDate
+                            }
+                        }
+                        .toImmutableMap()
 
                     val transactionDataState = TransactionDataState(
-                        transactions = transactions.groupBy {
-                            val createdAt = it.createdAt.toLocalDateTime()
-                            when {
-                                now == createdAt.toLocalDate() -> "Today"
-                                now.minusDays(1) == createdAt.toLocalDate() -> "Yesterday"
-                                else -> createdAt.formattedDate
-                            }
-                        }.toImmutableMap(),
+                        transactions = groupedTransactions,
                         transactionMainSummary = transactionMainSummary
                     )
 
