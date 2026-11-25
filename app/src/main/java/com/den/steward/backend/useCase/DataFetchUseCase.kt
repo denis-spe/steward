@@ -2,6 +2,7 @@
 package com.den.steward.backend.useCase
 
 import com.den.steward.backend.entitles.Transaction
+import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.services.service.Account
 import com.den.steward.backend.services.service.Storage
 import com.den.steward.backend.states.DataState
@@ -59,8 +60,15 @@ class DataFetchUseCase @Inject constructor(
         return storageService.getTransaction(userId, transactionId)
     }
 
-    fun fetchAllFulfillment(transaction: Transaction): Flow<DataState<List<Transaction>>> {
-        return storageService.fetchTransactionFulfillment(userId, transaction)
+    fun fetchAllFulfillment(
+        transaction: Transaction,
+        fulfillmentType: TransactionType? = null
+    ): Flow<DataState<List<Transaction>>> {
+        return storageService.fetchTransactionFulfillment(
+            userId,
+            transaction,
+            fulfillmentType = fulfillmentType
+        )
             .distinctUntilChanged()
             .map {
                 val originalTransactions = it.getOrThrow()

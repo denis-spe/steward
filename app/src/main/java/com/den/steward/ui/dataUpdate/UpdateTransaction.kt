@@ -163,29 +163,35 @@ fun UpdateTransaction(
             )
         }
 
-        TransactionNoteField(
-            title = "Note",
-            description = "Add more details (optional)",
-            state = dataUpdateState.note,
-            displayText = dataUpdateState.currentNote,
-            onDisplayTextChange = updateCorrectNote,
-            placeholder = "note...",
-            colorResId = transactionType.color,
-        )
+        if (transactionType !in listOf(
+                TransactionType.ACHIEVEMENT,
+                TransactionType.ATTAIN
+            )
+        ) {
+            TransactionNoteField(
+                title = "Note",
+                description = "Add more details (optional)",
+                state = dataUpdateState.note,
+                displayText = dataUpdateState.currentNote,
+                onDisplayTextChange = updateCorrectNote,
+                placeholder = "note...",
+                colorResId = transactionType.color,
+            )
 
-        TransactionDateField(
-            title = label,
-            colorResId = transactionType.color,
-            localDateState = dataUpdateState.localDateCreatedAt,
-            onLocalDateChange = onLocalDateChange
-        )
+            TransactionDateField(
+                title = label,
+                colorResId = transactionType.color,
+                localDateState = dataUpdateState.localDateCreatedAt,
+                onLocalDateChange = onLocalDateChange
+            )
 
-        TransactionTimeField(
-            title = label,
-            colorResId = transactionType.color,
-            localTime = dataUpdateState.localTimeCreatedAt,
-            onLocalTimeChange = onLocalTimeChange
-        )
+            TransactionTimeField(
+                title = label,
+                colorResId = transactionType.color,
+                localTime = dataUpdateState.localTimeCreatedAt,
+                onLocalTimeChange = onLocalTimeChange
+            )
+        }
 
         if (transactionType !in fulfillmentTransactionType) {
             TransactionIconSelector(

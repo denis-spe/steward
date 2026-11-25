@@ -6,8 +6,10 @@ import com.den.steward.backend.states.Affected
 import com.den.steward.helper.calculateFlow
 import com.den.steward.helper.formatToAmount
 import com.den.steward.helper.title
+import com.den.steward.helper.toLocalDateTime
 import com.den.steward.ui.components.SelectedIcon
 import com.den.steward.ui.components.icons
+import java.time.LocalDateTime
 
 @Stable
 sealed class Transaction {
@@ -195,13 +197,22 @@ sealed class Transaction {
         val repeatable: Recurrence = Recurrence.NONE,
     ) : Transaction() {
         val totalAttain get() = attain.sumOf { it.value }
-        val remainingValue: Double get() = value - totalAttain
+        val remainingValue: Double
+            get() {
+                val remainder = value - totalAttain
+                return if (remainder < 0) 0.0 else remainder
+            }
         val totalAchievement get() = achievement.groupBy { it.status }
         val percentage: Double get() = if (value > 0) (totalAttain / value) * 100 else 0.0
 
+        val isGoalExpired: Boolean
+            get() {
+                val now = LocalDateTime.now()
+                return now.isAfter(endAt.toLocalDateTime())
+            }
+
         val status: GoalStatus get() {
             val time = System.currentTimeMillis()
-
             return when {
                 remainingValue <= 0.0 -> GoalStatus.COMPLETED
                 time > endAt -> GoalStatus.FAILED
@@ -467,15 +478,18 @@ sealed class Transaction {
         get() {
             return when (this) {
                 is Debt -> {
-                    this.remainingAmount
+                    if (this.remainingAmount < 0) 0.0
+                    else this.remainingAmount
                 }
 
                 is Lent -> {
-                    this.remainingAmount
+                    if (this.remainingAmount < 0) 0.0
+                    else this.remainingAmount
                 }
 
                 is Goal -> {
-                    this.remainingValue
+                    if (this.remainingValue < 0) 0.0
+                    else this.remainingValue
                 }
 
                 else -> null

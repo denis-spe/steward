@@ -1,5 +1,6 @@
 package com.den.steward.backend.useCase
 
+import com.den.steward.backend.entitles.GoalStatus
 import com.den.steward.backend.entitles.PaymentMethod
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
@@ -163,18 +164,48 @@ class UpdateTransactionUseCase @Inject constructor(
                 .toDoubleOrNull() ?: 0.0
             val parentAmount = parentTransaction.getAmountOrValue ?: 0.0
 
-            if (amountOrValue > parentAmount) {
-                _dataUpdateState.update {
-                    it.copy(
-                        isAmountCorrect = TransactionFieldState.Error(
-                            "Amount cannot be greater than parent transaction"
+            when {
+                transaction.type != TransactionType.ACHIEVEMENT &&
+                        amountOrValue > parentAmount -> {
+                    _dataUpdateState.update {
+                        it.copy(
+                            isAmountCorrect = TransactionFieldState.Error(
+                                "Amount cannot be greater than parent transaction"
+                            )
                         )
-                    )
+                    }
+                    updateShowBottomSheet(true)
+                    return false
                 }
-                updateShowBottomSheet(true)
-                return false
-            } else {
-                updateShowBottomSheet(false)
+
+                transaction.type == TransactionType.ATTAIN &&
+                        (parentTransaction as Transaction.Goal).isGoalExpired -> {
+                    _dataUpdateState.update {
+                        it.copy(
+                            isAmountCorrect = TransactionFieldState.Error(
+                                "Your goal has already passed the deadline time"
+                            )
+                        )
+                    }
+                    updateShowBottomSheet(true)
+                    return false
+                }
+
+                amountOrValue < 0.0 -> {
+                    _dataUpdateState.update {
+                        it.copy(
+                            isAmountCorrect = TransactionFieldState.Error(
+                                "Amount can not be negative"
+                            )
+                        )
+                    }
+                    updateShowBottomSheet(true)
+                    return false
+                }
+
+                else -> {
+                    updateShowBottomSheet(false)
+                }
             }
 
 
@@ -210,8 +241,12 @@ class UpdateTransactionUseCase @Inject constructor(
 
                 TransactionType.ACHIEVEMENT -> {
                     val achievement = transaction as Transaction.Achievement
+                    val parentGoal = parentTransaction as? Transaction.Goal
+                    val targetValue = parentGoal?.value ?: achievement.value
+
                     achievement.copy(
-                        value = amountOrValue
+                        value = amountOrValue,
+                        status = if (amountOrValue >= targetValue) GoalStatus.COMPLETED else GoalStatus.FAILED
                     )
                 }
                 else -> return false

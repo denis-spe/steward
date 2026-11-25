@@ -11,6 +11,7 @@ import com.den.steward.backend.entitles.PlanStatus
 import com.den.steward.backend.entitles.Recurrence
 import com.den.steward.backend.entitles.Transaction
 import com.den.steward.backend.entitles.TransactionType
+import com.den.steward.ui.components.icons
 import com.google.firebase.firestore.DocumentSnapshot
 
 private val paymentMethodMap = PaymentMethod.entries.associateBy { it.name }
@@ -20,206 +21,231 @@ private val transactionTypeMap = TransactionType.entries.associateBy { it.name }
 private val liabilitiesStatusMap = LiabilitiesStatus.entries.associateBy { it.name }
 private val planStatusMap = PlanStatus.entries.associateBy { it.name }
 
+private fun getDefaultIconIntForType(type: String): Int = when (type) {
+    TransactionType.GOAL.name -> R.drawable.tag_goal
+    TransactionType.PLAN.name -> R.drawable.account
+    TransactionType.EARNINGS.name -> R.drawable.earnings_2
+    TransactionType.EXPENSE.name -> R.drawable.expense_2
+    TransactionType.LENT.name -> R.drawable.pay_date
+    TransactionType.DEBT.name -> R.drawable.debt_2
+    TransactionType.SAVINGS.name -> R.drawable.savings_2
+    else -> R.drawable.apple
+}
+
+private fun DocumentSnapshot.resolveSelectedIconInt(type: String): Int {
+    val raw = get("selectedIcon")
+    if (raw is String && raw.isNotBlank()) {
+        val mappedRes = icons[raw]
+        if (mappedRes != null) return mappedRes
+    } else if (raw is Number) {
+        val legacyInt = raw.toLong().toInt()
+        val match = icons.values.firstOrNull { it == legacyInt }
+        if (match != null) return match
+    }
+
+    return getDefaultIconIntForType(type)
+}
+
 val DocumentSnapshot.toTransaction: Transaction?
     get() {
         val id = this.id
-    val label = getString("label") ?: ""
-    val type = getString("type") ?: ""
-    val note = getString("note") ?: ""
-    val createdAt = getTimestamp("createdAt")?.toDate()?.time ?: System.currentTimeMillis()
-    val affectAmount = getBoolean("affectAmount") ?: false
-    val amount = getDouble("amount") ?: 0.0
-    val paymentMethod = getString("paymentMethod")?.let { name ->
-        paymentMethodMap[name]
-    } ?: PaymentMethod.CASH
-    val selectedIcon = getLong("selectedIcon") ?: R.drawable.description.toLong()
+        val label = getString("label") ?: ""
+        val type = getString("type") ?: ""
+        val note = getString("note") ?: ""
+        val createdAt = getTimestamp("createdAt")?.toDate()?.time ?: System.currentTimeMillis()
+        val affectAmount = getBoolean("affectAmount") ?: false
+        val amount = getDouble("amount") ?: 0.0
+        val paymentMethod = getString("paymentMethod")?.let { name ->
+            paymentMethodMap[name]
+        } ?: PaymentMethod.CASH
+        val selectedIcon = resolveSelectedIconInt(type)
 
-    return when (type) {
-        TransactionType.EXCHANGE.name -> {
-            val from = getString("from")?.let { name ->
-                paymentMethodMap[name]
-            } ?: PaymentMethod.CARD
-            val to = getString("to")?.let { name ->
-                paymentMethodMap[name]
-            } ?: PaymentMethod.CARD
+        return when (type) {
+            TransactionType.EXCHANGE.name -> {
+                val from = getString("from")?.let { name ->
+                    paymentMethodMap[name]
+                } ?: PaymentMethod.CARD
+                val to = getString("to")?.let { name ->
+                    paymentMethodMap[name]
+                } ?: PaymentMethod.CARD
 
-            Transaction.Exchange(
-                id = id,
-                label = label,
-                note = note,
-                createdAt = createdAt,
-                from = from,
-                to = to,
-                amount = amount
-            )
-        }
+                Transaction.Exchange(
+                    id = id,
+                    label = label,
+                    note = note,
+                    createdAt = createdAt,
+                    from = from,
+                    to = to,
+                    amount = amount
+                )
+            }
 
-        TransactionType.GOAL.name -> {
-            val value = getDouble("value") ?: 0.0
-            val goalType = getString("goalType")?.let { name ->
-                goalTypeMap[name]
-            } ?: GoalType.AMOUNT
-            val startedAt = getTimestamp("startedAt")?.toDate()?.time ?: createdAt
-            val endAt = getTimestamp("endAt")?.toDate()?.time ?: createdAt
-            val repeatable = toRecurrence
+            TransactionType.GOAL.name -> {
+                val value = getDouble("value") ?: 0.0
+                val goalType = getString("goalType")?.let { name ->
+                    goalTypeMap[name]
+                } ?: GoalType.AMOUNT
+                val startedAt = getTimestamp("startedAt")?.toDate()?.time ?: createdAt
+                val endAt = getTimestamp("endAt")?.toDate()?.time ?: createdAt
+                val repeatable = toRecurrence
 
-            Transaction.Goal(
-                id = id,
-                label = label,
-                value = value,
-                note = note,
-                goalType = goalType,
-                startedAt = startedAt,
-                endAt = endAt,
-                createdAt = createdAt,
-                repeatable = repeatable,
-                selectedIcon = selectedIcon.toInt()
-            )
-        }
+                Transaction.Goal(
+                    id = id,
+                    label = label,
+                    value = value,
+                    note = note,
+                    goalType = goalType,
+                    startedAt = startedAt,
+                    endAt = endAt,
+                    createdAt = createdAt,
+                    repeatable = repeatable,
+                    selectedIcon = selectedIcon
+                )
+            }
 
-        TransactionType.ATTAIN.name -> {
-            val value = getDouble("value") ?: 0.0
-            val goalId = reference.parent.parent?.id ?: ""
-            Transaction.Attain(
-                id = id,
-                value = value,
-                createdAt = createdAt,
-                goal = Transaction.Goal(id = goalId)
-            )
-        }
+            TransactionType.ATTAIN.name -> {
+                val value = getDouble("value") ?: 0.0
+                val goalId = reference.parent.parent?.id ?: ""
+                Transaction.Attain(
+                    id = id,
+                    value = value,
+                    createdAt = createdAt,
+                    goal = Transaction.Goal(id = goalId)
+                )
+            }
 
-        TransactionType.ACHIEVEMENT.name -> {
-            val value = getDouble("value") ?: 0.0
-            val startAt = getTimestamp("startAt")?.toDate()?.time ?: createdAt
-            val endAt = getTimestamp("endAt")?.toDate()?.time ?: createdAt
-            val status = getString("status")?.let { name ->
-                goalStatusMap[name]
-            } ?: GoalStatus.NOT_STARTED
-            val goalId = reference.parent.parent?.id ?: ""
-            Transaction.Achievement(
-                id = id,
-                value = value,
-                createdAt = createdAt,
-                startAt = startAt,
-                endAt = endAt,
-                status = status,
-                goal = Transaction.Goal(id = goalId)
-            )
-        }
+            TransactionType.ACHIEVEMENT.name -> {
+                val value = getDouble("value") ?: 0.0
+                val startAt = getTimestamp("startAt")?.toDate()?.time ?: createdAt
+                val endAt = getTimestamp("endAt")?.toDate()?.time ?: createdAt
+                val status = getString("status")?.let { name ->
+                    goalStatusMap[name]
+                } ?: GoalStatus.NOT_STARTED
+                val goalId = reference.parent.parent?.id ?: ""
+                Transaction.Achievement(
+                    id = id,
+                    value = value,
+                    createdAt = createdAt,
+                    startAt = startAt,
+                    endAt = endAt,
+                    status = status,
+                    goal = Transaction.Goal(id = goalId)
+                )
+            }
 
-        TransactionType.EARNINGS.name -> {
-            Transaction.Earnings(
-                id = id,
-                label = label,
-                amount = amount,
-                note = note,
-                createdAt = createdAt,
-                paymentMethod = paymentMethod,
-                affectAmount = affectAmount,
-                selectedIcon = selectedIcon.toInt()
-            )
-        }
+            TransactionType.EARNINGS.name -> {
+                Transaction.Earnings(
+                    id = id,
+                    label = label,
+                    amount = amount,
+                    note = note,
+                    createdAt = createdAt,
+                    paymentMethod = paymentMethod,
+                    affectAmount = affectAmount,
+                    selectedIcon = selectedIcon
+                )
+            }
 
-        TransactionType.EXPENSE.name -> {
-            Transaction.Expense(
-                id = id,
-                label = label,
-                amount = amount,
-                note = note,
-                createdAt = createdAt,
-                paymentMethod = paymentMethod,
-                affectAmount = affectAmount,
-                selectedIcon = selectedIcon.toInt()
-            )
-        }
+            TransactionType.EXPENSE.name -> {
+                Transaction.Expense(
+                    id = id,
+                    label = label,
+                    amount = amount,
+                    note = note,
+                    createdAt = createdAt,
+                    paymentMethod = paymentMethod,
+                    affectAmount = affectAmount,
+                    selectedIcon = selectedIcon
+                )
+            }
 
-        TransactionType.SAVINGS.name -> {
-            Transaction.Savings(
-                id = id,
-                label = label,
-                amount = amount,
-                note = note,
-                createdAt = createdAt,
-                paymentMethod = paymentMethod,
-                affectAmount = affectAmount,
-                selectedIcon = selectedIcon.toInt()
-            )
-        }
+            TransactionType.SAVINGS.name -> {
+                Transaction.Savings(
+                    id = id,
+                    label = label,
+                    amount = amount,
+                    note = note,
+                    createdAt = createdAt,
+                    paymentMethod = paymentMethod,
+                    affectAmount = affectAmount,
+                    selectedIcon = selectedIcon
+                )
+            }
 
-        TransactionType.LENT.name -> {
-            Transaction.Lent(
-                id = id,
-                label = label,
-                amount = amount,
-                note = note,
-                createdAt = createdAt,
-                paymentMethod = paymentMethod,
-                affectAmount = affectAmount,
-                selectedIcon = selectedIcon.toInt(),
-            )
-        }
+            TransactionType.LENT.name -> {
+                Transaction.Lent(
+                    id = id,
+                    label = label,
+                    amount = amount,
+                    note = note,
+                    createdAt = createdAt,
+                    paymentMethod = paymentMethod,
+                    affectAmount = affectAmount,
+                    selectedIcon = selectedIcon
+                )
+            }
 
-        TransactionType.DEBT.name -> {
-            Transaction.Debt(
-                id = id,
-                label = label,
-                amount = amount,
-                note = note,
-                createdAt = createdAt,
-                paymentMethod = paymentMethod,
-                affectAmount = affectAmount,
-                selectedIcon = selectedIcon.toInt(),
-            )
-        }
+            TransactionType.DEBT.name -> {
+                Transaction.Debt(
+                    id = id,
+                    label = label,
+                    amount = amount,
+                    note = note,
+                    createdAt = createdAt,
+                    paymentMethod = paymentMethod,
+                    affectAmount = affectAmount,
+                    selectedIcon = selectedIcon
+                )
+            }
 
-        TransactionType.SETTLEMENT.name -> {
-            val parentId = reference.parent.parent?.id ?: ""
-            Transaction.Settlement(
-                id = id,
-                label = label,
-                amount = amount,
-                note = note,
-                createdAt = createdAt,
-                paymentMethod = paymentMethod,
-                affectAmount = affectAmount,
-                debt = Transaction.Debt(id = parentId)
-            )
-        }
+            TransactionType.SETTLEMENT.name -> {
+                val parentId = reference.parent.parent?.id ?: ""
+                Transaction.Settlement(
+                    id = id,
+                    label = label,
+                    amount = amount,
+                    note = note,
+                    createdAt = createdAt,
+                    paymentMethod = paymentMethod,
+                    affectAmount = affectAmount,
+                    debt = Transaction.Debt(id = parentId)
+                )
+            }
 
-        TransactionType.REPAYMENT.name -> {
-            val parentId = reference.parent.parent?.id ?: ""
-            Transaction.Repayment(
-                id = id,
-                label = label,
-                amount = amount,
-                note = note,
-                createdAt = createdAt,
-                paymentMethod = paymentMethod,
-                affectAmount = affectAmount,
-                lent = Transaction.Lent(id = parentId)
-            )
-        }
+            TransactionType.REPAYMENT.name -> {
+                val parentId = reference.parent.parent?.id ?: ""
+                Transaction.Repayment(
+                    id = id,
+                    label = label,
+                    amount = amount,
+                    note = note,
+                    createdAt = createdAt,
+                    paymentMethod = paymentMethod,
+                    affectAmount = affectAmount,
+                    lent = Transaction.Lent(id = parentId)
+                )
+            }
 
-        TransactionType.PLAN.name -> {
-            val initialValue = getDouble("initialValue") ?: 0.0
-            val plannedAt = getTimestamp("plannedAt")?.toDate()?.time ?: createdAt
-            val endAt = getTimestamp("endAt")?.toDate()?.time ?: createdAt
-            val status = getString("status")?.let { name ->
-                planStatusMap[name]
-            } ?: PlanStatus.NOT_YET
+            TransactionType.PLAN.name -> {
+                val initialValue = getDouble("initialValue") ?: 0.0
+                val plannedAt = getTimestamp("plannedAt")?.toDate()?.time ?: createdAt
+                val endAt = getTimestamp("endAt")?.toDate()?.time ?: createdAt
+                val status = getString("status")?.let { name ->
+                    planStatusMap[name]
+                } ?: PlanStatus.NOT_YET
 
-            Transaction.Plan(
-                id = id,
-                label = label,
-                initialValue = initialValue,
-                note = note,
-                createdAt = createdAt,
-                plannedAt = plannedAt,
-                endAt = endAt,
-                status = status,
-                selectedIcon = selectedIcon.toInt()
-            )
-        }
+                Transaction.Plan(
+                    id = id,
+                    label = label,
+                    initialValue = initialValue,
+                    note = note,
+                    createdAt = createdAt,
+                    plannedAt = plannedAt,
+                    endAt = endAt,
+                    status = status,
+                    selectedIcon = selectedIcon
+                )
+            }
 
         TransactionType.PLAN_FULFILLMENT.name -> {
             val planId = reference.parent.parent?.id ?: ""

@@ -8,8 +8,8 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="com.den.steward" />
-                  <option name="mobileSdkAppId" value="1:291933237090:android:91dace3e68f8a12957c63b" />
+                  <option name="appId" value="com.den.steward.debug" />
+                  <option name="mobileSdkAppId" value="1:291933237090:android:d75918f8818209c557c63b" />
                   <option name="projectId" value="steward-20d80" />
                   <option name="projectNumber" value="291933237090" />
                 </ConnectionSetting>

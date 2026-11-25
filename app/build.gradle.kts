@@ -16,7 +16,7 @@ android {
         minSdk = 26
         targetSdk = 37
         versionCode = 1
-        versionName = "1.0"
+        versionName = "2.0.1"
 
         testInstrumentationRunner = "com.den.steward.HiltTestRunner"
         buildConfigField("String", "EMULATOR_HOST", "\"192.168.43.53\"")

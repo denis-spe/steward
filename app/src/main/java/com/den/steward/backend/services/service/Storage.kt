@@ -1,16 +1,13 @@
 package com.den.steward.backend.services.service
 
 import com.den.steward.backend.entitles.Transaction
+import com.den.steward.backend.entitles.TransactionType
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
 
 interface Storage {
     val firestore: FirebaseFirestore;
     fun fetchAllTransactions(userId: String): Flow<Result<List<Transaction>>>
-    fun fetchTransactionFulfillment(
-        userId: String,
-        transaction: Transaction
-    ): Flow<Result<List<Transaction>>>
 
     suspend fun addTransaction(userId: String, transaction: Transaction): Result<String>
     suspend fun addFulfillment(userId: String, transactionId: String, fulfillment: Transaction): Result<String>
@@ -48,4 +45,10 @@ interface Storage {
         userId: String,
         transactionIds: List<String>
     ): Result<Unit>
+
+    fun fetchTransactionFulfillment(
+        userId: String,
+        transaction: Transaction,
+        fulfillmentType: TransactionType?
+    ): Flow<Result<List<Transaction>>>
 }

@@ -45,7 +45,7 @@ val Transaction.toMap: MutableMap<String, Any>
                 mapping["note"] = this.note
                 mapping["paymentMethod"] = this.paymentMethod.name
                 mapping["affectAmount"] = this.affectAmount
-                mapping["selectedIcon"] = this.selectedIcon
+                mapping["selectedIcon"] = this.getSelectedIcon.name
             }
 
             is Expense -> {
@@ -54,7 +54,7 @@ val Transaction.toMap: MutableMap<String, Any>
                 mapping["note"] = this.note
                 mapping["paymentMethod"] = this.paymentMethod.name
                 mapping["affectAmount"] = this.affectAmount
-                mapping["selectedIcon"] = this.selectedIcon
+                mapping["selectedIcon"] = this.getSelectedIcon.name
             }
 
             is Lent -> {
@@ -63,7 +63,7 @@ val Transaction.toMap: MutableMap<String, Any>
                 mapping["note"] = this.note
                 mapping["paymentMethod"] = this.paymentMethod.name
                 mapping["affectAmount"] = this.affectAmount
-                mapping["selectedIcon"] = this.selectedIcon
+                mapping["selectedIcon"] = this.getSelectedIcon.name
             }
 
             is Debt -> {
@@ -72,7 +72,7 @@ val Transaction.toMap: MutableMap<String, Any>
                 mapping["note"] = this.note
                 mapping["paymentMethod"] = this.paymentMethod.name
                 mapping["affectAmount"] = this.affectAmount
-                mapping["selectedIcon"] = this.selectedIcon
+                mapping["selectedIcon"] = this.getSelectedIcon.name
             }
 
             is Savings -> {
@@ -81,7 +81,7 @@ val Transaction.toMap: MutableMap<String, Any>
                 mapping["note"] = this.note
                 mapping["paymentMethod"] = this.paymentMethod.name
                 mapping["affectAmount"] = this.affectAmount
-                mapping["selectedIcon"] = this.selectedIcon
+                mapping["selectedIcon"] = this.getSelectedIcon.name
             }
 
             is Goal -> {
@@ -93,7 +93,7 @@ val Transaction.toMap: MutableMap<String, Any>
                 mapping["repeatable"] = this.repeatable.toMap
                 mapping["startedAt"] = Timestamp(java.util.Date(this.startedAt))
                 mapping["endAt"] = Timestamp(java.util.Date(this.endAt))
-                mapping["selectedIcon"] = this.selectedIcon
+                mapping["selectedIcon"] = this.getSelectedIcon.name
             }
 
             is Attain -> {
@@ -130,7 +130,7 @@ val Transaction.toMap: MutableMap<String, Any>
                 mapping["plannedAt"] = Timestamp(java.util.Date(this.plannedAt))
                 mapping["endAt"] = Timestamp(java.util.Date(this.endAt))
                 mapping["status"] = this.status.name
-                mapping["selectedIcon"] = this.selectedIcon
+                mapping["selectedIcon"] = this.getSelectedIcon.name
             }
 
             is PlanFulfillment -> {

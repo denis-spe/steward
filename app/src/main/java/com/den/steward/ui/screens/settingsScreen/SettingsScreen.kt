@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -35,6 +36,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import coil.compose.AsyncImage
+import com.den.steward.BuildConfig
 import com.den.steward.R
 import com.den.steward.backend.states.AuthState
 import com.den.steward.backend.viewModels.SettingsViewModel
@@ -81,6 +83,7 @@ fun SettingsScreen(backStack: NavBackStack<NavKey>, settingsViewModel: SettingsV
                     settingsViewModel.logout()
                 }
             )
+            SettingsScreenAbout { }
         }
     }
 }
@@ -206,6 +209,34 @@ private fun SettingsScreenAccount(
             title = "Log out",
             description = "Sign out of your account",
             onLogout
+        )
+    }
+}
+
+@Composable
+private fun SettingsScreenAbout(
+    onMoreInfoClick: () -> Unit = {},
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 10.dp, horizontal = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        SettingsScreenSectionPartHeader(
+            title = "About"
+        ) {
+            Icon(
+                imageVector = Icons.Default.Info,
+                contentDescription = null,
+                modifier = Modifier.size(30.dp)
+            )
+        }
+
+        SettingsScreenSectionPartRow(
+            title = "App Version",
+            description = BuildConfig.VERSION_NAME,
+            onMoreInfoClick
         )
     }
 }

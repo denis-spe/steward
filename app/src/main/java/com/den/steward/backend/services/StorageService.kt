@@ -4,6 +4,7 @@ import android.util.Log
 import com.den.steward.backend.entitles.GoalStatus
 import com.den.steward.backend.entitles.Recurrence
 import com.den.steward.backend.entitles.Transaction
+import com.den.steward.backend.entitles.TransactionType
 import com.den.steward.backend.services.service.Storage
 import com.den.steward.helper.nextCycle
 import com.den.steward.helper.toMap
@@ -14,7 +15,6 @@ import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.WriteBatch
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -628,10 +628,10 @@ class StorageService @Inject constructor(
     // -------------------------------------------------------------------------
     // Real-time fulfillment listener for a single transaction
     // -------------------------------------------------------------------------
-    @OptIn(ExperimentalCoroutinesApi::class)
     override fun fetchTransactionFulfillment(
         userId: String,
-        transaction: Transaction
+        transaction: Transaction,
+        fulfillmentType: TransactionType?
     ): Flow<Result<List<Transaction>>> {
         val collection = when (transaction) {
             is Transaction.Lent -> docRef.document(userId).collection(TRANSACTION_COLLECTION)
@@ -640,8 +640,13 @@ class StorageService @Inject constructor(
             is Transaction.Debt -> docRef.document(userId).collection(TRANSACTION_COLLECTION)
                 .document(transaction.id).collection(SETTLEMENT_COLLECTION)
 
-            is Transaction.Goal -> docRef.document(userId).collection(TRANSACTION_COLLECTION)
-                .document(transaction.id).collection(ATTAIN_COLLECTION)
+            is Transaction.Goal -> {
+                val collection =
+                    if (fulfillmentType == TransactionType.ATTAIN) ATTAIN_COLLECTION else
+                        ACHIEVEMENT_COLLECTION
+                docRef.document(userId).collection(TRANSACTION_COLLECTION)
+                    .document(transaction.id).collection(collection)
+            }
 
             is Transaction.Repayment -> docRef.document(userId).collection(TRANSACTION_COLLECTION)
                 .document(transaction.id).collection(REPAYMENT_COLLECTION)
