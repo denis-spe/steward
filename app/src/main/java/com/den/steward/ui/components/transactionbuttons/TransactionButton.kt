@@ -37,7 +37,7 @@ fun TransactionButtons(
         TransactionType.EXPENSE -> "Submit your expense"
         TransactionType.LENT -> "Request a lent"
         TransactionType.DEBT -> "Borrow money"
-        TransactionType.GOAL -> "Set a goal"
+        TransactionType.GOAL -> "Set a goal you want to achieve"
         TransactionType.ATTAIN -> "Attain your goal"
         TransactionType.REPAYMENT -> "Make a repayment"
         TransactionType.SETTLEMENT -> "Submit a settlement"
@@ -52,7 +52,7 @@ fun TransactionButtons(
         TransactionType.EXPENSE -> "Spent"
         TransactionType.LENT -> "Lent"
         TransactionType.DEBT -> "Borrowed"
-        TransactionType.GOAL -> "Goal"
+        TransactionType.GOAL -> "Target"
         TransactionType.ATTAIN -> "Attain"
         TransactionType.REPAYMENT -> "Repayment"
         TransactionType.SETTLEMENT -> "Settlement"
@@ -63,7 +63,7 @@ fun TransactionButtons(
     }
 
     OutlinedButton(
-        modifier = modifier,
+        modifier = modifier.fillMaxWidth(0.8f),
         onClick = onClick,
         enabled = !isLoading,
         border = BorderStroke(2.dp, if (isErrors)

@@ -513,20 +513,26 @@ class StorageService @Inject constructor(
                 PLAN_COLLECTION
             )
 
+            val allOperations = mutableListOf<(WriteBatch) -> Unit>()
+
             for (subName in subcollections) {
-                runCatching {
-                    val subSnapshot = transactionRef.collection(subName).get().await()
-                    if (!subSnapshot.isEmpty) {
-                        subSnapshot.documents.chunked(500).forEach { chunk ->
-                            val batch = docRef.firestore.batch()
-                            chunk.forEach { batch.delete(it.reference) }
-                            batch.commit().await()
-                        }
+                val subSnapshot = transactionRef.collection(subName).get().await()
+                if (!subSnapshot.isEmpty) {
+                    subSnapshot.documents.forEach { doc ->
+                        allOperations.add { batch -> batch.delete(doc.reference) }
                     }
                 }
             }
 
-            transactionRef.delete().await()
+            allOperations.add { batch -> batch.delete(transactionRef) }
+
+            // Chunk operations by 500 to adhere to Firestore limits
+            allOperations.chunked(500).forEach { operationChunk ->
+                val batch = docRef.firestore.batch()
+                operationChunk.forEach { op -> op(batch) }
+                batch.commit().await()
+            }
+
             Result.success(Unit)
         } catch (e: CancellationException) {
             throw e
