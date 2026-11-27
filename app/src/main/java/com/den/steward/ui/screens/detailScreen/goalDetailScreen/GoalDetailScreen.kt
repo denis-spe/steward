@@ -15,9 +15,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -147,6 +151,20 @@ private fun GoalDetailScreenContent(
                 backStack = backStack,
                 transaction = transaction
             )
+        },
+
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    viewModel.updateShowFulfillmentTransactionAdditionBottomSheet(true)
+                },
+                containerColor = colorResource(TransactionType.ATTAIN.color)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add"
+                )
+            }
         }
     ) { innerPadding ->
         Column(
@@ -165,6 +183,25 @@ private fun GoalDetailScreenContent(
             )
         }
     }
+
+
+    AttainTransactionBottomDrawerSheet(
+        amount = goalDetailUiState.amount,
+        selectedTransactionType = TransactionType.ATTAIN,
+        isSaving = goalDetailUiState.isSaving,
+        isFulfillBtnClick = goalDetailUiState.isFulfillBtnClick,
+        showFulfillmentTransactionAdditionBottomSheet = goalDetailUiState.showFulfillmentTransactionAdditionBottomSheet,
+        isFulfillmentValid = goalDetailUiState.isFulfillmentValid,
+        isAmountCorrect = goalDetailUiState.isAmountCorrect,
+        updateIsAmountCorrect = viewModel::updateIsAmountCorrect,
+        currentAmount = goalDetailUiState.currentAmount,
+        updateCorrectAmount = viewModel::updateCorrectAmount,
+        isStartNotEqualToEndDateTime = goalDetailUiState.isStartNotEqualToEndDateTime,
+        addFulfillmentTransaction = {
+            viewModel.addAttainTransaction(transaction)
+        },
+        onDismissRequest = viewModel::reset
+    )
 
     // Show the delete dialog for single transaction
     DataDeletionDialog(
